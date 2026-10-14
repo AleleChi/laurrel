@@ -10,6 +10,17 @@ export interface TickerItem {
   iconName: 'sparkles' | 'truck' | 'box';
 }
 
+export interface HeroVideoItem {
+  id: string;
+  service: 'Cleaning' | 'Moving' | 'Storage';
+  serviceKey: 'cleaning' | 'moving' | 'storage';
+  src: string;
+  poster: string;
+  description: string;
+  order: number;
+  objectPosition?: string;
+}
+
 export interface SiteConfig {
   companyName: string;
   tagline: string;
@@ -51,6 +62,7 @@ export interface SiteConfig {
       imageSrc: string;
       altText: string;
       videoSrc?: string;
+      videos?: HeroVideoItem[];
     };
   };
   ticker: {
@@ -105,7 +117,38 @@ export const siteConfig: SiteConfig = {
     media: {
       imageSrc: '/assets/hero/laurrel-room.png',
       altText: 'Sunlit living room with pristine cream furniture and architectural staircase in Ottawa, Canada',
-      // videoSrc will be populated when public/assets/hero/laurrel-hero.mp4 is provided
+      videos: [
+        {
+          id: 'hero-video-cleaning',
+          service: 'Cleaning',
+          serviceKey: 'cleaning',
+          src: '/assets/videos/clean.mp4',
+          poster: '/assets/videos/cleaning-poster.jpg',
+          description: 'Laurrel Services cleaning professional inspecting and maintaining residential space in Ottawa',
+          order: 1,
+          objectPosition: 'center 45%',
+        },
+        {
+          id: 'hero-video-moving',
+          service: 'Moving',
+          serviceKey: 'moving',
+          src: '/assets/videos/movinng.mp4',
+          poster: '/assets/videos/moving-poster.jpg',
+          description: 'Laurrel Services moving specialist carefully transporting boxed belongings',
+          order: 2,
+          objectPosition: 'center 45%',
+        },
+        {
+          id: 'hero-video-storage',
+          service: 'Storage',
+          serviceKey: 'storage',
+          src: '/assets/videos/storagge.mp4',
+          poster: '/assets/videos/storage-poster.jpg',
+          description: 'Laurrel Services storage specialist organizing modern, dependable storage facility',
+          order: 3,
+          objectPosition: 'center 45%',
+        },
+      ],
     },
   },
   ticker: {

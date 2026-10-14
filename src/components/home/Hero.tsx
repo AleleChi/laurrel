@@ -1,9 +1,9 @@
 'use client';
 
 import React from 'react';
-import Image from 'next/image';
 import { MessageSquare, ChevronRight } from 'lucide-react';
 import { Button } from '../ui/Button';
+import { HeroVideoRotator } from './HeroVideoRotator';
 import { siteConfig } from '@/content/site';
 
 interface HeroProps {
@@ -89,25 +89,13 @@ export const Hero: React.FC<HeroProps> = ({ onOpenQuote }) => {
             </div>
           </div>
 
-          {/* Right Column: Hero Architectural Media Display (~52% of layout) */}
+          {/* Right Column: Hero Showcase Media Display (~52% of layout) */}
           <div className="lg:col-span-6 xl:col-span-6 w-full">
-            <div className="relative w-full aspect-[4/3] sm:aspect-[16/11] lg:aspect-[4/3] xl:aspect-[5/4] rounded-3xl overflow-hidden border border-black/[0.08] shadow-2xl bg-neutral-100">
-              {/* Client-supplied authentic living room photo */}
-              <Image
-                src={hero.media.imageSrc}
-                alt={hero.media.altText}
-                fill
-                priority
-                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 640px"
-                className="object-cover object-[center_60%] sm:object-[45%_55%] transition-transform duration-700 ease-out hover:scale-[1.01]"
-              />
-
-              {/* Subtle ambient lighting vignette overlay to enhance contrast */}
-              <div
-                className="absolute inset-0 bg-gradient-to-t from-black/10 via-transparent to-transparent pointer-events-none"
-                aria-hidden="true"
-              />
-            </div>
+            <HeroVideoRotator
+              videos={hero.media.videos || []}
+              fallbackImage={hero.media.imageSrc}
+              fallbackAlt={hero.media.altText}
+            />
           </div>
         </div>
       </div>
