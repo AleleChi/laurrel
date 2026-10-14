@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { Menu, X, ArrowUpRight, ChevronRight } from 'lucide-react';
 import { Logo } from '../ui/Logo';
 import { Button } from '../ui/Button';
@@ -12,6 +13,7 @@ interface SiteHeaderProps {
 }
 
 export const SiteHeader: React.FC<SiteHeaderProps> = ({ onOpenQuote }) => {
+  const pathname = usePathname();
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -68,18 +70,21 @@ export const SiteHeader: React.FC<SiteHeaderProps> = ({ onOpenQuote }) => {
             {/* Desktop Center Navigation Links (1024px+) */}
             <ul className="hidden lg:flex items-center gap-7 xl:gap-9 text-[15px] font-medium text-[#202024]">
               {siteConfig.navigation.links.map((link) => {
-                const isHome = link.label === 'Home';
+                const isActive =
+                  link.href === '/'
+                    ? pathname === '/'
+                    : pathname.startsWith(link.href.split('#')[0]) && link.href !== '/';
                 return (
                   <li key={link.label}>
                     <Link
                       href={link.href}
                       className={`relative py-1 transition-colors duration-200 hover:text-[#390044] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#390044] rounded ${
-                        isHome ? 'text-[#390044] font-semibold' : 'text-[#202024]/85'
+                        isActive ? 'text-[#390044] font-semibold' : 'text-[#202024]/85'
                       }`}
-                      aria-current={isHome ? 'page' : undefined}
+                      aria-current={isActive ? 'page' : undefined}
                     >
                       {link.label}
-                      {isHome && (
+                      {isActive && (
                         <span className="absolute bottom-0 left-0 w-full h-[2px] bg-[#390044] rounded-full" />
                       )}
                     </Link>
