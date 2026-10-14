@@ -1,0 +1,59 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --brand-purple: #390044;
+  --brand-purple-dark: #27002E;
+  --brand-purple-light: #4E025D;
+  --brand-lime: #C8E80B;
+  --brand-lime-hover: #D8F228;
+  --brand-lime-text: #557A00;
+  --warm-white: #F8F7F4;
+  --warm-white-surface: #FFFFFF;
+  --dark-ink: #202024;
+  --muted-ink: #575757;
+  --border-subtle: rgba(32, 32, 36, 0.08);
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    background-color: var(--warm-white);
+    color: var(--dark-ink);
+  }
+
+  body {
+    background-color: var(--warm-white);
+    color: var(--dark-ink);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  ::selection {
+    background-color: #390044;
+    color: #F8F7F4;
+  }
+}
+
+/* Pause ticker animation when user hovers or focuses */
+.ticker-track:hover,
+.ticker-track:focus-within {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .ticker-track {
+    animation: none !important;
+    transform: none !important;
+  }
+}

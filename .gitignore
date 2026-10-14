@@ -1,0 +1,22 @@
+# Next.js
+.next/
+out/
+
+# Dependencies
+node_modules/
+/.pnp
+.pnp.js
+
+# Environment variables
+.env*.local
+.env
+
+# Testing & Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# OS Files
+.DS_Store
+Thumbs.db
