@@ -83,11 +83,12 @@ export async function getAboutPageData(): Promise<{
   if (client) {
     try {
       const query = `*[_type == "aboutPage"][0]{
-        hero,
-        intro,
-        work,
-        start,
-        location,
+        banner,
+        aboutCompany,
+        whatWeDo,
+        whyLaurrel,
+        photographicStory,
+        faq,
         finalCta,
         seo
       }`;
@@ -95,35 +96,49 @@ export async function getAboutPageData(): Promise<{
       if (res) {
         return {
           data: {
-            hero: {
-              title: res.hero?.title || siteConfig.aboutPage.hero.title,
-              breadcrumb: siteConfig.aboutPage.hero.breadcrumb,
-              imageSrc: res.hero?.image?.asset?.url || siteConfig.aboutPage.hero.imageSrc,
-              altText: res.hero?.image?.alt || siteConfig.aboutPage.hero.altText,
+            banner: {
+              title: res.banner?.title || siteConfig.aboutPage.banner.title,
+              breadcrumb: siteConfig.aboutPage.banner.breadcrumb,
+              imageSrc: res.banner?.image?.asset?.url || siteConfig.aboutPage.banner.imageSrc,
+              altText: res.banner?.image?.alt || siteConfig.aboutPage.banner.altText,
             },
-            intro: {
-              label: res.intro?.label || siteConfig.aboutPage.intro.label,
-              headline: res.intro?.headline || siteConfig.aboutPage.intro.headline,
-              paragraphs: res.intro?.paragraphs || siteConfig.aboutPage.intro.paragraphs,
-              imageSrc: res.intro?.image?.asset?.url || siteConfig.aboutPage.intro.imageSrc,
-              altText: res.intro?.image?.alt || siteConfig.aboutPage.intro.altText,
+            aboutCompany: {
+              eyebrow: res.aboutCompany?.eyebrow || siteConfig.aboutPage.aboutCompany.eyebrow,
+              headline: res.aboutCompany?.headline || siteConfig.aboutPage.aboutCompany.headline,
+              paragraph1: res.aboutCompany?.paragraph1 || siteConfig.aboutPage.aboutCompany.paragraph1,
+              paragraph2: res.aboutCompany?.paragraph2 || siteConfig.aboutPage.aboutCompany.paragraph2,
+              cta: res.aboutCompany?.cta || siteConfig.aboutPage.aboutCompany.cta,
+              imageSrc: res.aboutCompany?.image?.asset?.url || siteConfig.aboutPage.aboutCompany.imageSrc,
+              altText: res.aboutCompany?.image?.alt || siteConfig.aboutPage.aboutCompany.altText,
             },
-            work: {
-              label: res.work?.label || siteConfig.aboutPage.work.label,
-              headline: res.work?.headline || siteConfig.aboutPage.work.headline,
-              intro: res.work?.intro || siteConfig.aboutPage.work.intro,
-              services: res.work?.services || siteConfig.aboutPage.work.services,
+            whatWeDo: {
+              eyebrow: res.whatWeDo?.eyebrow || siteConfig.aboutPage.whatWeDo.eyebrow,
+              headline: res.whatWeDo?.headline || siteConfig.aboutPage.whatWeDo.headline,
+              intro: res.whatWeDo?.intro || siteConfig.aboutPage.whatWeDo.intro,
+              services: res.whatWeDo?.services || siteConfig.aboutPage.whatWeDo.services,
             },
-            start: {
-              label: res.start?.label || siteConfig.aboutPage.start.label,
-              headline: res.start?.headline || siteConfig.aboutPage.start.headline,
-              paragraph: res.start?.paragraph || siteConfig.aboutPage.start.paragraph,
-              closingLine: res.start?.closingLine || siteConfig.aboutPage.start.closingLine,
+            whyLaurrel: {
+              eyebrow: res.whyLaurrel?.eyebrow || siteConfig.aboutPage.whyLaurrel.eyebrow,
+              headline: res.whyLaurrel?.headline || siteConfig.aboutPage.whyLaurrel.headline,
+              intro: res.whyLaurrel?.intro || siteConfig.aboutPage.whyLaurrel.intro,
+              points: res.whyLaurrel?.points || siteConfig.aboutPage.whyLaurrel.points,
+              imageSrc: res.whyLaurrel?.image?.asset?.url || siteConfig.aboutPage.whyLaurrel.imageSrc,
+              altText: res.whyLaurrel?.image?.alt || siteConfig.aboutPage.whyLaurrel.altText,
             },
-            location: {
-              label: res.location?.label || siteConfig.aboutPage.location.label,
-              headline: res.location?.headline || siteConfig.aboutPage.location.headline,
-              body: res.location?.body || siteConfig.aboutPage.location.body,
+            photographicStory: {
+              eyebrow: res.photographicStory?.eyebrow || siteConfig.aboutPage.photographicStory.eyebrow,
+              headline: res.photographicStory?.headline || siteConfig.aboutPage.photographicStory.headline,
+              bodyParagraphs: res.photographicStory?.bodyParagraphs || siteConfig.aboutPage.photographicStory.bodyParagraphs,
+              ctaLabel: res.photographicStory?.ctaLabel || siteConfig.aboutPage.photographicStory.ctaLabel,
+              imageSrc: res.photographicStory?.image?.asset?.url || siteConfig.aboutPage.photographicStory.imageSrc,
+              altText: res.photographicStory?.image?.alt || siteConfig.aboutPage.photographicStory.altText,
+            },
+            faq: {
+              eyebrow: res.faq?.eyebrow || siteConfig.aboutPage.faq.eyebrow,
+              headline: res.faq?.headline || siteConfig.aboutPage.faq.headline,
+              imageSrc: res.faq?.image?.asset?.url || siteConfig.aboutPage.faq.imageSrc,
+              altText: res.faq?.image?.alt || siteConfig.aboutPage.faq.altText,
+              items: res.faq?.items || siteConfig.aboutPage.faq.items,
             },
             finalCta: {
               headline: res.finalCta?.headline || siteConfig.aboutPage.finalCta.headline,

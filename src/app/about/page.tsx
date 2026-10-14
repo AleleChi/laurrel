@@ -15,10 +15,10 @@ export async function generateMetadata(): Promise<Metadata> {
       type: 'website',
       images: [
         {
-          url: data.hero.imageSrc,
+          url: data.banner.imageSrc,
           width: 1200,
           height: 630,
-          alt: data.hero.altText,
+          alt: data.banner.altText,
         },
       ],
     },

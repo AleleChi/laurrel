@@ -73,7 +73,9 @@ export const SiteHeader: React.FC<SiteHeaderProps> = ({ onOpenQuote }) => {
                 const isActive =
                   link.href === '/'
                     ? pathname === '/'
-                    : pathname.startsWith(link.href.split('#')[0]) && link.href !== '/';
+                    : link.href.includes('#')
+                    ? pathname === '/'
+                    : pathname === link.href;
                 return (
                   <li key={link.label}>
                     <Link

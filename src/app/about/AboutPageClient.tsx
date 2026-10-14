@@ -3,10 +3,11 @@
 import React, { useState } from 'react';
 import { SiteHeader } from '@/components/layout/SiteHeader';
 import { AboutHeroBanner } from '@/components/about/AboutHeroBanner';
-import { AboutIntroduction } from '@/components/about/AboutIntroduction';
-import { AboutServices } from '@/components/about/AboutServices';
-import { AboutStart } from '@/components/about/AboutStart';
-import { AboutLocation } from '@/components/about/AboutLocation';
+import { AboutCompanySection } from '@/components/about/AboutCompanySection';
+import { AboutWhatWeDoSection } from '@/components/about/AboutWhatWeDoSection';
+import { AboutWhySection } from '@/components/about/AboutWhySection';
+import { AboutStorySection } from '@/components/about/AboutStorySection';
+import { AboutFaqSection } from '@/components/about/AboutFaqSection';
 import { AboutFinalCta } from '@/components/about/AboutFinalCta';
 import { QuoteInquiryModal } from '@/components/ui/QuoteInquiryModal';
 import { AboutPageConfig } from '@/content/site';
@@ -23,49 +24,66 @@ export const AboutPageClient: React.FC<AboutPageClientProps> = ({ content }) => 
       {/* Persistent Global Header */}
       <SiteHeader onOpenQuote={() => setIsQuoteModalOpen(true)} />
 
-      {/* Main Content Area */}
+      {/* Main Experience: 7 Editorial Sections */}
       <main className="flex-1">
-        {/* C1. Image Breadcrumb Hero Banner */}
+        {/* Section 01: Full-width Photographic Banner with Breadcrumbs */}
         <AboutHeroBanner
-          title={content.hero.title}
-          breadcrumb={content.hero.breadcrumb}
-          imageSrc={content.hero.imageSrc}
-          altText={content.hero.altText}
+          title={content.banner.title}
+          breadcrumb={content.banner.breadcrumb}
+          imageSrc={content.banner.imageSrc}
+          altText={content.banner.altText}
         />
 
-        {/* C2. Main Introduction: Our Company */}
-        <AboutIntroduction
-          label={content.intro.label}
-          headline={content.intro.headline}
-          paragraphs={content.intro.paragraphs}
-          imageSrc={content.intro.imageSrc}
-          altText={content.intro.altText}
+        {/* Section 02: About Our Company (Editorial Two-Column) */}
+        <AboutCompanySection
+          eyebrow={content.aboutCompany.eyebrow}
+          headline={content.aboutCompany.headline}
+          paragraph1={content.aboutCompany.paragraph1}
+          paragraph2={content.aboutCompany.paragraph2}
+          cta={content.aboutCompany.cta}
+          imageSrc={content.aboutCompany.imageSrc}
+          altText={content.aboutCompany.altText}
         />
 
-        {/* C3. What We Do: Our Work */}
-        <AboutServices
-          label={content.work.label}
-          headline={content.work.headline}
-          intro={content.work.intro}
-          services={content.work.services}
+        {/* Section 03: What We Do (Typographic 3-Column Experience) */}
+        <AboutWhatWeDoSection
+          eyebrow={content.whatWeDo.eyebrow}
+          headline={content.whatWeDo.headline}
+          intro={content.whatWeDo.intro}
+          services={content.whatWeDo.services}
         />
 
-        {/* C4. How to Start: Getting Started */}
-        <AboutStart
-          label={content.start.label}
-          headline={content.start.headline}
-          paragraph={content.start.paragraph}
-          closingLine={content.start.closingLine}
+        {/* Section 04: Why People Consider Laurrel (Why Choose Adaptation) */}
+        <AboutWhySection
+          eyebrow={content.whyLaurrel.eyebrow}
+          headline={content.whyLaurrel.headline}
+          intro={content.whyLaurrel.intro}
+          points={content.whyLaurrel.points}
+          imageSrc={content.whyLaurrel.imageSrc}
+          altText={content.whyLaurrel.altText}
         />
 
-        {/* C5. Service Location: Where We Work */}
-        <AboutLocation
-          label={content.location.label}
-          headline={content.location.headline}
-          body={content.location.body}
+        {/* Section 05: Photographic Story (When Plans Overlap - Replaces Team) */}
+        <AboutStorySection
+          eyebrow={content.photographicStory.eyebrow}
+          headline={content.photographicStory.headline}
+          bodyParagraphs={content.photographicStory.bodyParagraphs}
+          ctaLabel={content.photographicStory.ctaLabel}
+          imageSrc={content.photographicStory.imageSrc}
+          altText={content.photographicStory.altText}
+          onOpenQuote={() => setIsQuoteModalOpen(true)}
         />
 
-        {/* C6. Final Closing CTA */}
+        {/* Section 06: Frequently Asked Questions (Accordion + Supporting Image) */}
+        <AboutFaqSection
+          eyebrow={content.faq.eyebrow}
+          headline={content.faq.headline}
+          imageSrc={content.faq.imageSrc}
+          altText={content.faq.altText}
+          items={content.faq.items}
+        />
+
+        {/* Section 07: Final Closing Call to Action */}
         <AboutFinalCta
           headline={content.finalCta.headline}
           body={content.finalCta.body}

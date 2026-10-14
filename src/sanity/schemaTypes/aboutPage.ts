@@ -4,50 +4,94 @@ export const aboutPageSchema = {
   type: 'document',
   fields: [
     {
-      name: 'hero',
-      title: 'Hero Banner',
+      name: 'banner',
+      title: 'Section 01: Hero Banner',
       type: 'object',
       fields: [
-        {
-          name: 'title',
-          title: 'Page Title (H1)',
-          type: 'string',
-          validation: (Rule: any) => Rule.required(),
-        },
-        {
-          name: 'breadcrumbLabel',
-          title: 'Breadcrumb Label',
-          type: 'string',
-        },
+        { name: 'title', title: 'Page Title (H1)', type: 'string', validation: (Rule: any) => Rule.required() },
+        { name: 'breadcrumbLabel', title: 'Breadcrumb Label', type: 'string' },
         {
           name: 'image',
           title: 'Banner Image',
           type: 'image',
-          options: {
-            hotspot: true,
-          },
+          options: { hotspot: true },
+          fields: [{ name: 'alt', title: 'Alt Text', type: 'string' }],
+        },
+      ],
+    },
+    {
+      name: 'aboutCompany',
+      title: 'Section 02: About Our Company',
+      type: 'object',
+      fields: [
+        { name: 'eyebrow', title: 'Eyebrow', type: 'string' },
+        { name: 'headline', title: 'Headline (H2)', type: 'string' },
+        { name: 'paragraph1', title: 'Paragraph 1', type: 'text' },
+        { name: 'paragraph2', title: 'Paragraph 2', type: 'text' },
+        {
+          name: 'cta',
+          title: 'Call to Action',
+          type: 'object',
           fields: [
+            { name: 'label', title: 'Label', type: 'string' },
+            { name: 'href', title: 'Destination', type: 'string' },
+          ],
+        },
+        {
+          name: 'image',
+          title: 'Company Photograph',
+          type: 'image',
+          options: { hotspot: true },
+          fields: [{ name: 'alt', title: 'Alt Text', type: 'string' }],
+        },
+      ],
+    },
+    {
+      name: 'whatWeDo',
+      title: 'Section 03: What We Do',
+      type: 'object',
+      fields: [
+        { name: 'eyebrow', title: 'Eyebrow', type: 'string' },
+        { name: 'headline', title: 'Headline (H2)', type: 'string' },
+        { name: 'intro', title: 'Introductory Statement', type: 'text' },
+        {
+          name: 'services',
+          title: 'Core Services',
+          type: 'array',
+          of: [
             {
-              name: 'alt',
-              title: 'Alt Text',
-              type: 'string',
+              type: 'object',
+              fields: [
+                { name: 'title', title: 'Service Name', type: 'string' },
+                { name: 'description', title: 'Description', type: 'text' },
+              ],
             },
           ],
         },
       ],
     },
     {
-      name: 'intro',
-      title: 'Section: Our Company',
+      name: 'whyLaurrel',
+      title: 'Section 04: Why Laurrel Services',
       type: 'object',
       fields: [
-        { name: 'label', title: 'Eyebrow Label', type: 'string' },
-        { name: 'headline', title: 'Section Headline (H2)', type: 'string' },
+        { name: 'eyebrow', title: 'Eyebrow', type: 'string' },
+        { name: 'headline', title: 'Headline (H2)', type: 'string' },
+        { name: 'intro', title: 'Introduction', type: 'text' },
         {
-          name: 'paragraphs',
-          title: 'Editorial Paragraphs',
+          name: 'points',
+          title: 'Numbered Editorial Points',
           type: 'array',
-          of: [{ type: 'text' }],
+          of: [
+            {
+              type: 'object',
+              fields: [
+                { name: 'number', title: 'Number (e.g. 01)', type: 'string' },
+                { name: 'title', title: 'Point Title', type: 'string' },
+                { name: 'description', title: 'Description', type: 'text' },
+              ],
+            },
+          ],
         },
         {
           name: 'image',
@@ -59,30 +103,52 @@ export const aboutPageSchema = {
       ],
     },
     {
-      name: 'work',
-      title: 'Section: Our Work',
+      name: 'photographicStory',
+      title: 'Section 05: Photographic Story',
       type: 'object',
       fields: [
-        { name: 'label', title: 'Eyebrow Label', type: 'string' },
+        { name: 'eyebrow', title: 'Eyebrow', type: 'string' },
         { name: 'headline', title: 'Headline (H2)', type: 'string' },
-        { name: 'intro', title: 'Introduction', type: 'text' },
         {
-          name: 'services',
-          title: 'Editorial Services',
+          name: 'bodyParagraphs',
+          title: 'Story Paragraphs',
+          type: 'array',
+          of: [{ type: 'text' }],
+        },
+        { name: 'ctaLabel', title: 'CTA Button Label', type: 'string' },
+        {
+          name: 'image',
+          title: 'Story Photograph',
+          type: 'image',
+          options: { hotspot: true },
+          fields: [{ name: 'alt', title: 'Alt Text', type: 'string' }],
+        },
+      ],
+    },
+    {
+      name: 'faq',
+      title: 'Section 06: Frequently Asked Questions',
+      type: 'object',
+      fields: [
+        { name: 'eyebrow', title: 'Eyebrow', type: 'string' },
+        { name: 'headline', title: 'Headline (H2)', type: 'string' },
+        {
+          name: 'image',
+          title: 'Supporting FAQ Photograph',
+          type: 'image',
+          options: { hotspot: true },
+          fields: [{ name: 'alt', title: 'Alt Text', type: 'string' }],
+        },
+        {
+          name: 'items',
+          title: 'Questions and Answers',
           type: 'array',
           of: [
             {
               type: 'object',
               fields: [
-                { name: 'title', title: 'Service Name', type: 'string' },
-                { name: 'description', title: 'Description', type: 'text' },
-                {
-                  name: 'image',
-                  title: 'Service Image',
-                  type: 'image',
-                  options: { hotspot: true },
-                  fields: [{ name: 'alt', title: 'Alt Text', type: 'string' }],
-                },
+                { name: 'question', title: 'Question', type: 'string' },
+                { name: 'answer', title: 'Answer', type: 'text' },
               ],
             },
           ],
@@ -90,29 +156,8 @@ export const aboutPageSchema = {
       ],
     },
     {
-      name: 'start',
-      title: 'Section: Getting Started',
-      type: 'object',
-      fields: [
-        { name: 'label', title: 'Eyebrow Label', type: 'string' },
-        { name: 'headline', title: 'Headline (H2)', type: 'string' },
-        { name: 'paragraph', title: 'Guidance Paragraph', type: 'text' },
-        { name: 'closingLine', title: 'Closing Line', type: 'string' },
-      ],
-    },
-    {
-      name: 'location',
-      title: 'Section: Where We Work',
-      type: 'object',
-      fields: [
-        { name: 'label', title: 'Eyebrow Label', type: 'string' },
-        { name: 'headline', title: 'Headline (H2)', type: 'string' },
-        { name: 'body', title: 'Location Body Text', type: 'text' },
-      ],
-    },
-    {
       name: 'finalCta',
-      title: 'Section: Closing CTA',
+      title: 'Section 07: Final CTA',
       type: 'object',
       fields: [
         { name: 'headline', title: 'CTA Headline', type: 'string' },
