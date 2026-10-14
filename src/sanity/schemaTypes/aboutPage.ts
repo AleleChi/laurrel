@@ -54,6 +54,8 @@ export const aboutPageSchema = {
         { name: 'eyebrow', title: 'Eyebrow', type: 'string' },
         { name: 'headline', title: 'Headline (H2)', type: 'string' },
         { name: 'intro', title: 'Introductory Statement', type: 'text' },
+        { name: 'statNumber', title: 'Large Typographic Number (e.g. 03)', type: 'string' },
+        { name: 'statLabel', title: 'Typographic Label (e.g. CORE SERVICE AREAS)', type: 'string' },
         {
           name: 'services',
           title: 'Core Services',
@@ -64,6 +66,7 @@ export const aboutPageSchema = {
               fields: [
                 { name: 'title', title: 'Service Name', type: 'string' },
                 { name: 'description', title: 'Description', type: 'text' },
+                { name: 'href', title: 'Destination Anchor', type: 'string' },
               ],
             },
           ],
@@ -79,15 +82,14 @@ export const aboutPageSchema = {
         { name: 'headline', title: 'Headline (H2)', type: 'string' },
         { name: 'intro', title: 'Introduction', type: 'text' },
         {
-          name: 'points',
-          title: 'Numbered Editorial Points',
+          name: 'items',
+          title: 'Information Blocks',
           type: 'array',
           of: [
             {
               type: 'object',
               fields: [
-                { name: 'number', title: 'Number (e.g. 01)', type: 'string' },
-                { name: 'title', title: 'Point Title', type: 'string' },
+                { name: 'title', title: 'Block Title', type: 'string' },
                 { name: 'description', title: 'Description', type: 'text' },
               ],
             },
@@ -103,35 +105,13 @@ export const aboutPageSchema = {
       ],
     },
     {
-      name: 'photographicStory',
-      title: 'Section 05: Photographic Story',
-      type: 'object',
-      fields: [
-        { name: 'eyebrow', title: 'Eyebrow', type: 'string' },
-        { name: 'headline', title: 'Headline (H2)', type: 'string' },
-        {
-          name: 'bodyParagraphs',
-          title: 'Story Paragraphs',
-          type: 'array',
-          of: [{ type: 'text' }],
-        },
-        { name: 'ctaLabel', title: 'CTA Button Label', type: 'string' },
-        {
-          name: 'image',
-          title: 'Story Photograph',
-          type: 'image',
-          options: { hotspot: true },
-          fields: [{ name: 'alt', title: 'Alt Text', type: 'string' }],
-        },
-      ],
-    },
-    {
       name: 'faq',
-      title: 'Section 06: Frequently Asked Questions',
+      title: 'Section 05: Frequently Asked Questions',
       type: 'object',
       fields: [
         { name: 'eyebrow', title: 'Eyebrow', type: 'string' },
         { name: 'headline', title: 'Headline (H2)', type: 'string' },
+        { name: 'intro', title: 'Introduction', type: 'text' },
         {
           name: 'image',
           title: 'Supporting FAQ Photograph',
@@ -157,7 +137,7 @@ export const aboutPageSchema = {
     },
     {
       name: 'finalCta',
-      title: 'Section 07: Final CTA',
+      title: 'Section 06: Final CTA',
       type: 'object',
       fields: [
         { name: 'headline', title: 'CTA Headline', type: 'string' },

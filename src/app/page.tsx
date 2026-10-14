@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { SiteHeader } from '@/components/layout/SiteHeader';
+import { SiteFooter } from '@/components/layout/SiteFooter';
 import { Hero } from '@/components/home/Hero';
 import { ServiceTicker } from '@/components/home/ServiceTicker';
 import { AboutSection } from '@/components/home/AboutSection';
@@ -21,6 +22,9 @@ export default function HomePage() {
         <ServiceTicker />
         <AboutSection onOpenQuote={() => setIsQuoteModalOpen(true)} />
       </main>
+
+      {/* Global Laurrel Footer */}
+      <SiteFooter onOpenQuote={() => setIsQuoteModalOpen(true)} />
 
       {/* Interactive Quote / Planning Inquiry Modal */}
       <QuoteInquiryModal

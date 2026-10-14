@@ -1,0 +1,2992 @@
+{
+  "banner": {
+    "text": "Home\nAbout us\nTeam\nNews\nServices\nGet in touch\n\nSolshine is a professional and conversion - focused F",
+    "rect": {
+      "top": 0,
+      "left": 0,
+      "width": 1440,
+      "height": 6927.859375
+    },
+    "styles": {
+      "backgroundColor": "rgba(0, 0, 0, 0)",
+      "paddingTop": "0px",
+      "paddingBottom": "0px",
+      "paddingLeft": "0px",
+      "paddingRight": "0px",
+      "display": "block",
+      "flexDirection": "row",
+      "justifyContent": "normal",
+      "alignItems": "normal",
+      "gap": "normal"
+    },
+    "headings": [
+      {
+        "tag": "H4",
+        "text": "We are here",
+        "fontSize": "24px",
+        "fontWeight": "600",
+        "lineHeight": "30px",
+        "letterSpacing": "normal",
+        "color": "rgb(0, 0, 0)"
+      },
+      {
+        "tag": "H4",
+        "text": "Contact me",
+        "fontSize": "24px",
+        "fontWeight": "600",
+        "lineHeight": "30px",
+        "letterSpacing": "normal",
+        "color": "rgb(0, 0, 0)"
+      },
+      {
+        "tag": "H4",
+        "text": "Follow us",
+        "fontSize": "24px",
+        "fontWeight": "600",
+        "lineHeight": "30px",
+        "letterSpacing": "normal",
+        "color": "rgb(0, 0, 0)"
+      },
+      {
+        "tag": "H1",
+        "text": "About us",
+        "fontSize": "65px",
+        "fontWeight": "500",
+        "lineHeight": "70px",
+        "letterSpacing": "-2px",
+        "color": "rgb(255, 255, 255)"
+      },
+      {
+        "tag": "H2",
+        "text": "Innovations in green technology and environmental solutions",
+        "fontSize": "58px",
+        "fontWeight": "500",
+        "lineHeight": "70px",
+        "letterSpacing": "-2px",
+        "color": "rgb(0, 0, 0)"
+      },
+      {
+        "tag": "H2",
+        "text": "10+ years of experience in the solar industry",
+        "fontSize": "58px",
+        "fontWeight": "500",
+        "lineHeight": "70px",
+        "letterSpacing": "-2px",
+        "color": "rgb(0, 0, 0)"
+      },
+      {
+        "tag": "H2",
+        "text": "We’re your first choice for solar energy services",
+        "fontSize": "58px",
+        "fontWeight": "500",
+        "lineHeight": "70px",
+        "letterSpacing": "-2px",
+        "color": "rgb(0, 0, 0)"
+      },
+      {
+        "tag": "H4",
+        "text": "Trusted & friendly",
+        "fontSize": "24px",
+        "fontWeight": "600",
+        "lineHeight": "30px",
+        "letterSpacing": "normal",
+        "color": "rgb(0, 0, 0)"
+      },
+      {
+        "tag": "H4",
+        "text": "Veteran owned",
+        "fontSize": "24px",
+        "fontWeight": "600",
+        "lineHeight": "30px",
+        "letterSpacing": "normal",
+        "color": "rgb(0, 0, 0)"
+      },
+      {
+        "tag": "H4",
+        "text": "Availability",
+        "fontSize": "24px",
+        "fontWeight": "600",
+        "lineHeight": "30px",
+        "letterSpacing": "normal",
+        "color": "rgb(0, 0, 0)"
+      },
+      {
+        "tag": "H4",
+        "text": "24/7 Support",
+        "fontSize": "24px",
+        "fontWeight": "600",
+        "lineHeight": "30px",
+        "letterSpacing": "normal",
+        "color": "rgb(0, 0, 0)"
+      },
+      {
+        "tag": "H2",
+        "text": "Meet the team behind techverse",
+        "fontSize": "58px",
+        "fontWeight": "500",
+        "lineHeight": "70px",
+        "letterSpacing": "-2px",
+        "color": "rgb(0, 0, 0)"
+      },
+      {
+        "tag": "H4",
+        "text": "Amy Walker",
+        "fontSize": "24px",
+        "fontWeight": "600",
+        "lineHeight": "30px",
+        "letterSpacing": "normal",
+        "color": "rgb(0, 0, 0)"
+      },
+      {
+        "tag": "H4",
+        "text": "Amy Walker",
+        "fontSize": "24px",
+        "fontWeight": "600",
+        "lineHeight": "30px",
+        "letterSpacing": "normal",
+        "color": "rgb(0, 0, 0)"
+      },
+      {
+        "tag": "H4",
+        "text": "Amy Walker",
+        "fontSize": "24px",
+        "fontWeight": "600",
+        "lineHeight": "30px",
+        "letterSpacing": "normal",
+        "color": "rgb(0, 0, 0)"
+      },
+      {
+        "tag": "H4",
+        "text": "Amy Walker",
+        "fontSize": "24px",
+        "fontWeight": "600",
+        "lineHeight": "30px",
+        "letterSpacing": "normal",
+        "color": "rgb(0, 0, 0)"
+      },
+      {
+        "tag": "H4",
+        "text": "Amy Walker",
+        "fontSize": "24px",
+        "fontWeight": "600",
+        "lineHeight": "30px",
+        "letterSpacing": "normal",
+        "color": "rgb(0, 0, 0)"
+      },
+      {
+        "tag": "H4",
+        "text": "Amy Walker",
+        "fontSize": "24px",
+        "fontWeight": "600",
+        "lineHeight": "30px",
+        "letterSpacing": "normal",
+        "color": "rgb(0, 0, 0)"
+      },
+      {
+        "tag": "H2",
+        "text": "10+",
+        "fontSize": "58px",
+        "fontWeight": "500",
+        "lineHeight": "70px",
+        "letterSpacing": "-2px",
+        "color": "rgb(0, 0, 0)"
+      },
+      {
+        "tag": "H2",
+        "text": "Have any questions? here some answers for you",
+        "fontSize": "58px",
+        "fontWeight": "500",
+        "lineHeight": "70px",
+        "letterSpacing": "-2px",
+        "color": "rgb(0, 0, 0)"
+      },
+      {
+        "tag": "H4",
+        "text": "How long does a solar installation usually take?",
+        "fontSize": "22px",
+        "fontWeight": "600",
+        "lineHeight": "30px",
+        "letterSpacing": "normal",
+        "color": "rgb(0, 0, 0)"
+      },
+      {
+        "tag": "H4",
+        "text": "Do solar panels work on cloudy days?",
+        "fontSize": "22px",
+        "fontWeight": "600",
+        "lineHeight": "30px",
+        "letterSpacing": "normal",
+        "color": "rgb(0, 0, 0)"
+      },
+      {
+        "tag": "H4",
+        "text": "What maintenance do solar systems require?",
+        "fontSize": "22px",
+        "fontWeight": "600",
+        "lineHeight": "30px",
+        "letterSpacing": "normal",
+        "color": "rgb(0, 0, 0)"
+      },
+      {
+        "tag": "H4",
+        "text": "What is grid tie solar solution?",
+        "fontSize": "22px",
+        "fontWeight": "600",
+        "lineHeight": "30px",
+        "letterSpacing": "normal",
+        "color": "rgb(0, 0, 0)"
+      },
+      {
+        "tag": "H4",
+        "text": "Supported by the world's top venture capitalists",
+        "fontSize": "24px",
+        "fontWeight": "600",
+        "lineHeight": "30px",
+        "letterSpacing": "normal",
+        "color": "rgb(0, 0, 0)"
+      },
+      {
+        "tag": "H4",
+        "text": "About Solshine",
+        "fontSize": "24px",
+        "fontWeight": "600",
+        "lineHeight": "30px",
+        "letterSpacing": "normal",
+        "color": "rgb(255, 255, 255)"
+      },
+      {
+        "tag": "H4",
+        "text": "Useful links",
+        "fontSize": "24px",
+        "fontWeight": "600",
+        "lineHeight": "30px",
+        "letterSpacing": "normal",
+        "color": "rgb(255, 255, 255)"
+      },
+      {
+        "tag": "H4",
+        "text": "Contact information",
+        "fontSize": "24px",
+        "fontWeight": "600",
+        "lineHeight": "30px",
+        "letterSpacing": "normal",
+        "color": "rgb(255, 255, 255)"
+      },
+      {
+        "tag": "H4",
+        "text": "Our newsletter",
+        "fontSize": "24px",
+        "fontWeight": "600",
+        "lineHeight": "30px",
+        "letterSpacing": "normal",
+        "color": "rgb(255, 255, 255)"
+      }
+    ],
+    "images": [
+      {
+        "src": "https://framerusercontent.com/images/WioQWlXxVQDqe2KhkHeOjhO9KA.svg?width=229&height=68",
+        "width": 168,
+        "height": 48,
+        "aspectRatio": 3.5,
+        "objectFit": "contain",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/WioQWlXxVQDqe2KhkHeOjhO9KA.svg?width=229&height=68",
+        "width": 183,
+        "height": 54.328125,
+        "aspectRatio": 3.3684210526315788,
+        "objectFit": "contain",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/7ahob399syUX6jMpG4G4YK63E.jpg?width=6048&height=4024",
+        "width": 1440,
+        "height": 550,
+        "aspectRatio": 2.618181818181818,
+        "objectFit": "cover",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/cEjMpYR7tXxcu7GnqwyyJHB6Ic.svg?width=130&height=120",
+        "width": 130,
+        "height": 120,
+        "aspectRatio": 1.0833333333333333,
+        "objectFit": "cover",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/JVUMbFm3aewqZiVAl7BKDSdJZM.svg?width=330&height=183",
+        "width": 330,
+        "height": 182.984375,
+        "aspectRatio": 1.8034326701391854,
+        "objectFit": "cover",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/dsfQ3GdJTzveF5Jx756vaZklTs4.png?width=2632&height=2808",
+        "width": 450,
+        "height": 490,
+        "aspectRatio": 0.9183673469387755,
+        "objectFit": "cover",
+        "borderRadius": "50px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/wNnFqpu9Z6yqOz5jN72KpKsHtd4.svg?width=90&height=90",
+        "width": 82,
+        "height": 82,
+        "aspectRatio": 1,
+        "objectFit": "contain",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/wNnFqpu9Z6yqOz5jN72KpKsHtd4.svg?width=90&height=90",
+        "width": 82,
+        "height": 82,
+        "aspectRatio": 1,
+        "objectFit": "contain",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/9jEi31vXRKUchjmAKxiMLR50cvk.svg?width=90&height=90",
+        "width": 82,
+        "height": 82,
+        "aspectRatio": 1,
+        "objectFit": "contain",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/9jEi31vXRKUchjmAKxiMLR50cvk.svg?width=90&height=90",
+        "width": 82,
+        "height": 82,
+        "aspectRatio": 1,
+        "objectFit": "contain",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/p7RKbvwaSgRSHzZ5MV9M2T7zqBY.svg?width=90&height=90",
+        "width": 82,
+        "height": 82,
+        "aspectRatio": 1,
+        "objectFit": "contain",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/p7RKbvwaSgRSHzZ5MV9M2T7zqBY.svg?width=90&height=90",
+        "width": 82,
+        "height": 82,
+        "aspectRatio": 1,
+        "objectFit": "contain",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/r6DD4ewFKzCMH3qLVIET3QkSj4.svg?width=90&height=90",
+        "width": 82,
+        "height": 82,
+        "aspectRatio": 1,
+        "objectFit": "contain",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/r6DD4ewFKzCMH3qLVIET3QkSj4.svg?width=90&height=90",
+        "width": 82,
+        "height": 82,
+        "aspectRatio": 1,
+        "objectFit": "contain",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/wy6XMBGanAracXhR8wG7adQOR9k.png?width=2032&height=2972",
+        "width": 508,
+        "height": 742.359375,
+        "aspectRatio": 0.6843046873355644,
+        "objectFit": "contain",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/c5KtJlri7tVtLpjG0bx7gSOzGCw.png?width=1064&height=476",
+        "width": 125,
+        "height": 55.9140625,
+        "aspectRatio": 2.2355735643426016,
+        "objectFit": "fill",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/B8AOyL3V0azDfxbgJVjiisX7Mc.png?width=260&height=260",
+        "width": 65,
+        "height": 65,
+        "aspectRatio": 1,
+        "objectFit": "fill",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/B8AOyL3V0azDfxbgJVjiisX7Mc.png?width=260&height=260",
+        "width": 65,
+        "height": 65,
+        "aspectRatio": 1,
+        "objectFit": "fill",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/B8AOyL3V0azDfxbgJVjiisX7Mc.png?width=260&height=260",
+        "width": 65,
+        "height": 65,
+        "aspectRatio": 1,
+        "objectFit": "fill",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/heoMlJ66F2SJ7jbVdPLwIXFXBo.jpg?width=1488&height=1488",
+        "width": 409,
+        "height": 371,
+        "aspectRatio": 1.1024258760107817,
+        "objectFit": "cover",
+        "borderRadius": "50px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/B6SAUcWOaxeRbm7TmftAKKuE3bo.jpg?width=600&height=600",
+        "width": 409,
+        "height": 371,
+        "aspectRatio": 1.1024258760107817,
+        "objectFit": "cover",
+        "borderRadius": "50px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/84rQ0xS0GSXogxfHmYXKT30ETM.jpg?width=600&height=600",
+        "width": 409,
+        "height": 371,
+        "aspectRatio": 1.1024258760107817,
+        "objectFit": "cover",
+        "borderRadius": "50px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/aVsvLJkR2RekklaZEFisskMVMr0.jpg?width=600&height=600",
+        "width": 409,
+        "height": 371,
+        "aspectRatio": 1.1024258760107817,
+        "objectFit": "cover",
+        "borderRadius": "50px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/D6NjmeWaBY1FiFMHLr429HxpKRM.jpg?width=600&height=600",
+        "width": 409,
+        "height": 371,
+        "aspectRatio": 1.1024258760107817,
+        "objectFit": "cover",
+        "borderRadius": "50px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/jwXvxAQ61mfcjjrQsvoreqxnrMg.jpg?width=600&height=600",
+        "width": 409,
+        "height": 371,
+        "aspectRatio": 1.1024258760107817,
+        "objectFit": "cover",
+        "borderRadius": "50px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/baGPQhxMT3drvtvGMT0f0VIDA.webp?width=2740&height=2740",
+        "width": 676,
+        "height": 676,
+        "aspectRatio": 1,
+        "objectFit": "cover",
+        "borderRadius": "50px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/6QEz8kJbwqWFzbNDcgcMwaBk7Jk.svg?width=176&height=40",
+        "width": 114,
+        "height": 35.984375,
+        "aspectRatio": 3.16804168475901,
+        "objectFit": "contain",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/4I0nUFgLGKqAqwEE0S5l6yrCXzQ.svg?width=132&height=35",
+        "width": 114,
+        "height": 35.984375,
+        "aspectRatio": 3.16804168475901,
+        "objectFit": "contain",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/gjmyWxGl1gWzjkyIh4cJfB7rg.svg?width=132&height=35",
+        "width": 114,
+        "height": 35.984375,
+        "aspectRatio": 3.16804168475901,
+        "objectFit": "contain",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/GPSxJ7zrNG4isyTYg1gr1HjRTA.svg?width=175&height=40",
+        "width": 114,
+        "height": 35.984375,
+        "aspectRatio": 3.16804168475901,
+        "objectFit": "contain",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/oeigtHFhM0qf1CThkR9gRSymB0.svg?width=119&height=30",
+        "width": 114,
+        "height": 35.984375,
+        "aspectRatio": 3.16804168475901,
+        "objectFit": "contain",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/duZwjP73YzY6931zuqasWWfWDZY.svg?width=163&height=42",
+        "width": 114,
+        "height": 35.984375,
+        "aspectRatio": 3.16804168475901,
+        "objectFit": "contain",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/Qifbcz2UjIveHTCuImUZcqT9kZg.svg?width=140&height=30",
+        "width": 114,
+        "height": 35.984375,
+        "aspectRatio": 3.16804168475901,
+        "objectFit": "contain",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/ThiPMi5yUjVdKo6t4N9wLOgcQ.svg?width=168&height=40",
+        "width": 114,
+        "height": 35.984375,
+        "aspectRatio": 3.16804168475901,
+        "objectFit": "contain",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/ugOirwbvxWR0SU7YDwnuLLvlcZQ.svg?width=229&height=68",
+        "width": 236,
+        "height": 69.859375,
+        "aspectRatio": 3.378215164392753,
+        "objectFit": "contain",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/7ZLR5nIwrQ1G9rH5l5Jd5o7pOY.svg?width=12&height=17",
+        "width": 20,
+        "height": 20,
+        "aspectRatio": 1,
+        "objectFit": "contain",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/9RTthQjtszhXNikLkOAskVakcY.svg?width=16&height=12",
+        "width": 20,
+        "height": 20,
+        "aspectRatio": 1,
+        "objectFit": "contain",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/qkP6xU2UlwWYUURNcxwVeo2gEY.svg?width=16&height=16",
+        "width": 20,
+        "height": 20,
+        "aspectRatio": 1,
+        "objectFit": "contain",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/42fsssGMOp2HC9D72RDmDV5sJow.svg?width=16&height=16",
+        "width": 20,
+        "height": 20,
+        "aspectRatio": 1,
+        "objectFit": "contain",
+        "borderRadius": "0px"
+      }
+    ]
+  },
+  "about_company": {
+    "text": "Home\nAbout us\nTeam\nNews\nServices\nGet in touch\n\nSolshine is a professional and conversion - focused F",
+    "rect": {
+      "top": 0,
+      "left": 0,
+      "width": 1440,
+      "height": 6927.859375
+    },
+    "styles": {
+      "backgroundColor": "rgba(0, 0, 0, 0)",
+      "paddingTop": "0px",
+      "paddingBottom": "0px",
+      "paddingLeft": "0px",
+      "paddingRight": "0px",
+      "display": "block",
+      "flexDirection": "row",
+      "justifyContent": "normal",
+      "alignItems": "normal",
+      "gap": "normal"
+    },
+    "headings": [
+      {
+        "tag": "H4",
+        "text": "We are here",
+        "fontSize": "24px",
+        "fontWeight": "600",
+        "lineHeight": "30px",
+        "letterSpacing": "normal",
+        "color": "rgb(0, 0, 0)"
+      },
+      {
+        "tag": "H4",
+        "text": "Contact me",
+        "fontSize": "24px",
+        "fontWeight": "600",
+        "lineHeight": "30px",
+        "letterSpacing": "normal",
+        "color": "rgb(0, 0, 0)"
+      },
+      {
+        "tag": "H4",
+        "text": "Follow us",
+        "fontSize": "24px",
+        "fontWeight": "600",
+        "lineHeight": "30px",
+        "letterSpacing": "normal",
+        "color": "rgb(0, 0, 0)"
+      },
+      {
+        "tag": "H1",
+        "text": "About us",
+        "fontSize": "65px",
+        "fontWeight": "500",
+        "lineHeight": "70px",
+        "letterSpacing": "-2px",
+        "color": "rgb(255, 255, 255)"
+      },
+      {
+        "tag": "H2",
+        "text": "Innovations in green technology and environmental solutions",
+        "fontSize": "58px",
+        "fontWeight": "500",
+        "lineHeight": "70px",
+        "letterSpacing": "-2px",
+        "color": "rgb(0, 0, 0)"
+      },
+      {
+        "tag": "H2",
+        "text": "10+ years of experience in the solar industry",
+        "fontSize": "58px",
+        "fontWeight": "500",
+        "lineHeight": "70px",
+        "letterSpacing": "-2px",
+        "color": "rgb(0, 0, 0)"
+      },
+      {
+        "tag": "H2",
+        "text": "We’re your first choice for solar energy services",
+        "fontSize": "58px",
+        "fontWeight": "500",
+        "lineHeight": "70px",
+        "letterSpacing": "-2px",
+        "color": "rgb(0, 0, 0)"
+      },
+      {
+        "tag": "H4",
+        "text": "Trusted & friendly",
+        "fontSize": "24px",
+        "fontWeight": "600",
+        "lineHeight": "30px",
+        "letterSpacing": "normal",
+        "color": "rgb(0, 0, 0)"
+      },
+      {
+        "tag": "H4",
+        "text": "Veteran owned",
+        "fontSize": "24px",
+        "fontWeight": "600",
+        "lineHeight": "30px",
+        "letterSpacing": "normal",
+        "color": "rgb(0, 0, 0)"
+      },
+      {
+        "tag": "H4",
+        "text": "Availability",
+        "fontSize": "24px",
+        "fontWeight": "600",
+        "lineHeight": "30px",
+        "letterSpacing": "normal",
+        "color": "rgb(0, 0, 0)"
+      },
+      {
+        "tag": "H4",
+        "text": "24/7 Support",
+        "fontSize": "24px",
+        "fontWeight": "600",
+        "lineHeight": "30px",
+        "letterSpacing": "normal",
+        "color": "rgb(0, 0, 0)"
+      },
+      {
+        "tag": "H2",
+        "text": "Meet the team behind techverse",
+        "fontSize": "58px",
+        "fontWeight": "500",
+        "lineHeight": "70px",
+        "letterSpacing": "-2px",
+        "color": "rgb(0, 0, 0)"
+      },
+      {
+        "tag": "H4",
+        "text": "Amy Walker",
+        "fontSize": "24px",
+        "fontWeight": "600",
+        "lineHeight": "30px",
+        "letterSpacing": "normal",
+        "color": "rgb(0, 0, 0)"
+      },
+      {
+        "tag": "H4",
+        "text": "Amy Walker",
+        "fontSize": "24px",
+        "fontWeight": "600",
+        "lineHeight": "30px",
+        "letterSpacing": "normal",
+        "color": "rgb(0, 0, 0)"
+      },
+      {
+        "tag": "H4",
+        "text": "Amy Walker",
+        "fontSize": "24px",
+        "fontWeight": "600",
+        "lineHeight": "30px",
+        "letterSpacing": "normal",
+        "color": "rgb(0, 0, 0)"
+      },
+      {
+        "tag": "H4",
+        "text": "Amy Walker",
+        "fontSize": "24px",
+        "fontWeight": "600",
+        "lineHeight": "30px",
+        "letterSpacing": "normal",
+        "color": "rgb(0, 0, 0)"
+      },
+      {
+        "tag": "H4",
+        "text": "Amy Walker",
+        "fontSize": "24px",
+        "fontWeight": "600",
+        "lineHeight": "30px",
+        "letterSpacing": "normal",
+        "color": "rgb(0, 0, 0)"
+      },
+      {
+        "tag": "H4",
+        "text": "Amy Walker",
+        "fontSize": "24px",
+        "fontWeight": "600",
+        "lineHeight": "30px",
+        "letterSpacing": "normal",
+        "color": "rgb(0, 0, 0)"
+      },
+      {
+        "tag": "H2",
+        "text": "10+",
+        "fontSize": "58px",
+        "fontWeight": "500",
+        "lineHeight": "70px",
+        "letterSpacing": "-2px",
+        "color": "rgb(0, 0, 0)"
+      },
+      {
+        "tag": "H2",
+        "text": "Have any questions? here some answers for you",
+        "fontSize": "58px",
+        "fontWeight": "500",
+        "lineHeight": "70px",
+        "letterSpacing": "-2px",
+        "color": "rgb(0, 0, 0)"
+      },
+      {
+        "tag": "H4",
+        "text": "How long does a solar installation usually take?",
+        "fontSize": "22px",
+        "fontWeight": "600",
+        "lineHeight": "30px",
+        "letterSpacing": "normal",
+        "color": "rgb(0, 0, 0)"
+      },
+      {
+        "tag": "H4",
+        "text": "Do solar panels work on cloudy days?",
+        "fontSize": "22px",
+        "fontWeight": "600",
+        "lineHeight": "30px",
+        "letterSpacing": "normal",
+        "color": "rgb(0, 0, 0)"
+      },
+      {
+        "tag": "H4",
+        "text": "What maintenance do solar systems require?",
+        "fontSize": "22px",
+        "fontWeight": "600",
+        "lineHeight": "30px",
+        "letterSpacing": "normal",
+        "color": "rgb(0, 0, 0)"
+      },
+      {
+        "tag": "H4",
+        "text": "What is grid tie solar solution?",
+        "fontSize": "22px",
+        "fontWeight": "600",
+        "lineHeight": "30px",
+        "letterSpacing": "normal",
+        "color": "rgb(0, 0, 0)"
+      },
+      {
+        "tag": "H4",
+        "text": "Supported by the world's top venture capitalists",
+        "fontSize": "24px",
+        "fontWeight": "600",
+        "lineHeight": "30px",
+        "letterSpacing": "normal",
+        "color": "rgb(0, 0, 0)"
+      },
+      {
+        "tag": "H4",
+        "text": "About Solshine",
+        "fontSize": "24px",
+        "fontWeight": "600",
+        "lineHeight": "30px",
+        "letterSpacing": "normal",
+        "color": "rgb(255, 255, 255)"
+      },
+      {
+        "tag": "H4",
+        "text": "Useful links",
+        "fontSize": "24px",
+        "fontWeight": "600",
+        "lineHeight": "30px",
+        "letterSpacing": "normal",
+        "color": "rgb(255, 255, 255)"
+      },
+      {
+        "tag": "H4",
+        "text": "Contact information",
+        "fontSize": "24px",
+        "fontWeight": "600",
+        "lineHeight": "30px",
+        "letterSpacing": "normal",
+        "color": "rgb(255, 255, 255)"
+      },
+      {
+        "tag": "H4",
+        "text": "Our newsletter",
+        "fontSize": "24px",
+        "fontWeight": "600",
+        "lineHeight": "30px",
+        "letterSpacing": "normal",
+        "color": "rgb(255, 255, 255)"
+      }
+    ],
+    "images": [
+      {
+        "src": "https://framerusercontent.com/images/WioQWlXxVQDqe2KhkHeOjhO9KA.svg?width=229&height=68",
+        "width": 168,
+        "height": 48,
+        "aspectRatio": 3.5,
+        "objectFit": "contain",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/WioQWlXxVQDqe2KhkHeOjhO9KA.svg?width=229&height=68",
+        "width": 183,
+        "height": 54.328125,
+        "aspectRatio": 3.3684210526315788,
+        "objectFit": "contain",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/7ahob399syUX6jMpG4G4YK63E.jpg?width=6048&height=4024",
+        "width": 1440,
+        "height": 550,
+        "aspectRatio": 2.618181818181818,
+        "objectFit": "cover",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/cEjMpYR7tXxcu7GnqwyyJHB6Ic.svg?width=130&height=120",
+        "width": 130,
+        "height": 120,
+        "aspectRatio": 1.0833333333333333,
+        "objectFit": "cover",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/JVUMbFm3aewqZiVAl7BKDSdJZM.svg?width=330&height=183",
+        "width": 330,
+        "height": 182.984375,
+        "aspectRatio": 1.8034326701391854,
+        "objectFit": "cover",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/dsfQ3GdJTzveF5Jx756vaZklTs4.png?width=2632&height=2808",
+        "width": 450,
+        "height": 490,
+        "aspectRatio": 0.9183673469387755,
+        "objectFit": "cover",
+        "borderRadius": "50px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/wNnFqpu9Z6yqOz5jN72KpKsHtd4.svg?width=90&height=90",
+        "width": 82,
+        "height": 82,
+        "aspectRatio": 1,
+        "objectFit": "contain",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/wNnFqpu9Z6yqOz5jN72KpKsHtd4.svg?width=90&height=90",
+        "width": 82,
+        "height": 82,
+        "aspectRatio": 1,
+        "objectFit": "contain",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/9jEi31vXRKUchjmAKxiMLR50cvk.svg?width=90&height=90",
+        "width": 82,
+        "height": 82,
+        "aspectRatio": 1,
+        "objectFit": "contain",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/9jEi31vXRKUchjmAKxiMLR50cvk.svg?width=90&height=90",
+        "width": 82,
+        "height": 82,
+        "aspectRatio": 1,
+        "objectFit": "contain",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/p7RKbvwaSgRSHzZ5MV9M2T7zqBY.svg?width=90&height=90",
+        "width": 82,
+        "height": 82,
+        "aspectRatio": 1,
+        "objectFit": "contain",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/p7RKbvwaSgRSHzZ5MV9M2T7zqBY.svg?width=90&height=90",
+        "width": 82,
+        "height": 82,
+        "aspectRatio": 1,
+        "objectFit": "contain",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/r6DD4ewFKzCMH3qLVIET3QkSj4.svg?width=90&height=90",
+        "width": 82,
+        "height": 82,
+        "aspectRatio": 1,
+        "objectFit": "contain",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/r6DD4ewFKzCMH3qLVIET3QkSj4.svg?width=90&height=90",
+        "width": 82,
+        "height": 82,
+        "aspectRatio": 1,
+        "objectFit": "contain",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/wy6XMBGanAracXhR8wG7adQOR9k.png?width=2032&height=2972",
+        "width": 508,
+        "height": 742.359375,
+        "aspectRatio": 0.6843046873355644,
+        "objectFit": "contain",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/c5KtJlri7tVtLpjG0bx7gSOzGCw.png?width=1064&height=476",
+        "width": 125,
+        "height": 55.9140625,
+        "aspectRatio": 2.2355735643426016,
+        "objectFit": "fill",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/B8AOyL3V0azDfxbgJVjiisX7Mc.png?width=260&height=260",
+        "width": 65,
+        "height": 65,
+        "aspectRatio": 1,
+        "objectFit": "fill",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/B8AOyL3V0azDfxbgJVjiisX7Mc.png?width=260&height=260",
+        "width": 65,
+        "height": 65,
+        "aspectRatio": 1,
+        "objectFit": "fill",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/B8AOyL3V0azDfxbgJVjiisX7Mc.png?width=260&height=260",
+        "width": 65,
+        "height": 65,
+        "aspectRatio": 1,
+        "objectFit": "fill",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/heoMlJ66F2SJ7jbVdPLwIXFXBo.jpg?width=1488&height=1488",
+        "width": 409,
+        "height": 371,
+        "aspectRatio": 1.1024258760107817,
+        "objectFit": "cover",
+        "borderRadius": "50px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/B6SAUcWOaxeRbm7TmftAKKuE3bo.jpg?width=600&height=600",
+        "width": 409,
+        "height": 371,
+        "aspectRatio": 1.1024258760107817,
+        "objectFit": "cover",
+        "borderRadius": "50px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/84rQ0xS0GSXogxfHmYXKT30ETM.jpg?width=600&height=600",
+        "width": 409,
+        "height": 371,
+        "aspectRatio": 1.1024258760107817,
+        "objectFit": "cover",
+        "borderRadius": "50px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/aVsvLJkR2RekklaZEFisskMVMr0.jpg?width=600&height=600",
+        "width": 409,
+        "height": 371,
+        "aspectRatio": 1.1024258760107817,
+        "objectFit": "cover",
+        "borderRadius": "50px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/D6NjmeWaBY1FiFMHLr429HxpKRM.jpg?width=600&height=600",
+        "width": 409,
+        "height": 371,
+        "aspectRatio": 1.1024258760107817,
+        "objectFit": "cover",
+        "borderRadius": "50px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/jwXvxAQ61mfcjjrQsvoreqxnrMg.jpg?width=600&height=600",
+        "width": 409,
+        "height": 371,
+        "aspectRatio": 1.1024258760107817,
+        "objectFit": "cover",
+        "borderRadius": "50px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/baGPQhxMT3drvtvGMT0f0VIDA.webp?width=2740&height=2740",
+        "width": 676,
+        "height": 676,
+        "aspectRatio": 1,
+        "objectFit": "cover",
+        "borderRadius": "50px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/6QEz8kJbwqWFzbNDcgcMwaBk7Jk.svg?width=176&height=40",
+        "width": 114,
+        "height": 35.984375,
+        "aspectRatio": 3.16804168475901,
+        "objectFit": "contain",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/4I0nUFgLGKqAqwEE0S5l6yrCXzQ.svg?width=132&height=35",
+        "width": 114,
+        "height": 35.984375,
+        "aspectRatio": 3.16804168475901,
+        "objectFit": "contain",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/gjmyWxGl1gWzjkyIh4cJfB7rg.svg?width=132&height=35",
+        "width": 114,
+        "height": 35.984375,
+        "aspectRatio": 3.16804168475901,
+        "objectFit": "contain",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/GPSxJ7zrNG4isyTYg1gr1HjRTA.svg?width=175&height=40",
+        "width": 114,
+        "height": 35.984375,
+        "aspectRatio": 3.16804168475901,
+        "objectFit": "contain",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/oeigtHFhM0qf1CThkR9gRSymB0.svg?width=119&height=30",
+        "width": 114,
+        "height": 35.984375,
+        "aspectRatio": 3.16804168475901,
+        "objectFit": "contain",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/duZwjP73YzY6931zuqasWWfWDZY.svg?width=163&height=42",
+        "width": 114,
+        "height": 35.984375,
+        "aspectRatio": 3.16804168475901,
+        "objectFit": "contain",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/Qifbcz2UjIveHTCuImUZcqT9kZg.svg?width=140&height=30",
+        "width": 114,
+        "height": 35.984375,
+        "aspectRatio": 3.16804168475901,
+        "objectFit": "contain",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/ThiPMi5yUjVdKo6t4N9wLOgcQ.svg?width=168&height=40",
+        "width": 114,
+        "height": 35.984375,
+        "aspectRatio": 3.16804168475901,
+        "objectFit": "contain",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/ugOirwbvxWR0SU7YDwnuLLvlcZQ.svg?width=229&height=68",
+        "width": 236,
+        "height": 69.859375,
+        "aspectRatio": 3.378215164392753,
+        "objectFit": "contain",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/7ZLR5nIwrQ1G9rH5l5Jd5o7pOY.svg?width=12&height=17",
+        "width": 20,
+        "height": 20,
+        "aspectRatio": 1,
+        "objectFit": "contain",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/9RTthQjtszhXNikLkOAskVakcY.svg?width=16&height=12",
+        "width": 20,
+        "height": 20,
+        "aspectRatio": 1,
+        "objectFit": "contain",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/qkP6xU2UlwWYUURNcxwVeo2gEY.svg?width=16&height=16",
+        "width": 20,
+        "height": 20,
+        "aspectRatio": 1,
+        "objectFit": "contain",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/42fsssGMOp2HC9D72RDmDV5sJow.svg?width=16&height=16",
+        "width": 20,
+        "height": 20,
+        "aspectRatio": 1,
+        "objectFit": "contain",
+        "borderRadius": "0px"
+      }
+    ]
+  },
+  "experience_stats": {
+    "text": "Home\nAbout us\nTeam\nNews\nServices\nGet in touch\n\nSolshine is a professional and conversion - focused F",
+    "rect": {
+      "top": 0,
+      "left": 0,
+      "width": 1440,
+      "height": 6927.859375
+    },
+    "styles": {
+      "backgroundColor": "rgba(0, 0, 0, 0)",
+      "paddingTop": "0px",
+      "paddingBottom": "0px",
+      "paddingLeft": "0px",
+      "paddingRight": "0px",
+      "display": "block",
+      "flexDirection": "row",
+      "justifyContent": "normal",
+      "alignItems": "normal",
+      "gap": "normal"
+    },
+    "headings": [
+      {
+        "tag": "H4",
+        "text": "We are here",
+        "fontSize": "24px",
+        "fontWeight": "600",
+        "lineHeight": "30px",
+        "letterSpacing": "normal",
+        "color": "rgb(0, 0, 0)"
+      },
+      {
+        "tag": "H4",
+        "text": "Contact me",
+        "fontSize": "24px",
+        "fontWeight": "600",
+        "lineHeight": "30px",
+        "letterSpacing": "normal",
+        "color": "rgb(0, 0, 0)"
+      },
+      {
+        "tag": "H4",
+        "text": "Follow us",
+        "fontSize": "24px",
+        "fontWeight": "600",
+        "lineHeight": "30px",
+        "letterSpacing": "normal",
+        "color": "rgb(0, 0, 0)"
+      },
+      {
+        "tag": "H1",
+        "text": "About us",
+        "fontSize": "65px",
+        "fontWeight": "500",
+        "lineHeight": "70px",
+        "letterSpacing": "-2px",
+        "color": "rgb(255, 255, 255)"
+      },
+      {
+        "tag": "H2",
+        "text": "Innovations in green technology and environmental solutions",
+        "fontSize": "58px",
+        "fontWeight": "500",
+        "lineHeight": "70px",
+        "letterSpacing": "-2px",
+        "color": "rgb(0, 0, 0)"
+      },
+      {
+        "tag": "H2",
+        "text": "10+ years of experience in the solar industry",
+        "fontSize": "58px",
+        "fontWeight": "500",
+        "lineHeight": "70px",
+        "letterSpacing": "-2px",
+        "color": "rgb(0, 0, 0)"
+      },
+      {
+        "tag": "H2",
+        "text": "We’re your first choice for solar energy services",
+        "fontSize": "58px",
+        "fontWeight": "500",
+        "lineHeight": "70px",
+        "letterSpacing": "-2px",
+        "color": "rgb(0, 0, 0)"
+      },
+      {
+        "tag": "H4",
+        "text": "Trusted & friendly",
+        "fontSize": "24px",
+        "fontWeight": "600",
+        "lineHeight": "30px",
+        "letterSpacing": "normal",
+        "color": "rgb(0, 0, 0)"
+      },
+      {
+        "tag": "H4",
+        "text": "Veteran owned",
+        "fontSize": "24px",
+        "fontWeight": "600",
+        "lineHeight": "30px",
+        "letterSpacing": "normal",
+        "color": "rgb(0, 0, 0)"
+      },
+      {
+        "tag": "H4",
+        "text": "Availability",
+        "fontSize": "24px",
+        "fontWeight": "600",
+        "lineHeight": "30px",
+        "letterSpacing": "normal",
+        "color": "rgb(0, 0, 0)"
+      },
+      {
+        "tag": "H4",
+        "text": "24/7 Support",
+        "fontSize": "24px",
+        "fontWeight": "600",
+        "lineHeight": "30px",
+        "letterSpacing": "normal",
+        "color": "rgb(0, 0, 0)"
+      },
+      {
+        "tag": "H2",
+        "text": "Meet the team behind techverse",
+        "fontSize": "58px",
+        "fontWeight": "500",
+        "lineHeight": "70px",
+        "letterSpacing": "-2px",
+        "color": "rgb(0, 0, 0)"
+      },
+      {
+        "tag": "H4",
+        "text": "Amy Walker",
+        "fontSize": "24px",
+        "fontWeight": "600",
+        "lineHeight": "30px",
+        "letterSpacing": "normal",
+        "color": "rgb(0, 0, 0)"
+      },
+      {
+        "tag": "H4",
+        "text": "Amy Walker",
+        "fontSize": "24px",
+        "fontWeight": "600",
+        "lineHeight": "30px",
+        "letterSpacing": "normal",
+        "color": "rgb(0, 0, 0)"
+      },
+      {
+        "tag": "H4",
+        "text": "Amy Walker",
+        "fontSize": "24px",
+        "fontWeight": "600",
+        "lineHeight": "30px",
+        "letterSpacing": "normal",
+        "color": "rgb(0, 0, 0)"
+      },
+      {
+        "tag": "H4",
+        "text": "Amy Walker",
+        "fontSize": "24px",
+        "fontWeight": "600",
+        "lineHeight": "30px",
+        "letterSpacing": "normal",
+        "color": "rgb(0, 0, 0)"
+      },
+      {
+        "tag": "H4",
+        "text": "Amy Walker",
+        "fontSize": "24px",
+        "fontWeight": "600",
+        "lineHeight": "30px",
+        "letterSpacing": "normal",
+        "color": "rgb(0, 0, 0)"
+      },
+      {
+        "tag": "H4",
+        "text": "Amy Walker",
+        "fontSize": "24px",
+        "fontWeight": "600",
+        "lineHeight": "30px",
+        "letterSpacing": "normal",
+        "color": "rgb(0, 0, 0)"
+      },
+      {
+        "tag": "H2",
+        "text": "10+",
+        "fontSize": "58px",
+        "fontWeight": "500",
+        "lineHeight": "70px",
+        "letterSpacing": "-2px",
+        "color": "rgb(0, 0, 0)"
+      },
+      {
+        "tag": "H2",
+        "text": "Have any questions? here some answers for you",
+        "fontSize": "58px",
+        "fontWeight": "500",
+        "lineHeight": "70px",
+        "letterSpacing": "-2px",
+        "color": "rgb(0, 0, 0)"
+      },
+      {
+        "tag": "H4",
+        "text": "How long does a solar installation usually take?",
+        "fontSize": "22px",
+        "fontWeight": "600",
+        "lineHeight": "30px",
+        "letterSpacing": "normal",
+        "color": "rgb(0, 0, 0)"
+      },
+      {
+        "tag": "H4",
+        "text": "Do solar panels work on cloudy days?",
+        "fontSize": "22px",
+        "fontWeight": "600",
+        "lineHeight": "30px",
+        "letterSpacing": "normal",
+        "color": "rgb(0, 0, 0)"
+      },
+      {
+        "tag": "H4",
+        "text": "What maintenance do solar systems require?",
+        "fontSize": "22px",
+        "fontWeight": "600",
+        "lineHeight": "30px",
+        "letterSpacing": "normal",
+        "color": "rgb(0, 0, 0)"
+      },
+      {
+        "tag": "H4",
+        "text": "What is grid tie solar solution?",
+        "fontSize": "22px",
+        "fontWeight": "600",
+        "lineHeight": "30px",
+        "letterSpacing": "normal",
+        "color": "rgb(0, 0, 0)"
+      },
+      {
+        "tag": "H4",
+        "text": "Supported by the world's top venture capitalists",
+        "fontSize": "24px",
+        "fontWeight": "600",
+        "lineHeight": "30px",
+        "letterSpacing": "normal",
+        "color": "rgb(0, 0, 0)"
+      },
+      {
+        "tag": "H4",
+        "text": "About Solshine",
+        "fontSize": "24px",
+        "fontWeight": "600",
+        "lineHeight": "30px",
+        "letterSpacing": "normal",
+        "color": "rgb(255, 255, 255)"
+      },
+      {
+        "tag": "H4",
+        "text": "Useful links",
+        "fontSize": "24px",
+        "fontWeight": "600",
+        "lineHeight": "30px",
+        "letterSpacing": "normal",
+        "color": "rgb(255, 255, 255)"
+      },
+      {
+        "tag": "H4",
+        "text": "Contact information",
+        "fontSize": "24px",
+        "fontWeight": "600",
+        "lineHeight": "30px",
+        "letterSpacing": "normal",
+        "color": "rgb(255, 255, 255)"
+      },
+      {
+        "tag": "H4",
+        "text": "Our newsletter",
+        "fontSize": "24px",
+        "fontWeight": "600",
+        "lineHeight": "30px",
+        "letterSpacing": "normal",
+        "color": "rgb(255, 255, 255)"
+      }
+    ],
+    "images": [
+      {
+        "src": "https://framerusercontent.com/images/WioQWlXxVQDqe2KhkHeOjhO9KA.svg?width=229&height=68",
+        "width": 168,
+        "height": 48,
+        "aspectRatio": 3.5,
+        "objectFit": "contain",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/WioQWlXxVQDqe2KhkHeOjhO9KA.svg?width=229&height=68",
+        "width": 183,
+        "height": 54.328125,
+        "aspectRatio": 3.3684210526315788,
+        "objectFit": "contain",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/7ahob399syUX6jMpG4G4YK63E.jpg?width=6048&height=4024",
+        "width": 1440,
+        "height": 550,
+        "aspectRatio": 2.618181818181818,
+        "objectFit": "cover",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/cEjMpYR7tXxcu7GnqwyyJHB6Ic.svg?width=130&height=120",
+        "width": 130,
+        "height": 120,
+        "aspectRatio": 1.0833333333333333,
+        "objectFit": "cover",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/JVUMbFm3aewqZiVAl7BKDSdJZM.svg?width=330&height=183",
+        "width": 330,
+        "height": 182.984375,
+        "aspectRatio": 1.8034326701391854,
+        "objectFit": "cover",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/dsfQ3GdJTzveF5Jx756vaZklTs4.png?width=2632&height=2808",
+        "width": 450,
+        "height": 490,
+        "aspectRatio": 0.9183673469387755,
+        "objectFit": "cover",
+        "borderRadius": "50px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/wNnFqpu9Z6yqOz5jN72KpKsHtd4.svg?width=90&height=90",
+        "width": 82,
+        "height": 82,
+        "aspectRatio": 1,
+        "objectFit": "contain",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/wNnFqpu9Z6yqOz5jN72KpKsHtd4.svg?width=90&height=90",
+        "width": 82,
+        "height": 82,
+        "aspectRatio": 1,
+        "objectFit": "contain",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/9jEi31vXRKUchjmAKxiMLR50cvk.svg?width=90&height=90",
+        "width": 82,
+        "height": 82,
+        "aspectRatio": 1,
+        "objectFit": "contain",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/9jEi31vXRKUchjmAKxiMLR50cvk.svg?width=90&height=90",
+        "width": 82,
+        "height": 82,
+        "aspectRatio": 1,
+        "objectFit": "contain",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/p7RKbvwaSgRSHzZ5MV9M2T7zqBY.svg?width=90&height=90",
+        "width": 82,
+        "height": 82,
+        "aspectRatio": 1,
+        "objectFit": "contain",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/p7RKbvwaSgRSHzZ5MV9M2T7zqBY.svg?width=90&height=90",
+        "width": 82,
+        "height": 82,
+        "aspectRatio": 1,
+        "objectFit": "contain",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/r6DD4ewFKzCMH3qLVIET3QkSj4.svg?width=90&height=90",
+        "width": 82,
+        "height": 82,
+        "aspectRatio": 1,
+        "objectFit": "contain",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/r6DD4ewFKzCMH3qLVIET3QkSj4.svg?width=90&height=90",
+        "width": 82,
+        "height": 82,
+        "aspectRatio": 1,
+        "objectFit": "contain",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/wy6XMBGanAracXhR8wG7adQOR9k.png?width=2032&height=2972",
+        "width": 508,
+        "height": 742.359375,
+        "aspectRatio": 0.6843046873355644,
+        "objectFit": "contain",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/c5KtJlri7tVtLpjG0bx7gSOzGCw.png?width=1064&height=476",
+        "width": 125,
+        "height": 55.9140625,
+        "aspectRatio": 2.2355735643426016,
+        "objectFit": "fill",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/B8AOyL3V0azDfxbgJVjiisX7Mc.png?width=260&height=260",
+        "width": 65,
+        "height": 65,
+        "aspectRatio": 1,
+        "objectFit": "fill",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/B8AOyL3V0azDfxbgJVjiisX7Mc.png?width=260&height=260",
+        "width": 65,
+        "height": 65,
+        "aspectRatio": 1,
+        "objectFit": "fill",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/B8AOyL3V0azDfxbgJVjiisX7Mc.png?width=260&height=260",
+        "width": 65,
+        "height": 65,
+        "aspectRatio": 1,
+        "objectFit": "fill",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/heoMlJ66F2SJ7jbVdPLwIXFXBo.jpg?width=1488&height=1488",
+        "width": 409,
+        "height": 371,
+        "aspectRatio": 1.1024258760107817,
+        "objectFit": "cover",
+        "borderRadius": "50px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/B6SAUcWOaxeRbm7TmftAKKuE3bo.jpg?width=600&height=600",
+        "width": 409,
+        "height": 371,
+        "aspectRatio": 1.1024258760107817,
+        "objectFit": "cover",
+        "borderRadius": "50px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/84rQ0xS0GSXogxfHmYXKT30ETM.jpg?width=600&height=600",
+        "width": 409,
+        "height": 371,
+        "aspectRatio": 1.1024258760107817,
+        "objectFit": "cover",
+        "borderRadius": "50px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/aVsvLJkR2RekklaZEFisskMVMr0.jpg?width=600&height=600",
+        "width": 409,
+        "height": 371,
+        "aspectRatio": 1.1024258760107817,
+        "objectFit": "cover",
+        "borderRadius": "50px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/D6NjmeWaBY1FiFMHLr429HxpKRM.jpg?width=600&height=600",
+        "width": 409,
+        "height": 371,
+        "aspectRatio": 1.1024258760107817,
+        "objectFit": "cover",
+        "borderRadius": "50px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/jwXvxAQ61mfcjjrQsvoreqxnrMg.jpg?width=600&height=600",
+        "width": 409,
+        "height": 371,
+        "aspectRatio": 1.1024258760107817,
+        "objectFit": "cover",
+        "borderRadius": "50px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/baGPQhxMT3drvtvGMT0f0VIDA.webp?width=2740&height=2740",
+        "width": 676,
+        "height": 676,
+        "aspectRatio": 1,
+        "objectFit": "cover",
+        "borderRadius": "50px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/6QEz8kJbwqWFzbNDcgcMwaBk7Jk.svg?width=176&height=40",
+        "width": 114,
+        "height": 35.984375,
+        "aspectRatio": 3.16804168475901,
+        "objectFit": "contain",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/4I0nUFgLGKqAqwEE0S5l6yrCXzQ.svg?width=132&height=35",
+        "width": 114,
+        "height": 35.984375,
+        "aspectRatio": 3.16804168475901,
+        "objectFit": "contain",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/gjmyWxGl1gWzjkyIh4cJfB7rg.svg?width=132&height=35",
+        "width": 114,
+        "height": 35.984375,
+        "aspectRatio": 3.16804168475901,
+        "objectFit": "contain",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/GPSxJ7zrNG4isyTYg1gr1HjRTA.svg?width=175&height=40",
+        "width": 114,
+        "height": 35.984375,
+        "aspectRatio": 3.16804168475901,
+        "objectFit": "contain",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/oeigtHFhM0qf1CThkR9gRSymB0.svg?width=119&height=30",
+        "width": 114,
+        "height": 35.984375,
+        "aspectRatio": 3.16804168475901,
+        "objectFit": "contain",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/duZwjP73YzY6931zuqasWWfWDZY.svg?width=163&height=42",
+        "width": 114,
+        "height": 35.984375,
+        "aspectRatio": 3.16804168475901,
+        "objectFit": "contain",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/Qifbcz2UjIveHTCuImUZcqT9kZg.svg?width=140&height=30",
+        "width": 114,
+        "height": 35.984375,
+        "aspectRatio": 3.16804168475901,
+        "objectFit": "contain",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/ThiPMi5yUjVdKo6t4N9wLOgcQ.svg?width=168&height=40",
+        "width": 114,
+        "height": 35.984375,
+        "aspectRatio": 3.16804168475901,
+        "objectFit": "contain",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/ugOirwbvxWR0SU7YDwnuLLvlcZQ.svg?width=229&height=68",
+        "width": 236,
+        "height": 69.859375,
+        "aspectRatio": 3.378215164392753,
+        "objectFit": "contain",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/7ZLR5nIwrQ1G9rH5l5Jd5o7pOY.svg?width=12&height=17",
+        "width": 20,
+        "height": 20,
+        "aspectRatio": 1,
+        "objectFit": "contain",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/9RTthQjtszhXNikLkOAskVakcY.svg?width=16&height=12",
+        "width": 20,
+        "height": 20,
+        "aspectRatio": 1,
+        "objectFit": "contain",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/qkP6xU2UlwWYUURNcxwVeo2gEY.svg?width=16&height=16",
+        "width": 20,
+        "height": 20,
+        "aspectRatio": 1,
+        "objectFit": "contain",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/42fsssGMOp2HC9D72RDmDV5sJow.svg?width=16&height=16",
+        "width": 20,
+        "height": 20,
+        "aspectRatio": 1,
+        "objectFit": "contain",
+        "borderRadius": "0px"
+      }
+    ]
+  },
+  "why_choose": {
+    "text": "Home\nAbout us\nTeam\nNews\nServices\nGet in touch\n\nSolshine is a professional and conversion - focused F",
+    "rect": {
+      "top": 0,
+      "left": 0,
+      "width": 1440,
+      "height": 6927.859375
+    },
+    "styles": {
+      "backgroundColor": "rgba(0, 0, 0, 0)",
+      "paddingTop": "0px",
+      "paddingBottom": "0px",
+      "paddingLeft": "0px",
+      "paddingRight": "0px",
+      "display": "block",
+      "flexDirection": "row",
+      "justifyContent": "normal",
+      "alignItems": "normal",
+      "gap": "normal"
+    },
+    "headings": [
+      {
+        "tag": "H4",
+        "text": "We are here",
+        "fontSize": "24px",
+        "fontWeight": "600",
+        "lineHeight": "30px",
+        "letterSpacing": "normal",
+        "color": "rgb(0, 0, 0)"
+      },
+      {
+        "tag": "H4",
+        "text": "Contact me",
+        "fontSize": "24px",
+        "fontWeight": "600",
+        "lineHeight": "30px",
+        "letterSpacing": "normal",
+        "color": "rgb(0, 0, 0)"
+      },
+      {
+        "tag": "H4",
+        "text": "Follow us",
+        "fontSize": "24px",
+        "fontWeight": "600",
+        "lineHeight": "30px",
+        "letterSpacing": "normal",
+        "color": "rgb(0, 0, 0)"
+      },
+      {
+        "tag": "H1",
+        "text": "About us",
+        "fontSize": "65px",
+        "fontWeight": "500",
+        "lineHeight": "70px",
+        "letterSpacing": "-2px",
+        "color": "rgb(255, 255, 255)"
+      },
+      {
+        "tag": "H2",
+        "text": "Innovations in green technology and environmental solutions",
+        "fontSize": "58px",
+        "fontWeight": "500",
+        "lineHeight": "70px",
+        "letterSpacing": "-2px",
+        "color": "rgb(0, 0, 0)"
+      },
+      {
+        "tag": "H2",
+        "text": "10+ years of experience in the solar industry",
+        "fontSize": "58px",
+        "fontWeight": "500",
+        "lineHeight": "70px",
+        "letterSpacing": "-2px",
+        "color": "rgb(0, 0, 0)"
+      },
+      {
+        "tag": "H2",
+        "text": "We’re your first choice for solar energy services",
+        "fontSize": "58px",
+        "fontWeight": "500",
+        "lineHeight": "70px",
+        "letterSpacing": "-2px",
+        "color": "rgb(0, 0, 0)"
+      },
+      {
+        "tag": "H4",
+        "text": "Trusted & friendly",
+        "fontSize": "24px",
+        "fontWeight": "600",
+        "lineHeight": "30px",
+        "letterSpacing": "normal",
+        "color": "rgb(0, 0, 0)"
+      },
+      {
+        "tag": "H4",
+        "text": "Veteran owned",
+        "fontSize": "24px",
+        "fontWeight": "600",
+        "lineHeight": "30px",
+        "letterSpacing": "normal",
+        "color": "rgb(0, 0, 0)"
+      },
+      {
+        "tag": "H4",
+        "text": "Availability",
+        "fontSize": "24px",
+        "fontWeight": "600",
+        "lineHeight": "30px",
+        "letterSpacing": "normal",
+        "color": "rgb(0, 0, 0)"
+      },
+      {
+        "tag": "H4",
+        "text": "24/7 Support",
+        "fontSize": "24px",
+        "fontWeight": "600",
+        "lineHeight": "30px",
+        "letterSpacing": "normal",
+        "color": "rgb(0, 0, 0)"
+      },
+      {
+        "tag": "H2",
+        "text": "Meet the team behind techverse",
+        "fontSize": "58px",
+        "fontWeight": "500",
+        "lineHeight": "70px",
+        "letterSpacing": "-2px",
+        "color": "rgb(0, 0, 0)"
+      },
+      {
+        "tag": "H4",
+        "text": "Amy Walker",
+        "fontSize": "24px",
+        "fontWeight": "600",
+        "lineHeight": "30px",
+        "letterSpacing": "normal",
+        "color": "rgb(0, 0, 0)"
+      },
+      {
+        "tag": "H4",
+        "text": "Amy Walker",
+        "fontSize": "24px",
+        "fontWeight": "600",
+        "lineHeight": "30px",
+        "letterSpacing": "normal",
+        "color": "rgb(0, 0, 0)"
+      },
+      {
+        "tag": "H4",
+        "text": "Amy Walker",
+        "fontSize": "24px",
+        "fontWeight": "600",
+        "lineHeight": "30px",
+        "letterSpacing": "normal",
+        "color": "rgb(0, 0, 0)"
+      },
+      {
+        "tag": "H4",
+        "text": "Amy Walker",
+        "fontSize": "24px",
+        "fontWeight": "600",
+        "lineHeight": "30px",
+        "letterSpacing": "normal",
+        "color": "rgb(0, 0, 0)"
+      },
+      {
+        "tag": "H4",
+        "text": "Amy Walker",
+        "fontSize": "24px",
+        "fontWeight": "600",
+        "lineHeight": "30px",
+        "letterSpacing": "normal",
+        "color": "rgb(0, 0, 0)"
+      },
+      {
+        "tag": "H4",
+        "text": "Amy Walker",
+        "fontSize": "24px",
+        "fontWeight": "600",
+        "lineHeight": "30px",
+        "letterSpacing": "normal",
+        "color": "rgb(0, 0, 0)"
+      },
+      {
+        "tag": "H2",
+        "text": "10+",
+        "fontSize": "58px",
+        "fontWeight": "500",
+        "lineHeight": "70px",
+        "letterSpacing": "-2px",
+        "color": "rgb(0, 0, 0)"
+      },
+      {
+        "tag": "H2",
+        "text": "Have any questions? here some answers for you",
+        "fontSize": "58px",
+        "fontWeight": "500",
+        "lineHeight": "70px",
+        "letterSpacing": "-2px",
+        "color": "rgb(0, 0, 0)"
+      },
+      {
+        "tag": "H4",
+        "text": "How long does a solar installation usually take?",
+        "fontSize": "22px",
+        "fontWeight": "600",
+        "lineHeight": "30px",
+        "letterSpacing": "normal",
+        "color": "rgb(0, 0, 0)"
+      },
+      {
+        "tag": "H4",
+        "text": "Do solar panels work on cloudy days?",
+        "fontSize": "22px",
+        "fontWeight": "600",
+        "lineHeight": "30px",
+        "letterSpacing": "normal",
+        "color": "rgb(0, 0, 0)"
+      },
+      {
+        "tag": "H4",
+        "text": "What maintenance do solar systems require?",
+        "fontSize": "22px",
+        "fontWeight": "600",
+        "lineHeight": "30px",
+        "letterSpacing": "normal",
+        "color": "rgb(0, 0, 0)"
+      },
+      {
+        "tag": "H4",
+        "text": "What is grid tie solar solution?",
+        "fontSize": "22px",
+        "fontWeight": "600",
+        "lineHeight": "30px",
+        "letterSpacing": "normal",
+        "color": "rgb(0, 0, 0)"
+      },
+      {
+        "tag": "H4",
+        "text": "Supported by the world's top venture capitalists",
+        "fontSize": "24px",
+        "fontWeight": "600",
+        "lineHeight": "30px",
+        "letterSpacing": "normal",
+        "color": "rgb(0, 0, 0)"
+      },
+      {
+        "tag": "H4",
+        "text": "About Solshine",
+        "fontSize": "24px",
+        "fontWeight": "600",
+        "lineHeight": "30px",
+        "letterSpacing": "normal",
+        "color": "rgb(255, 255, 255)"
+      },
+      {
+        "tag": "H4",
+        "text": "Useful links",
+        "fontSize": "24px",
+        "fontWeight": "600",
+        "lineHeight": "30px",
+        "letterSpacing": "normal",
+        "color": "rgb(255, 255, 255)"
+      },
+      {
+        "tag": "H4",
+        "text": "Contact information",
+        "fontSize": "24px",
+        "fontWeight": "600",
+        "lineHeight": "30px",
+        "letterSpacing": "normal",
+        "color": "rgb(255, 255, 255)"
+      },
+      {
+        "tag": "H4",
+        "text": "Our newsletter",
+        "fontSize": "24px",
+        "fontWeight": "600",
+        "lineHeight": "30px",
+        "letterSpacing": "normal",
+        "color": "rgb(255, 255, 255)"
+      }
+    ],
+    "images": [
+      {
+        "src": "https://framerusercontent.com/images/WioQWlXxVQDqe2KhkHeOjhO9KA.svg?width=229&height=68",
+        "width": 168,
+        "height": 48,
+        "aspectRatio": 3.5,
+        "objectFit": "contain",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/WioQWlXxVQDqe2KhkHeOjhO9KA.svg?width=229&height=68",
+        "width": 183,
+        "height": 54.328125,
+        "aspectRatio": 3.3684210526315788,
+        "objectFit": "contain",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/7ahob399syUX6jMpG4G4YK63E.jpg?width=6048&height=4024",
+        "width": 1440,
+        "height": 550,
+        "aspectRatio": 2.618181818181818,
+        "objectFit": "cover",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/cEjMpYR7tXxcu7GnqwyyJHB6Ic.svg?width=130&height=120",
+        "width": 130,
+        "height": 120,
+        "aspectRatio": 1.0833333333333333,
+        "objectFit": "cover",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/JVUMbFm3aewqZiVAl7BKDSdJZM.svg?width=330&height=183",
+        "width": 330,
+        "height": 182.984375,
+        "aspectRatio": 1.8034326701391854,
+        "objectFit": "cover",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/dsfQ3GdJTzveF5Jx756vaZklTs4.png?width=2632&height=2808",
+        "width": 450,
+        "height": 490,
+        "aspectRatio": 0.9183673469387755,
+        "objectFit": "cover",
+        "borderRadius": "50px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/wNnFqpu9Z6yqOz5jN72KpKsHtd4.svg?width=90&height=90",
+        "width": 82,
+        "height": 82,
+        "aspectRatio": 1,
+        "objectFit": "contain",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/wNnFqpu9Z6yqOz5jN72KpKsHtd4.svg?width=90&height=90",
+        "width": 82,
+        "height": 82,
+        "aspectRatio": 1,
+        "objectFit": "contain",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/9jEi31vXRKUchjmAKxiMLR50cvk.svg?width=90&height=90",
+        "width": 82,
+        "height": 82,
+        "aspectRatio": 1,
+        "objectFit": "contain",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/9jEi31vXRKUchjmAKxiMLR50cvk.svg?width=90&height=90",
+        "width": 82,
+        "height": 82,
+        "aspectRatio": 1,
+        "objectFit": "contain",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/p7RKbvwaSgRSHzZ5MV9M2T7zqBY.svg?width=90&height=90",
+        "width": 82,
+        "height": 82,
+        "aspectRatio": 1,
+        "objectFit": "contain",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/p7RKbvwaSgRSHzZ5MV9M2T7zqBY.svg?width=90&height=90",
+        "width": 82,
+        "height": 82,
+        "aspectRatio": 1,
+        "objectFit": "contain",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/r6DD4ewFKzCMH3qLVIET3QkSj4.svg?width=90&height=90",
+        "width": 82,
+        "height": 82,
+        "aspectRatio": 1,
+        "objectFit": "contain",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/r6DD4ewFKzCMH3qLVIET3QkSj4.svg?width=90&height=90",
+        "width": 82,
+        "height": 82,
+        "aspectRatio": 1,
+        "objectFit": "contain",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/wy6XMBGanAracXhR8wG7adQOR9k.png?width=2032&height=2972",
+        "width": 508,
+        "height": 742.359375,
+        "aspectRatio": 0.6843046873355644,
+        "objectFit": "contain",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/c5KtJlri7tVtLpjG0bx7gSOzGCw.png?width=1064&height=476",
+        "width": 125,
+        "height": 55.9140625,
+        "aspectRatio": 2.2355735643426016,
+        "objectFit": "fill",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/B8AOyL3V0azDfxbgJVjiisX7Mc.png?width=260&height=260",
+        "width": 65,
+        "height": 65,
+        "aspectRatio": 1,
+        "objectFit": "fill",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/B8AOyL3V0azDfxbgJVjiisX7Mc.png?width=260&height=260",
+        "width": 65,
+        "height": 65,
+        "aspectRatio": 1,
+        "objectFit": "fill",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/B8AOyL3V0azDfxbgJVjiisX7Mc.png?width=260&height=260",
+        "width": 65,
+        "height": 65,
+        "aspectRatio": 1,
+        "objectFit": "fill",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/heoMlJ66F2SJ7jbVdPLwIXFXBo.jpg?width=1488&height=1488",
+        "width": 409,
+        "height": 371,
+        "aspectRatio": 1.1024258760107817,
+        "objectFit": "cover",
+        "borderRadius": "50px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/B6SAUcWOaxeRbm7TmftAKKuE3bo.jpg?width=600&height=600",
+        "width": 409,
+        "height": 371,
+        "aspectRatio": 1.1024258760107817,
+        "objectFit": "cover",
+        "borderRadius": "50px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/84rQ0xS0GSXogxfHmYXKT30ETM.jpg?width=600&height=600",
+        "width": 409,
+        "height": 371,
+        "aspectRatio": 1.1024258760107817,
+        "objectFit": "cover",
+        "borderRadius": "50px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/aVsvLJkR2RekklaZEFisskMVMr0.jpg?width=600&height=600",
+        "width": 409,
+        "height": 371,
+        "aspectRatio": 1.1024258760107817,
+        "objectFit": "cover",
+        "borderRadius": "50px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/D6NjmeWaBY1FiFMHLr429HxpKRM.jpg?width=600&height=600",
+        "width": 409,
+        "height": 371,
+        "aspectRatio": 1.1024258760107817,
+        "objectFit": "cover",
+        "borderRadius": "50px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/jwXvxAQ61mfcjjrQsvoreqxnrMg.jpg?width=600&height=600",
+        "width": 409,
+        "height": 371,
+        "aspectRatio": 1.1024258760107817,
+        "objectFit": "cover",
+        "borderRadius": "50px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/baGPQhxMT3drvtvGMT0f0VIDA.webp?width=2740&height=2740",
+        "width": 676,
+        "height": 676,
+        "aspectRatio": 1,
+        "objectFit": "cover",
+        "borderRadius": "50px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/6QEz8kJbwqWFzbNDcgcMwaBk7Jk.svg?width=176&height=40",
+        "width": 114,
+        "height": 35.984375,
+        "aspectRatio": 3.16804168475901,
+        "objectFit": "contain",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/4I0nUFgLGKqAqwEE0S5l6yrCXzQ.svg?width=132&height=35",
+        "width": 114,
+        "height": 35.984375,
+        "aspectRatio": 3.16804168475901,
+        "objectFit": "contain",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/gjmyWxGl1gWzjkyIh4cJfB7rg.svg?width=132&height=35",
+        "width": 114,
+        "height": 35.984375,
+        "aspectRatio": 3.16804168475901,
+        "objectFit": "contain",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/GPSxJ7zrNG4isyTYg1gr1HjRTA.svg?width=175&height=40",
+        "width": 114,
+        "height": 35.984375,
+        "aspectRatio": 3.16804168475901,
+        "objectFit": "contain",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/oeigtHFhM0qf1CThkR9gRSymB0.svg?width=119&height=30",
+        "width": 114,
+        "height": 35.984375,
+        "aspectRatio": 3.16804168475901,
+        "objectFit": "contain",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/duZwjP73YzY6931zuqasWWfWDZY.svg?width=163&height=42",
+        "width": 114,
+        "height": 35.984375,
+        "aspectRatio": 3.16804168475901,
+        "objectFit": "contain",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/Qifbcz2UjIveHTCuImUZcqT9kZg.svg?width=140&height=30",
+        "width": 114,
+        "height": 35.984375,
+        "aspectRatio": 3.16804168475901,
+        "objectFit": "contain",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/ThiPMi5yUjVdKo6t4N9wLOgcQ.svg?width=168&height=40",
+        "width": 114,
+        "height": 35.984375,
+        "aspectRatio": 3.16804168475901,
+        "objectFit": "contain",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/ugOirwbvxWR0SU7YDwnuLLvlcZQ.svg?width=229&height=68",
+        "width": 236,
+        "height": 69.859375,
+        "aspectRatio": 3.378215164392753,
+        "objectFit": "contain",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/7ZLR5nIwrQ1G9rH5l5Jd5o7pOY.svg?width=12&height=17",
+        "width": 20,
+        "height": 20,
+        "aspectRatio": 1,
+        "objectFit": "contain",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/9RTthQjtszhXNikLkOAskVakcY.svg?width=16&height=12",
+        "width": 20,
+        "height": 20,
+        "aspectRatio": 1,
+        "objectFit": "contain",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/qkP6xU2UlwWYUURNcxwVeo2gEY.svg?width=16&height=16",
+        "width": 20,
+        "height": 20,
+        "aspectRatio": 1,
+        "objectFit": "contain",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/42fsssGMOp2HC9D72RDmDV5sJow.svg?width=16&height=16",
+        "width": 20,
+        "height": 20,
+        "aspectRatio": 1,
+        "objectFit": "contain",
+        "borderRadius": "0px"
+      }
+    ]
+  },
+  "footer": {
+    "text": "Home\nAbout us\nTeam\nNews\nServices\nGet in touch\n\nSolshine is a professional and conversion - focused F",
+    "rect": {
+      "top": 0,
+      "left": 0,
+      "width": 1440,
+      "height": 6927.859375
+    },
+    "styles": {
+      "backgroundColor": "rgba(0, 0, 0, 0)",
+      "paddingTop": "0px",
+      "paddingBottom": "0px",
+      "paddingLeft": "0px",
+      "paddingRight": "0px",
+      "display": "block",
+      "flexDirection": "row",
+      "justifyContent": "normal",
+      "alignItems": "normal",
+      "gap": "normal"
+    },
+    "headings": [
+      {
+        "tag": "H4",
+        "text": "We are here",
+        "fontSize": "24px",
+        "fontWeight": "600",
+        "lineHeight": "30px",
+        "letterSpacing": "normal",
+        "color": "rgb(0, 0, 0)"
+      },
+      {
+        "tag": "H4",
+        "text": "Contact me",
+        "fontSize": "24px",
+        "fontWeight": "600",
+        "lineHeight": "30px",
+        "letterSpacing": "normal",
+        "color": "rgb(0, 0, 0)"
+      },
+      {
+        "tag": "H4",
+        "text": "Follow us",
+        "fontSize": "24px",
+        "fontWeight": "600",
+        "lineHeight": "30px",
+        "letterSpacing": "normal",
+        "color": "rgb(0, 0, 0)"
+      },
+      {
+        "tag": "H1",
+        "text": "About us",
+        "fontSize": "65px",
+        "fontWeight": "500",
+        "lineHeight": "70px",
+        "letterSpacing": "-2px",
+        "color": "rgb(255, 255, 255)"
+      },
+      {
+        "tag": "H2",
+        "text": "Innovations in green technology and environmental solutions",
+        "fontSize": "58px",
+        "fontWeight": "500",
+        "lineHeight": "70px",
+        "letterSpacing": "-2px",
+        "color": "rgb(0, 0, 0)"
+      },
+      {
+        "tag": "H2",
+        "text": "10+ years of experience in the solar industry",
+        "fontSize": "58px",
+        "fontWeight": "500",
+        "lineHeight": "70px",
+        "letterSpacing": "-2px",
+        "color": "rgb(0, 0, 0)"
+      },
+      {
+        "tag": "H2",
+        "text": "We’re your first choice for solar energy services",
+        "fontSize": "58px",
+        "fontWeight": "500",
+        "lineHeight": "70px",
+        "letterSpacing": "-2px",
+        "color": "rgb(0, 0, 0)"
+      },
+      {
+        "tag": "H4",
+        "text": "Trusted & friendly",
+        "fontSize": "24px",
+        "fontWeight": "600",
+        "lineHeight": "30px",
+        "letterSpacing": "normal",
+        "color": "rgb(0, 0, 0)"
+      },
+      {
+        "tag": "H4",
+        "text": "Veteran owned",
+        "fontSize": "24px",
+        "fontWeight": "600",
+        "lineHeight": "30px",
+        "letterSpacing": "normal",
+        "color": "rgb(0, 0, 0)"
+      },
+      {
+        "tag": "H4",
+        "text": "Availability",
+        "fontSize": "24px",
+        "fontWeight": "600",
+        "lineHeight": "30px",
+        "letterSpacing": "normal",
+        "color": "rgb(0, 0, 0)"
+      },
+      {
+        "tag": "H4",
+        "text": "24/7 Support",
+        "fontSize": "24px",
+        "fontWeight": "600",
+        "lineHeight": "30px",
+        "letterSpacing": "normal",
+        "color": "rgb(0, 0, 0)"
+      },
+      {
+        "tag": "H2",
+        "text": "Meet the team behind techverse",
+        "fontSize": "58px",
+        "fontWeight": "500",
+        "lineHeight": "70px",
+        "letterSpacing": "-2px",
+        "color": "rgb(0, 0, 0)"
+      },
+      {
+        "tag": "H4",
+        "text": "Amy Walker",
+        "fontSize": "24px",
+        "fontWeight": "600",
+        "lineHeight": "30px",
+        "letterSpacing": "normal",
+        "color": "rgb(0, 0, 0)"
+      },
+      {
+        "tag": "H4",
+        "text": "Amy Walker",
+        "fontSize": "24px",
+        "fontWeight": "600",
+        "lineHeight": "30px",
+        "letterSpacing": "normal",
+        "color": "rgb(0, 0, 0)"
+      },
+      {
+        "tag": "H4",
+        "text": "Amy Walker",
+        "fontSize": "24px",
+        "fontWeight": "600",
+        "lineHeight": "30px",
+        "letterSpacing": "normal",
+        "color": "rgb(0, 0, 0)"
+      },
+      {
+        "tag": "H4",
+        "text": "Amy Walker",
+        "fontSize": "24px",
+        "fontWeight": "600",
+        "lineHeight": "30px",
+        "letterSpacing": "normal",
+        "color": "rgb(0, 0, 0)"
+      },
+      {
+        "tag": "H4",
+        "text": "Amy Walker",
+        "fontSize": "24px",
+        "fontWeight": "600",
+        "lineHeight": "30px",
+        "letterSpacing": "normal",
+        "color": "rgb(0, 0, 0)"
+      },
+      {
+        "tag": "H4",
+        "text": "Amy Walker",
+        "fontSize": "24px",
+        "fontWeight": "600",
+        "lineHeight": "30px",
+        "letterSpacing": "normal",
+        "color": "rgb(0, 0, 0)"
+      },
+      {
+        "tag": "H2",
+        "text": "10+",
+        "fontSize": "58px",
+        "fontWeight": "500",
+        "lineHeight": "70px",
+        "letterSpacing": "-2px",
+        "color": "rgb(0, 0, 0)"
+      },
+      {
+        "tag": "H2",
+        "text": "Have any questions? here some answers for you",
+        "fontSize": "58px",
+        "fontWeight": "500",
+        "lineHeight": "70px",
+        "letterSpacing": "-2px",
+        "color": "rgb(0, 0, 0)"
+      },
+      {
+        "tag": "H4",
+        "text": "How long does a solar installation usually take?",
+        "fontSize": "22px",
+        "fontWeight": "600",
+        "lineHeight": "30px",
+        "letterSpacing": "normal",
+        "color": "rgb(0, 0, 0)"
+      },
+      {
+        "tag": "H4",
+        "text": "Do solar panels work on cloudy days?",
+        "fontSize": "22px",
+        "fontWeight": "600",
+        "lineHeight": "30px",
+        "letterSpacing": "normal",
+        "color": "rgb(0, 0, 0)"
+      },
+      {
+        "tag": "H4",
+        "text": "What maintenance do solar systems require?",
+        "fontSize": "22px",
+        "fontWeight": "600",
+        "lineHeight": "30px",
+        "letterSpacing": "normal",
+        "color": "rgb(0, 0, 0)"
+      },
+      {
+        "tag": "H4",
+        "text": "What is grid tie solar solution?",
+        "fontSize": "22px",
+        "fontWeight": "600",
+        "lineHeight": "30px",
+        "letterSpacing": "normal",
+        "color": "rgb(0, 0, 0)"
+      },
+      {
+        "tag": "H4",
+        "text": "Supported by the world's top venture capitalists",
+        "fontSize": "24px",
+        "fontWeight": "600",
+        "lineHeight": "30px",
+        "letterSpacing": "normal",
+        "color": "rgb(0, 0, 0)"
+      },
+      {
+        "tag": "H4",
+        "text": "About Solshine",
+        "fontSize": "24px",
+        "fontWeight": "600",
+        "lineHeight": "30px",
+        "letterSpacing": "normal",
+        "color": "rgb(255, 255, 255)"
+      },
+      {
+        "tag": "H4",
+        "text": "Useful links",
+        "fontSize": "24px",
+        "fontWeight": "600",
+        "lineHeight": "30px",
+        "letterSpacing": "normal",
+        "color": "rgb(255, 255, 255)"
+      },
+      {
+        "tag": "H4",
+        "text": "Contact information",
+        "fontSize": "24px",
+        "fontWeight": "600",
+        "lineHeight": "30px",
+        "letterSpacing": "normal",
+        "color": "rgb(255, 255, 255)"
+      },
+      {
+        "tag": "H4",
+        "text": "Our newsletter",
+        "fontSize": "24px",
+        "fontWeight": "600",
+        "lineHeight": "30px",
+        "letterSpacing": "normal",
+        "color": "rgb(255, 255, 255)"
+      }
+    ],
+    "images": [
+      {
+        "src": "https://framerusercontent.com/images/WioQWlXxVQDqe2KhkHeOjhO9KA.svg?width=229&height=68",
+        "width": 168,
+        "height": 48,
+        "aspectRatio": 3.5,
+        "objectFit": "contain",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/WioQWlXxVQDqe2KhkHeOjhO9KA.svg?width=229&height=68",
+        "width": 183,
+        "height": 54.328125,
+        "aspectRatio": 3.3684210526315788,
+        "objectFit": "contain",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/7ahob399syUX6jMpG4G4YK63E.jpg?width=6048&height=4024",
+        "width": 1440,
+        "height": 550,
+        "aspectRatio": 2.618181818181818,
+        "objectFit": "cover",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/cEjMpYR7tXxcu7GnqwyyJHB6Ic.svg?width=130&height=120",
+        "width": 130,
+        "height": 120,
+        "aspectRatio": 1.0833333333333333,
+        "objectFit": "cover",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/JVUMbFm3aewqZiVAl7BKDSdJZM.svg?width=330&height=183",
+        "width": 330,
+        "height": 182.984375,
+        "aspectRatio": 1.8034326701391854,
+        "objectFit": "cover",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/dsfQ3GdJTzveF5Jx756vaZklTs4.png?width=2632&height=2808",
+        "width": 450,
+        "height": 490,
+        "aspectRatio": 0.9183673469387755,
+        "objectFit": "cover",
+        "borderRadius": "50px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/wNnFqpu9Z6yqOz5jN72KpKsHtd4.svg?width=90&height=90",
+        "width": 82,
+        "height": 82,
+        "aspectRatio": 1,
+        "objectFit": "contain",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/wNnFqpu9Z6yqOz5jN72KpKsHtd4.svg?width=90&height=90",
+        "width": 82,
+        "height": 82,
+        "aspectRatio": 1,
+        "objectFit": "contain",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/9jEi31vXRKUchjmAKxiMLR50cvk.svg?width=90&height=90",
+        "width": 82,
+        "height": 82,
+        "aspectRatio": 1,
+        "objectFit": "contain",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/9jEi31vXRKUchjmAKxiMLR50cvk.svg?width=90&height=90",
+        "width": 82,
+        "height": 82,
+        "aspectRatio": 1,
+        "objectFit": "contain",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/p7RKbvwaSgRSHzZ5MV9M2T7zqBY.svg?width=90&height=90",
+        "width": 82,
+        "height": 82,
+        "aspectRatio": 1,
+        "objectFit": "contain",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/p7RKbvwaSgRSHzZ5MV9M2T7zqBY.svg?width=90&height=90",
+        "width": 82,
+        "height": 82,
+        "aspectRatio": 1,
+        "objectFit": "contain",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/r6DD4ewFKzCMH3qLVIET3QkSj4.svg?width=90&height=90",
+        "width": 82,
+        "height": 82,
+        "aspectRatio": 1,
+        "objectFit": "contain",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/r6DD4ewFKzCMH3qLVIET3QkSj4.svg?width=90&height=90",
+        "width": 82,
+        "height": 82,
+        "aspectRatio": 1,
+        "objectFit": "contain",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/wy6XMBGanAracXhR8wG7adQOR9k.png?width=2032&height=2972",
+        "width": 508,
+        "height": 742.359375,
+        "aspectRatio": 0.6843046873355644,
+        "objectFit": "contain",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/c5KtJlri7tVtLpjG0bx7gSOzGCw.png?width=1064&height=476",
+        "width": 125,
+        "height": 55.9140625,
+        "aspectRatio": 2.2355735643426016,
+        "objectFit": "fill",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/B8AOyL3V0azDfxbgJVjiisX7Mc.png?width=260&height=260",
+        "width": 65,
+        "height": 65,
+        "aspectRatio": 1,
+        "objectFit": "fill",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/B8AOyL3V0azDfxbgJVjiisX7Mc.png?width=260&height=260",
+        "width": 65,
+        "height": 65,
+        "aspectRatio": 1,
+        "objectFit": "fill",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/B8AOyL3V0azDfxbgJVjiisX7Mc.png?width=260&height=260",
+        "width": 65,
+        "height": 65,
+        "aspectRatio": 1,
+        "objectFit": "fill",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/heoMlJ66F2SJ7jbVdPLwIXFXBo.jpg?width=1488&height=1488",
+        "width": 409,
+        "height": 371,
+        "aspectRatio": 1.1024258760107817,
+        "objectFit": "cover",
+        "borderRadius": "50px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/B6SAUcWOaxeRbm7TmftAKKuE3bo.jpg?width=600&height=600",
+        "width": 409,
+        "height": 371,
+        "aspectRatio": 1.1024258760107817,
+        "objectFit": "cover",
+        "borderRadius": "50px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/84rQ0xS0GSXogxfHmYXKT30ETM.jpg?width=600&height=600",
+        "width": 409,
+        "height": 371,
+        "aspectRatio": 1.1024258760107817,
+        "objectFit": "cover",
+        "borderRadius": "50px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/aVsvLJkR2RekklaZEFisskMVMr0.jpg?width=600&height=600",
+        "width": 409,
+        "height": 371,
+        "aspectRatio": 1.1024258760107817,
+        "objectFit": "cover",
+        "borderRadius": "50px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/D6NjmeWaBY1FiFMHLr429HxpKRM.jpg?width=600&height=600",
+        "width": 409,
+        "height": 371,
+        "aspectRatio": 1.1024258760107817,
+        "objectFit": "cover",
+        "borderRadius": "50px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/jwXvxAQ61mfcjjrQsvoreqxnrMg.jpg?width=600&height=600",
+        "width": 409,
+        "height": 371,
+        "aspectRatio": 1.1024258760107817,
+        "objectFit": "cover",
+        "borderRadius": "50px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/baGPQhxMT3drvtvGMT0f0VIDA.webp?width=2740&height=2740",
+        "width": 676,
+        "height": 676,
+        "aspectRatio": 1,
+        "objectFit": "cover",
+        "borderRadius": "50px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/6QEz8kJbwqWFzbNDcgcMwaBk7Jk.svg?width=176&height=40",
+        "width": 114,
+        "height": 35.984375,
+        "aspectRatio": 3.16804168475901,
+        "objectFit": "contain",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/4I0nUFgLGKqAqwEE0S5l6yrCXzQ.svg?width=132&height=35",
+        "width": 114,
+        "height": 35.984375,
+        "aspectRatio": 3.16804168475901,
+        "objectFit": "contain",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/gjmyWxGl1gWzjkyIh4cJfB7rg.svg?width=132&height=35",
+        "width": 114,
+        "height": 35.984375,
+        "aspectRatio": 3.16804168475901,
+        "objectFit": "contain",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/GPSxJ7zrNG4isyTYg1gr1HjRTA.svg?width=175&height=40",
+        "width": 114,
+        "height": 35.984375,
+        "aspectRatio": 3.16804168475901,
+        "objectFit": "contain",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/oeigtHFhM0qf1CThkR9gRSymB0.svg?width=119&height=30",
+        "width": 114,
+        "height": 35.984375,
+        "aspectRatio": 3.16804168475901,
+        "objectFit": "contain",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/duZwjP73YzY6931zuqasWWfWDZY.svg?width=163&height=42",
+        "width": 114,
+        "height": 35.984375,
+        "aspectRatio": 3.16804168475901,
+        "objectFit": "contain",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/Qifbcz2UjIveHTCuImUZcqT9kZg.svg?width=140&height=30",
+        "width": 114,
+        "height": 35.984375,
+        "aspectRatio": 3.16804168475901,
+        "objectFit": "contain",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/ThiPMi5yUjVdKo6t4N9wLOgcQ.svg?width=168&height=40",
+        "width": 114,
+        "height": 35.984375,
+        "aspectRatio": 3.16804168475901,
+        "objectFit": "contain",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/ugOirwbvxWR0SU7YDwnuLLvlcZQ.svg?width=229&height=68",
+        "width": 236,
+        "height": 69.859375,
+        "aspectRatio": 3.378215164392753,
+        "objectFit": "contain",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/7ZLR5nIwrQ1G9rH5l5Jd5o7pOY.svg?width=12&height=17",
+        "width": 20,
+        "height": 20,
+        "aspectRatio": 1,
+        "objectFit": "contain",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/9RTthQjtszhXNikLkOAskVakcY.svg?width=16&height=12",
+        "width": 20,
+        "height": 20,
+        "aspectRatio": 1,
+        "objectFit": "contain",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/qkP6xU2UlwWYUURNcxwVeo2gEY.svg?width=16&height=16",
+        "width": 20,
+        "height": 20,
+        "aspectRatio": 1,
+        "objectFit": "contain",
+        "borderRadius": "0px"
+      },
+      {
+        "src": "https://framerusercontent.com/images/42fsssGMOp2HC9D72RDmDV5sJow.svg?width=16&height=16",
+        "width": 20,
+        "height": 20,
+        "aspectRatio": 1,
+        "objectFit": "contain",
+        "borderRadius": "0px"
+      }
+    ]
+  }
+}

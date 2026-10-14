@@ -3,7 +3,6 @@
 import React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Button } from '../ui/Button';
 
 interface AboutCompanySectionProps {
   eyebrow: string;
@@ -28,50 +27,51 @@ export const AboutCompanySection: React.FC<AboutCompanySectionProps> = ({
   altText,
 }) => {
   return (
-    <section className="py-20 sm:py-24 lg:py-28 bg-[#FFFFFF]" aria-labelledby="about-company-heading">
-      <div className="max-w-[1320px] mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-14 xl:gap-16 items-center">
-          
-          {/* LEFT: Large Premium Photograph (45-50% width on desktop) */}
-          <div className="lg:col-span-6 w-full order-2 lg:order-1">
-            <div className="relative w-full aspect-[4/3] sm:aspect-[16/11] rounded-3xl overflow-hidden border border-black/[0.08] shadow-card-soft bg-neutral-100">
+    <section className="w-full bg-[#F8F7F4] py-20 lg:py-28 overflow-hidden">
+      <div className="max-w-7xl mx-auto px-6 sm:px-8">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center">
+          {/* Dominant Service Photograph (Left, ~42% width) */}
+          <div className="lg:col-span-5 w-full">
+            <div className="relative w-full aspect-[4/5] sm:aspect-[450/490] max-w-[480px] mx-auto lg:mx-0 rounded-[40px] lg:rounded-[50px] overflow-hidden shadow-sm bg-[#202024]/5">
               <Image
                 src={imageSrc}
                 alt={altText}
                 fill
                 loading="eager"
-                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 620px"
-                className="object-cover object-[center_35%]"
+                sizes="(max-width: 1024px) 100vw, 480px"
+                className="object-cover object-center"
               />
             </div>
           </div>
 
-          {/* RIGHT: Section label, prominent H2, two paragraphs, contextual CTA */}
-          <div className="lg:col-span-6 flex flex-col items-start order-1 lg:order-2">
-            <p className="text-xs sm:text-[13px] font-bold tracking-[0.14em] uppercase text-[#390044] mb-3.5">
+          {/* Editorial Introduction Content (Right, ~58% width) */}
+          <div className="lg:col-span-7 flex flex-col justify-center">
+            {/* Section Eyebrow Label (No badges, plain uppercase) */}
+            <span className="text-xs font-semibold tracking-wider text-[#390044] uppercase mb-4 block">
               {eyebrow}
-            </p>
-            <h2
-              id="about-company-heading"
-              className="text-3xl sm:text-4xl lg:text-[2.85rem] xl:text-[3.15rem] font-extrabold tracking-tight text-[#390044] leading-[1.14] mb-6"
-            >
+            </span>
+
+            {/* Major H2 Headline */}
+            <h2 className="text-3xl sm:text-4xl lg:text-[48px] font-medium leading-[1.15] tracking-[-0.03em] text-[#202024] mb-6">
               {headline}
             </h2>
 
-            <div className="space-y-4 text-base sm:text-[17px] text-[#575757] leading-relaxed font-normal mb-8">
+            {/* Editorial Paragraphs */}
+            <div className="space-y-4 text-base sm:text-lg leading-relaxed text-[#202024]/80 mb-8 max-w-2xl">
               <p>{paragraph1}</p>
               <p>{paragraph2}</p>
             </div>
 
+            {/* Call to Action Button */}
             <div>
-              <Link href={cta.href}>
-                <Button variant="primary" size="lg" icon={false}>
-                  {cta.label}
-                </Button>
+              <Link
+                href={cta.href}
+                className="inline-flex items-center justify-center px-7 py-3.5 bg-[#C8E80B] text-[#202024] font-semibold text-sm sm:text-base rounded-full transition-all duration-200 hover:bg-[#b5d309] shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#390044]"
+              >
+                {cta.label}
               </Link>
             </div>
           </div>
-
         </div>
       </div>
     </section>
