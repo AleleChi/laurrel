@@ -7,7 +7,25 @@ export interface NavLink {
 export interface TickerItem {
   id: string;
   label: string;
-  iconName: 'sparkles' | 'truck' | 'box';
+}
+
+export interface AboutConfig {
+  eyebrow: string;
+  headline: string;
+  editorialStatement: string;
+  paragraphs: string[];
+  cta: {
+    label: string;
+    href: string;
+  };
+  informationCard: {
+    title: string;
+    description: string;
+  };
+  media: {
+    imageSrc: string;
+    altText: string;
+  };
 }
 
 export interface HeroVideoItem {
@@ -68,6 +86,7 @@ export interface SiteConfig {
   ticker: {
     items: TickerItem[];
   };
+  about: AboutConfig;
 }
 
 export const siteConfig: SiteConfig = {
@@ -153,9 +172,31 @@ export const siteConfig: SiteConfig = {
   },
   ticker: {
     items: [
-      { id: 'clean', label: 'Cleaning', iconName: 'sparkles' },
-      { id: 'move', label: 'Moving', iconName: 'truck' },
-      { id: 'store', label: 'Storage', iconName: 'box' },
+      { id: 'clean', label: 'Cleaning' },
+      { id: 'move', label: 'Moving' },
+      { id: 'store', label: 'Storage' },
     ],
+  },
+  about: {
+    eyebrow: 'ABOUT LAURREL SERVICES',
+    headline: "Some jobs don't fit neatly into one service.",
+    editorialStatement:
+      "One service or several related jobs. Start with the details, and we'll help you work out the next step.",
+    paragraphs: [
+      'Your move-out cleaning may need to happen after the furniture leaves. Your new home might not be ready when everything is packed. Or you might simply need a cleaner, without a move at all.',
+      "Laurrel Services offers cleaning, moving and storage in Ottawa. Tell us what needs doing, where and when, and we'll work through the arrangements with you.",
+    ],
+    cta: {
+      label: 'More About Laurrel',
+      href: '#quote',
+    },
+    informationCard: {
+      title: 'One request. Multiple services.',
+      description: 'Cleaning, moving and storage can be discussed as part of the same enquiry.',
+    },
+    media: {
+      imageSrc: '/assets/videos/moving-poster.jpg',
+      altText: 'Laurrel Services moving specialist carrying packed belongings into a clean residential interior in Ottawa',
+    },
   },
 };
