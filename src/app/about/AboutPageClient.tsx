@@ -7,8 +7,8 @@ import { AboutHeroBanner } from '@/components/about/AboutHeroBanner';
 import { AboutCompanySection } from '@/components/about/AboutCompanySection';
 import { AboutWhatWeDoSection } from '@/components/about/AboutWhatWeDoSection';
 import { AboutWhySection } from '@/components/about/AboutWhySection';
+import { AboutMarqueeSection } from '@/components/about/AboutMarqueeSection';
 import { AboutFaqSection } from '@/components/about/AboutFaqSection';
-import { AboutFinalCta } from '@/components/about/AboutFinalCta';
 import { QuoteInquiryModal } from '@/components/ui/QuoteInquiryModal';
 import { AboutPageConfig } from '@/content/site';
 
@@ -21,12 +21,12 @@ export const AboutPageClient: React.FC<AboutPageClientProps> = ({ content }) => 
 
   return (
     <div className="min-h-screen flex flex-col bg-[#F8F7F4]">
-      {/* Persistent Global Header */}
+      {/* Persistent Global Floating Header */}
       <SiteHeader onOpenQuote={() => setIsQuoteModalOpen(true)} />
 
-      {/* Main Experience: 6 Reconstructed Sections Following Solshine Architecture */}
+      {/* Main Experience: 6 Cohesive Sections Following Exact Solshine Architecture */}
       <main className="flex-1">
-        {/* Section 01: Full-width Photographic Banner with Breadcrumbs */}
+        {/* Section 01: Full-Width Photographic Banner with Breadcrumbs */}
         <AboutHeroBanner
           title={content.banner.title}
           breadcrumb={content.banner.breadcrumb}
@@ -34,18 +34,19 @@ export const AboutPageClient: React.FC<AboutPageClientProps> = ({ content }) => 
           altText={content.banner.altText}
         />
 
-        {/* Section 02: About Our Company (Asymmetric 450x490 Photograph + Editorial Copy) */}
+        {/* Section 02: About Our Company (Asymmetric Photo + Editorial Copy + Vector Icon Emphasis Points + Lime CTA) */}
         <AboutCompanySection
           eyebrow={content.aboutCompany.eyebrow}
           headline={content.aboutCompany.headline}
           paragraph1={content.aboutCompany.paragraph1}
           paragraph2={content.aboutCompany.paragraph2}
+          emphasisPoints={content.aboutCompany.emphasisPoints}
           cta={content.aboutCompany.cta}
           imageSrc={content.aboutCompany.imageSrc}
           altText={content.aboutCompany.altText}
         />
 
-        {/* Section 03: What We Do (Oversized 03 Typography + 3 Open Service Descriptions) */}
+        {/* Section 03: What We Do (Solshine 3-Stat Rhythm: 2-Col Header + 3 Equal Typographic Service Columns) */}
         <AboutWhatWeDoSection
           eyebrow={content.whatWeDo.eyebrow}
           headline={content.whatWeDo.headline}
@@ -55,7 +56,7 @@ export const AboutPageClient: React.FC<AboutPageClientProps> = ({ content }) => 
           services={content.whatWeDo.services}
         />
 
-        {/* Section 04: Why Laurrel (Editorial Hierarchy + Dominant Photograph) */}
+        {/* Section 04: Why Laurrel Services (Edge-to-Edge Lime #C8E80B + 2x2 Black Circular Tiles with Lime Linework + Standing Cutout Subject) */}
         <AboutWhySection
           eyebrow={content.whyLaurrel.eyebrow}
           headline={content.whyLaurrel.headline}
@@ -63,9 +64,16 @@ export const AboutPageClient: React.FC<AboutPageClientProps> = ({ content }) => 
           items={content.whyLaurrel.items}
           imageSrc={content.whyLaurrel.imageSrc}
           altText={content.whyLaurrel.altText}
+          cutoutImageSrc={content.whyLaurrel.cutoutImageSrc}
+          cutoutAltText={content.whyLaurrel.cutoutAltText}
         />
 
-        {/* Section 05: Frequently Asked Questions (Photographic 2-Column + Accessible Accordion) */}
+        {/* Section 05: Dark Typography Marquee (Full-Width Black #0B0B0E Outlined Looping Typography) */}
+        <AboutMarqueeSection
+          items={content.marquee?.items}
+        />
+
+        {/* Section 06: Frequently Asked Questions (46/54% Asymmetric Photo + Accessible Accordion) */}
         <AboutFaqSection
           eyebrow={content.faq.eyebrow}
           headline={content.faq.headline}
@@ -74,17 +82,9 @@ export const AboutPageClient: React.FC<AboutPageClientProps> = ({ content }) => 
           imageSrc={content.faq.imageSrc}
           altText={content.faq.altText}
         />
-
-        {/* Section 06: Closing CTA */}
-        <AboutFinalCta
-          headline={content.finalCta.headline}
-          body={content.finalCta.body}
-          ctaLabel={content.finalCta.ctaLabel}
-          onOpenQuote={() => setIsQuoteModalOpen(true)}
-        />
       </main>
 
-      {/* Global Laurrel Footer */}
+      {/* Section 07: Global Full Dark Footer (#0B0B0E with Lime Contact Tiles + 4 Columns) */}
       <SiteFooter onOpenQuote={() => setIsQuoteModalOpen(true)} />
 
       {/* Working Quote Inquiry Modal */}

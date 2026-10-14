@@ -107,6 +107,7 @@ export async function getAboutPageData(): Promise<{
               headline: res.aboutCompany?.headline || siteConfig.aboutPage.aboutCompany.headline,
               paragraph1: res.aboutCompany?.paragraph1 || siteConfig.aboutPage.aboutCompany.paragraph1,
               paragraph2: res.aboutCompany?.paragraph2 || siteConfig.aboutPage.aboutCompany.paragraph2,
+              emphasisPoints: res.aboutCompany?.emphasisPoints || siteConfig.aboutPage.aboutCompany.emphasisPoints,
               cta: res.aboutCompany?.cta || siteConfig.aboutPage.aboutCompany.cta,
               imageSrc: res.aboutCompany?.image?.asset?.url || siteConfig.aboutPage.aboutCompany.imageSrc,
               altText: res.aboutCompany?.image?.alt || siteConfig.aboutPage.aboutCompany.altText,
@@ -126,6 +127,11 @@ export async function getAboutPageData(): Promise<{
               items: res.whyLaurrel?.items || siteConfig.aboutPage.whyLaurrel.items,
               imageSrc: res.whyLaurrel?.image?.asset?.url || siteConfig.aboutPage.whyLaurrel.imageSrc,
               altText: res.whyLaurrel?.image?.alt || siteConfig.aboutPage.whyLaurrel.altText,
+              cutoutImageSrc: res.whyLaurrel?.cutoutImage?.asset?.url || siteConfig.aboutPage.whyLaurrel.cutoutImageSrc,
+              cutoutAltText: res.whyLaurrel?.cutoutImage?.alt || siteConfig.aboutPage.whyLaurrel.cutoutAltText,
+            },
+            marquee: {
+              items: res.marquee?.items || siteConfig.aboutPage.marquee?.items || ['CLEANING', 'MOVING', 'STORAGE'],
             },
             faq: {
               eyebrow: res.faq?.eyebrow || siteConfig.aboutPage.faq.eyebrow,

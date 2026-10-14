@@ -29,6 +29,20 @@ export const aboutPageSchema = {
         { name: 'paragraph1', title: 'Paragraph 1', type: 'text' },
         { name: 'paragraph2', title: 'Paragraph 2', type: 'text' },
         {
+          name: 'emphasisPoints',
+          title: 'Emphasis Statements',
+          type: 'array',
+          of: [
+            {
+              type: 'object',
+              fields: [
+                { name: 'id', title: 'Identifier', type: 'string' },
+                { name: 'text', title: 'Statement Text', type: 'string' },
+              ],
+            },
+          ],
+        },
+        {
           name: 'cta',
           title: 'Call to Action',
           type: 'object',
@@ -64,6 +78,7 @@ export const aboutPageSchema = {
             {
               type: 'object',
               fields: [
+                { name: 'number', title: 'Service Number (e.g. 01)', type: 'string' },
                 { name: 'title', title: 'Service Name', type: 'string' },
                 { name: 'description', title: 'Description', type: 'text' },
                 { name: 'href', title: 'Destination Anchor', type: 'string' },
@@ -89,6 +104,7 @@ export const aboutPageSchema = {
             {
               type: 'object',
               fields: [
+                { name: 'id', title: 'ID', type: 'string' },
                 { name: 'title', title: 'Block Title', type: 'string' },
                 { name: 'description', title: 'Description', type: 'text' },
               ],
@@ -101,6 +117,26 @@ export const aboutPageSchema = {
           type: 'image',
           options: { hotspot: true },
           fields: [{ name: 'alt', title: 'Alt Text', type: 'string' }],
+        },
+        {
+          name: 'cutoutImage',
+          title: 'Standing Cutout Subject Image',
+          type: 'image',
+          options: { hotspot: true },
+          fields: [{ name: 'alt', title: 'Alt Text', type: 'string' }],
+        },
+      ],
+    },
+    {
+      name: 'marquee',
+      title: 'Section 05: Dark Typography Marquee',
+      type: 'object',
+      fields: [
+        {
+          name: 'items',
+          title: 'Marquee Items',
+          type: 'array',
+          of: [{ type: 'string' }],
         },
       ],
     },
