@@ -6,6 +6,7 @@ import { SiteFooter } from '@/components/layout/SiteFooter';
 import { Hero } from '@/components/home/Hero';
 import { ServiceTicker } from '@/components/home/ServiceTicker';
 import { AboutSection } from '@/components/home/AboutSection';
+import { ServicesHighlightSection } from '@/components/home/ServicesHighlightSection';
 import { QuoteInquiryModal } from '@/components/ui/QuoteInquiryModal';
 
 export default function HomePage() {
@@ -16,11 +17,12 @@ export default function HomePage() {
       {/* Global Header */}
       <SiteHeader onOpenQuote={() => setIsQuoteModalOpen(true)} />
 
-      {/* Main Experience: Hero, Refined Ticker & About Section */}
+      {/* Main Experience: Hero, Refined Ticker, About Section & Services Highlight */}
       <main className="flex-1">
         <Hero onOpenQuote={() => setIsQuoteModalOpen(true)} />
         <ServiceTicker />
         <AboutSection onOpenQuote={() => setIsQuoteModalOpen(true)} />
+        <ServicesHighlightSection />
       </main>
 
       {/* Global Laurrel Footer */}

@@ -142,6 +142,43 @@ export interface AboutPageConfig {
   };
 }
 
+export interface ServiceHighlightItem {
+  id: 'cleaning' | 'moving' | 'storage';
+  title: string;
+  description: string;
+  anchor: string;
+}
+
+export interface ServicesHighlightConfig {
+  eyebrow: string;
+  headline: string;
+  cta: {
+    label: string;
+    href: string;
+  };
+  services: ServiceHighlightItem[];
+}
+
+export interface ServicesPageServiceDetail {
+  id: string;
+  anchor: string;
+  badge: string;
+  title: string;
+  summary: string;
+  details: string[];
+  ctaLabel: string;
+}
+
+export interface ServicesPageConfig {
+  meta: {
+    title: string;
+    description: string;
+  };
+  heading: string;
+  intro: string;
+  sections: ServicesPageServiceDetail[];
+}
+
 export interface SiteConfig {
   companyName: string;
   tagline: string;
@@ -191,6 +228,8 @@ export interface SiteConfig {
   };
   about: HomepageAboutConfig;
   aboutPage: AboutPageConfig;
+  servicesHighlight: ServicesHighlightConfig;
+  servicesPage: ServicesPageConfig;
 }
 
 export const siteConfig: SiteConfig = {
@@ -465,5 +504,93 @@ export const siteConfig: SiteConfig = {
       description:
         'Learn about Laurrel Services and our cleaning, moving and storage services in Ottawa. Understand our approach to planning related service requests.',
     },
+  },
+  servicesHighlight: {
+    eyebrow: 'OUR SERVICES',
+    headline: 'A space to clean. A move to make. Belongings to store.',
+    cta: {
+      label: 'Explore Services',
+      href: '/services',
+    },
+    services: [
+      {
+        id: 'cleaning',
+        title: 'Cleaning',
+        description:
+          "An apartment after move-out. A home that needs a thorough clean. A workplace being prepared for its next day of business. Tell us about the space, what needs attention and when you'd like it done.",
+        anchor: '/services#cleaning',
+      },
+      {
+        id: 'moving',
+        title: 'Moving',
+        description:
+          "A new address comes with its own logistics. Furniture, boxes, stairs, elevators and moving dates all need consideration. Tell us what you're moving and where it needs to go.",
+        anchor: '/services#moving',
+      },
+      {
+        id: 'storage',
+        title: 'Storage',
+        description:
+          "Between leases, renovating or simply making more room? Let us know what you're keeping, how much space you expect to need and how long you plan to store it.",
+        anchor: '/services#storage',
+      },
+    ],
+  },
+  servicesPage: {
+    meta: {
+      title: 'Cleaning, Moving & Storage Services Ottawa | Laurrel Services',
+      description:
+        'Explore Laurrel Services cleaning, moving and storage options in Ottawa. Learn what information to provide and request a quote for your next job.',
+    },
+    heading: 'Cleaning, Moving & Storage Services in Ottawa',
+    intro:
+      "Laurrel Services offers cleaning, moving and storage for customers in Ottawa. Whether you're preparing a property, arranging a move or looking into storage, start with the service you need and the details of the job.",
+    sections: [
+      {
+        id: 'cleaning',
+        anchor: 'cleaning',
+        badge: 'SERVICE 01',
+        title: 'Residential & Commercial Cleaning',
+        summary:
+          'From move-in and move-out cleans to recurring property maintenance and post-renovation preparation, every space requires different focus.',
+        details: [
+          'Occupied residential cleaning tailored to room priorities and schedules',
+          'Move-in / move-out turnover cleaning for tenants, owners and property managers',
+          'Post-renovation dust removal and deep surface care',
+          'Commercial and workplace cleaning structured around business operating hours',
+        ],
+        ctaLabel: 'Request a Quote',
+      },
+      {
+        id: 'moving',
+        anchor: 'moving',
+        badge: 'SERVICE 02',
+        title: 'Careful Residential & Commercial Moving',
+        summary:
+          'A successful move begins with understanding what is being transported, building access, and timing.',
+        details: [
+          'Local moves across Ottawa and surrounding communities',
+          'Furniture protection, padding and secure cargo securing',
+          'Staircase, elevator, loading bay and narrow corridor coordination',
+          'Clear communication from initial inventory review to final placement',
+        ],
+        ctaLabel: 'Request a Quote',
+      },
+      {
+        id: 'storage',
+        anchor: 'storage',
+        badge: 'SERVICE 03',
+        title: 'Secured Short & Long-Term Storage',
+        summary:
+          'Flexible storage arrangements for households in transition, renovations, or surplus commercial inventory.',
+        details: [
+          'Transition storage between lease dates or closing schedules',
+          'Safe keeping for packed boxes, furniture sets and household goods',
+          'Scalable space arrangements based on actual volume',
+          'Coordinated transfers in tandem with our moving services',
+        ],
+        ctaLabel: 'Request a Quote',
+      },
+    ],
   },
 };

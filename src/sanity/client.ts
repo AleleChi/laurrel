@@ -3,8 +3,10 @@ import {
   siteConfig,
   HomepageAboutConfig,
   AboutPageConfig,
+  ServicesHighlightConfig,
   SiteConfig,
 } from '@/content/site';
+
 
 export const projectId = process.env.NEXT_PUBLIC_SANITY_PROJECT_ID;
 export const dataset = process.env.NEXT_PUBLIC_SANITY_DATASET || 'production';
@@ -69,6 +71,44 @@ export async function getHomeAboutData(): Promise<{
 
   return {
     data: siteConfig.about,
+    source: 'local',
+  };
+}
+
+/**
+ * Fetch Homepage Services Highlight data with fallback to local centralized config
+ */
+export async function getHomeServicesData(): Promise<{
+  data: ServicesHighlightConfig;
+  source: 'sanity' | 'local';
+}> {
+  if (client) {
+    try {
+      const query = `*[_type == "homeServices"][0]{
+        eyebrow,
+        headline,
+        cta,
+        services
+      }`;
+      const res = await client.fetch(query, {}, { next: { revalidate: 60 } });
+      if (res) {
+        return {
+          data: {
+            eyebrow: res.eyebrow || siteConfig.servicesHighlight.eyebrow,
+            headline: res.headline || siteConfig.servicesHighlight.headline,
+            cta: res.cta || siteConfig.servicesHighlight.cta,
+            services: res.services || siteConfig.servicesHighlight.services,
+          },
+          source: 'sanity',
+        };
+      }
+    } catch (error) {
+      console.warn('[CMS warning] Could not fetch homeServices from Sanity; falling back to local content:', error);
+    }
+  }
+
+  return {
+    data: siteConfig.servicesHighlight,
     source: 'local',
   };
 }
