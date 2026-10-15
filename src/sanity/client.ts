@@ -12,7 +12,7 @@ import {
 
 
 
-export const projectId = process.env.NEXT_PUBLIC_SANITY_PROJECT_ID;
+export const projectId = process.env.NEXT_PUBLIC_SANITY_PROJECT_ID || '5nupsg0g';
 export const dataset = process.env.NEXT_PUBLIC_SANITY_DATASET || 'production';
 export const apiVersion = process.env.NEXT_PUBLIC_SANITY_API_VERSION || '2024-01-01';
 
@@ -60,7 +60,7 @@ export async function getHomeHeroData(): Promise<{
         "fallbackImage": fallbackImage.asset->url,
         "fallbackAlt": fallbackImage.alt
       }`;
-      const res = await client.fetch(query, {}, { next: { revalidate: 60 } });
+      const res = await client.fetch(query, {}, { next: { revalidate: 60, tags: ['sanity'] } });
       if (res) {
         const defaultHero = siteConfig.hero;
         const defaultVideos = defaultHero.media.videos || [];
@@ -168,7 +168,7 @@ export async function getHomeAboutData(): Promise<{
         services,
         cta
       }`;
-      const res = await client.fetch(query, {}, { next: { revalidate: 60 } });
+      const res = await client.fetch(query, {}, { next: { revalidate: 60, tags: ['sanity'] } });
       if (res) {
         return {
           data: {
@@ -213,7 +213,7 @@ export async function getHomeServicesData(): Promise<{
         cta,
         services
       }`;
-      const res = await client.fetch(query, {}, { next: { revalidate: 60 } });
+      const res = await client.fetch(query, {}, { next: { revalidate: 60, tags: ['sanity'] } });
       if (res) {
         return {
           data: {
@@ -255,7 +255,7 @@ export async function getAboutPageData(): Promise<{
         finalCta,
         seo
       }`;
-      const res = await client.fetch(query, {}, { next: { revalidate: 60 } });
+      const res = await client.fetch(query, {}, { next: { revalidate: 60, tags: ['sanity'] } });
       if (res) {
         return {
           data: {
@@ -354,7 +354,7 @@ export async function getServicesPageData(): Promise<{
         sidebarForm,
         sidebarInfoPanel
       }`;
-      const res = await client.fetch(query, {}, { next: { revalidate: 60 } });
+      const res = await client.fetch(query, {}, { next: { revalidate: 60, tags: ['sanity'] } });
       if (res) {
         return {
           data: {
@@ -429,7 +429,7 @@ export async function getOverlappingPlansData(): Promise<{
           details
         }
       }`;
-      const res = await client.fetch(query, {}, { next: { revalidate: 60 } });
+      const res = await client.fetch(query, {}, { next: { revalidate: 60, tags: ['sanity'] } });
       if (res && res.situations && res.situations.length > 0) {
         return {
           data: {
@@ -492,7 +492,7 @@ export async function getContactPageData(): Promise<{
         "bannerAlt": banner.image.alt,
         "bannerTitle": banner.title
       }`;
-      const res = await client.fetch(query, {}, { next: { revalidate: 60 } });
+      const res = await client.fetch(query, {}, { next: { revalidate: 60, tags: ['sanity'] } });
       if (res) {
         return {
           data: {
@@ -532,5 +532,104 @@ export async function getContactPageData(): Promise<{
     source: 'local',
   };
 }
+
+/**
+ * Fetch Global Site Settings & Footer with fallback to local centralized config
+ */
+export async function getSiteSettingsData(): Promise<{
+  data: {
+    companyName: string;
+    tagline: string;
+    location: string;
+    businessInfo: {
+      phone?: string;
+      email?: string;
+      serviceArea?: string;
+      officeAddress?: string;
+    };
+    footer: {
+      aboutSummary?: string;
+      serviceRegionLabel?: string;
+      coordinationLabel?: string;
+      estimatesLabel?: string;
+      copyrightNotice?: string;
+    };
+    seo: {
+      defaultMetaTitle?: string;
+      defaultMetaDescription?: string;
+    };
+  };
+  source: 'sanity' | 'local';
+}> {
+  if (client) {
+    try {
+      const query = `*[_type == "siteSettings"][0]{
+        companyName,
+        tagline,
+        location,
+        businessInfo,
+        footer,
+        seo
+      }`;
+      const res = await client.fetch(query, {}, { next: { revalidate: 60, tags: ['sanity'] } });
+      if (res) {
+        return {
+          data: {
+            companyName: res.companyName || siteConfig.companyName,
+            tagline: res.tagline || siteConfig.tagline,
+            location: res.location || siteConfig.location,
+            businessInfo: {
+              phone: res.businessInfo?.phone || siteConfig.contactPage.businessPhone,
+              email: res.businessInfo?.email || siteConfig.contactPage.businessEmail,
+              serviceArea: res.businessInfo?.serviceArea || 'Ottawa & the National Capital Region (NCR)',
+              officeAddress: res.businessInfo?.officeAddress || siteConfig.contactPage.officeAddress,
+            },
+            footer: {
+              aboutSummary: res.footer?.aboutSummary,
+              serviceRegionLabel: res.footer?.serviceRegionLabel || 'Ottawa & NCR',
+              coordinationLabel: res.footer?.coordinationLabel || '1 Point of Contact',
+              estimatesLabel: res.footer?.estimatesLabel || 'Online Request',
+              copyrightNotice: res.footer?.copyrightNotice || '© 2026 Laurrel Services. All rights reserved. Ottawa, Ontario, Canada.',
+            },
+            seo: {
+              defaultMetaTitle: res.seo?.defaultMetaTitle || siteConfig.meta.title,
+              defaultMetaDescription: res.seo?.defaultMetaDescription || siteConfig.meta.description,
+            },
+          },
+          source: 'sanity',
+        };
+      }
+    } catch (err) {
+      console.warn('[CMS warning] Could not fetch siteSettings from Sanity; falling back to local content:', err);
+    }
+  }
+
+  return {
+    data: {
+      companyName: siteConfig.companyName,
+      tagline: siteConfig.tagline,
+      location: siteConfig.location,
+      businessInfo: {
+        phone: siteConfig.contactPage.businessPhone,
+        email: siteConfig.contactPage.businessEmail,
+        serviceArea: 'Ottawa & the National Capital Region (NCR)',
+        officeAddress: siteConfig.contactPage.officeAddress,
+      },
+      footer: {
+        aboutSummary: 'Laurrel Services coordinates residential and commercial cleaning, careful moving, and secure storage arrangements across Ottawa and the surrounding National Capital Region.',
+        serviceRegionLabel: 'Ottawa & NCR',
+        coordinationLabel: '1 Point of Contact',
+        estimatesLabel: 'Online Request',
+        copyrightNotice: '© 2026 Laurrel Services. All rights reserved. Ottawa, Ontario, Canada.',
+      },
+      seo: {
+        defaultMetaTitle: siteConfig.meta.title,
+        defaultMetaDescription: siteConfig.meta.description,
+      },
+    },
+    source: 'local',
+  };
+}
+
 
 

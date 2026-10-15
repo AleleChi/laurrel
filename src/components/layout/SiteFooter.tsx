@@ -1,9 +1,10 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { motion, useReducedMotion } from 'framer-motion';
 import { MOTION_EASE, MOTION_DURATIONS, VIEWPORT_CONFIG } from '@/utils/motion';
+import { getSiteSettingsData, isCmsConfigured } from '@/sanity/client';
 
 interface SiteFooterProps {
   onOpenQuote?: () => void;
@@ -11,6 +12,19 @@ interface SiteFooterProps {
 
 export const SiteFooter: React.FC<SiteFooterProps> = ({ onOpenQuote }) => {
   const shouldReduceMotion = useReducedMotion();
+  const [siteSettings, setSiteSettings] = useState<any>(null);
+
+  useEffect(() => {
+    if (isCmsConfigured) {
+      getSiteSettingsData()
+        .then((res) => {
+          if (res?.data) {
+            setSiteSettings(res.data);
+          }
+        })
+        .catch(() => {});
+    }
+  }, []);
 
   const footerContainerVariants = {
     hidden: { opacity: 0 },
@@ -82,7 +96,7 @@ export const SiteFooter: React.FC<SiteFooterProps> = ({ onOpenQuote }) => {
                   Service Region
                 </span>
                 <span className="text-sm sm:text-base font-semibold text-white">
-                  Ottawa & NCR
+                  {siteSettings?.footer?.serviceRegionLabel || 'Ottawa & NCR'}
                 </span>
               </div>
             </div>
@@ -105,7 +119,7 @@ export const SiteFooter: React.FC<SiteFooterProps> = ({ onOpenQuote }) => {
                   Coordination
                 </span>
                 <span className="text-sm sm:text-base font-semibold text-white">
-                  1 Point of Contact
+                  {siteSettings?.footer?.coordinationLabel || '1 Point of Contact'}
                 </span>
               </div>
             </div>
@@ -133,7 +147,7 @@ export const SiteFooter: React.FC<SiteFooterProps> = ({ onOpenQuote }) => {
                   onClick={onOpenQuote}
                   className="text-sm sm:text-base font-semibold text-white hover:text-[#C8E80B] transition-colors text-left"
                 >
-                  Online Request
+                  {siteSettings?.footer?.estimatesLabel || 'Online Request'}
                 </button>
               </div>
             </div>
@@ -151,7 +165,8 @@ export const SiteFooter: React.FC<SiteFooterProps> = ({ onOpenQuote }) => {
               About Laurrel
             </h4>
             <p className="text-sm leading-relaxed text-white/70 max-w-sm mb-4">
-              Laurrel Services coordinates residential and commercial cleaning, careful moving, and secure storage arrangements across Ottawa and the surrounding National Capital Region.
+              {siteSettings?.footer?.aboutSummary ||
+                'Laurrel Services coordinates residential and commercial cleaning, careful moving, and secure storage arrangements across Ottawa and the surrounding National Capital Region.'}
             </p>
             <p className="text-xs text-white/50">
               One responsive team for multiple related property and transition needs.
@@ -248,7 +263,10 @@ export const SiteFooter: React.FC<SiteFooterProps> = ({ onOpenQuote }) => {
           variants={footerItemVariants}
           className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-white/50"
         >
-          <p>© {new Date().getFullYear()} LAURREL SERVICES. All rights reserved.</p>
+          <p>
+            {siteSettings?.footer?.copyrightNotice ||
+              `© ${new Date().getFullYear()} LAURREL SERVICES. All rights reserved.`}
+          </p>
           <div className="flex items-center gap-6">
             <span>Serving Ottawa & Eastern Ontario</span>
             <span>Privacy Policy</span>

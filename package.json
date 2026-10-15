@@ -6,7 +6,11 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "studio": "npm --prefix studio run dev",
+    "studio:build": "npm --prefix studio run build",
+    "studio:preview": "npm --prefix studio run start",
+    "seed:sanity": "node scripts/seed-sanity.js"
   },
   "dependencies": {
     "@google/genai": "^2.30.0",
