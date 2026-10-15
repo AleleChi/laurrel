@@ -14,6 +14,7 @@ export async function runMigrations(): Promise<{ success: boolean; message: stri
   const candidatePaths = [
     path.join(__dirname, 'schema.sql'),
     path.join(__dirname, '..', '..', 'src', 'database', 'schema.sql'),
+    path.join(process.cwd(), 'backend', 'src', 'database', 'schema.sql'),
     path.join(process.cwd(), 'src', 'database', 'schema.sql'),
   ];
 
@@ -24,7 +25,6 @@ export async function runMigrations(): Promise<{ success: boolean; message: stri
       message: `Schema file not found in candidates: ${candidatePaths.join(', ')}`,
     };
   }
-
 
   const sql = fs.readFileSync(schemaPath, 'utf8');
 
@@ -49,9 +49,13 @@ export async function runMigrations(): Promise<{ success: boolean; message: stri
 }
 
 // Standalone CLI execution
-if (require.main === module) {
+const isDirectCall =
+  (typeof require !== 'undefined' && require.main === module) ||
+  (process.argv[1] && process.argv[1].includes('migrate'));
+
+if (isDirectCall) {
   runMigrations().then((result) => {
-    console.log(result);
+    console.log('[Migration Result]:', result.message);
     process.exit(result.success ? 0 : 1);
   });
 }
