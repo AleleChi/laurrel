@@ -166,6 +166,8 @@ export interface ServiceDetailSection {
   title: string;
   headline: string;
   paragraphs: string[];
+  imageSrc: string;
+  imageAlt: string;
   planningTitle: string;
   planningIntro: string;
   usefulInfoTitle: string;
@@ -185,17 +187,16 @@ export interface ServicesPageConfig {
     title: string;
     description: string;
   };
-  hero: {
-    heading: string;
-    subtitle: string;
-    intro: string;
-    primaryCta: {
-      label: string;
-    };
-    secondaryCta: {
-      label: string;
-      href: string;
-    };
+  banner: {
+    title: string;
+    breadcrumb: { label: string; href: string }[];
+    imageSrc: string;
+    altText: string;
+  };
+  articleIntro: {
+    h2: string;
+    paragraph1: string;
+    paragraph2: string;
   };
   services: ServiceDetailSection[];
   gettingStarted: {
@@ -575,22 +576,25 @@ export const siteConfig: SiteConfig = {
   },
   servicesPage: {
     meta: {
-      title: 'Cleaning, Moving & Storage Services in Ottawa | Laurrel Services',
+      title: 'Cleaning, Moving & Storage Services Ottawa | Laurrel Services',
       description:
-        'A property to prepare. A move to organise. Belongings that need somewhere to stay. Laurrel Services offers cleaning, moving and storage in Ottawa.',
+        'Explore cleaning, moving and storage services in Ottawa. Learn what to include in your enquiry and request availability and a quote from Laurrel Services.',
     },
-    hero: {
-      heading: 'Cleaning, Moving & Storage Services in Ottawa',
-      subtitle: 'A property to prepare. A move to organise. Belongings that need somewhere to stay.',
-      intro:
-        "Laurrel Services offers cleaning, moving and storage in Ottawa. Whether you're arranging one job or working through several things at once, start with what needs doing, where and when.",
-      primaryCta: {
-        label: 'Request a Quote',
-      },
-      secondaryCta: {
-        label: 'View Our Services',
-        href: '#cleaning',
-      },
+    banner: {
+      title: 'Our Services',
+      breadcrumb: [
+        { label: 'Home', href: '/' },
+        { label: 'Services', href: '/services' },
+      ],
+      imageSrc: '/assets/hero/laurrel-room.png',
+      altText: 'Laurrel Services cleaning, moving and storage services in Ottawa, Canada',
+    },
+    articleIntro: {
+      h2: 'Cleaning, moving and storage services in Ottawa',
+      paragraph1:
+        'Getting a property ready, moving to a new address or finding room for belongings can involve different arrangements. Laurrel Services offers cleaning, moving and storage in Ottawa, with each request considered according to the work involved.',
+      paragraph2:
+        "Whether you need one service or several, start by telling us what needs doing, where and when. We'll use those details to discuss the available arrangements.",
     },
     services: [
       {
@@ -598,14 +602,16 @@ export const siteConfig: SiteConfig = {
         anchor: 'cleaning',
         badge: 'CLEANING SERVICES IN OTTAWA',
         title: 'Cleaning Services in Ottawa',
-        headline: 'The right clean starts with the space.',
+        headline: 'Cleaning for homes and properties in Ottawa',
         paragraphs: [
           "An occupied home doesn't need the same attention as an empty property being prepared for its next occupants. A workplace has its own requirements, too. Before any cleaning job can be planned properly, it helps to understand the space and what needs attention.",
           'Laurrel Services welcomes cleaning enquiries from Ottawa customers. Tell us about the property, the rooms or areas involved, its current condition and the date you have in mind.',
         ],
-        planningTitle: 'Planning your cleaning request',
+        imageSrc: '/assets/videos/cleaning-poster.jpg',
+        imageAlt: 'Laurrel Services cleaning specialist preparing a residential space in Ottawa',
+        planningTitle: 'What to include in your cleaning enquiry',
         planningIntro:
-          "Whether you're preparing to move in, getting ready to hand back the keys or arranging cleaning for a property in regular use, the details help establish the scope.",
+          "Whether you're preparing to move in, getting ready to hand back the keys or arranging cleaning for a property in regular use, the details help establish the scope. Useful information includes:",
         usefulInfoTitle: 'Useful information includes:',
         usefulInfo: [
           'The type and approximate size of the property',
@@ -621,14 +627,16 @@ export const siteConfig: SiteConfig = {
         anchor: 'moving',
         badge: 'MOVING SERVICES IN OTTAWA',
         title: 'Moving Services in Ottawa',
-        headline: 'A move is easier to plan when the details are clear.',
+        headline: 'Moving services in Ottawa',
         paragraphs: [
           'Moving across Ottawa can involve more than the distance between two addresses. A condo may have an elevator reservation. An apartment may have narrow stairs. Large furniture may need particular attention, and collection or delivery times may depend on building access.',
           'Laurrel Services handles moving enquiries in Ottawa. Start by telling us where the belongings are coming from, where they’re going and what needs transporting.',
         ],
-        planningTitle: 'Preparing your moving enquiry',
+        imageSrc: '/assets/videos/moving-poster.jpg',
+        imageAlt: 'Laurrel Services moving specialist transporting packaged boxes in Ottawa',
+        planningTitle: 'Planning your move',
         planningIntro:
-          "You don't need to have every detail worked out before getting in touch. An approximate inventory and a preferred moving date are a useful starting point.",
+          "You don't need to have every detail worked out before getting in touch. An approximate inventory and a preferred moving date are a useful starting point. Information to include:",
         usefulInfoTitle: 'Information to include:',
         usefulInfo: [
           'Collection and destination locations',
@@ -646,12 +654,14 @@ export const siteConfig: SiteConfig = {
         anchor: 'storage',
         badge: 'STORAGE SERVICES IN OTTAWA',
         title: 'Storage Services in Ottawa',
-        headline: 'Sometimes the space you need isn’t ready yet.',
+        headline: 'Storage services in Ottawa',
         paragraphs: [
           'Your lease may end before the next one begins. Renovations may require furniture to be moved out temporarily. Or you may simply need to make room for belongings you aren’t ready to part with.',
           'Storage requirements vary. A few packed boxes are different from the contents of an entire home, and the length of time matters just as much as the amount of space.',
           'Laurrel Services accepts storage enquiries in Ottawa. Describe what you need to keep, approximately how much space it will require and how long you expect to need storage.',
         ],
+        imageSrc: '/assets/videos/storage-poster.jpg',
+        imageAlt: 'Laurrel Services clean and secure storage facility in Ottawa',
         planningTitle: 'Before arranging storage',
         planningIntro: 'There are several details worth confirming:',
         usefulInfoTitle: 'Details worth confirming:',

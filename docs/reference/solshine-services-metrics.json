@@ -1,0 +1,180 @@
+{
+  "vp_1840": {
+    "banner": {
+      "rect": {},
+      "height": "550px",
+      "padding": "100px 0px 0px",
+      "bg": "rgba(0, 0, 0, 0)"
+    },
+    "h1": {
+      "text": "Cleaning services",
+      "fontSize": "65px",
+      "lineHeight": "70px",
+      "fontWeight": "500",
+      "color": "rgb(255, 255, 255)",
+      "textAlign": "center",
+      "rect": {}
+    },
+    "breadcrumb": {
+      "text": "Home",
+      "rect": {},
+      "style": {
+        "fontSize": "12px",
+        "padding": "0px",
+        "borderRadius": "0px",
+        "bg": "rgba(0, 0, 0, 0)"
+      }
+    },
+    "twoColContainer": {
+      "rect": null,
+      "width": null,
+      "maxWidth": null,
+      "gap": null,
+      "padding": null
+    },
+    "sidebar": {
+      "rect": null,
+      "width": null,
+      "padding": null,
+      "bg": null,
+      "borderRadius": null,
+      "rows": []
+    },
+    "mainContent": {
+      "rect": {},
+      "width": "957.891px",
+      "h2": {
+        "text": "Smart solar panel cleaning for higher efficiency and long-term savings",
+        "fontSize": "58px",
+        "lineHeight": "70px",
+        "fontWeight": "500"
+      },
+      "images": [
+        {
+          "src": "https://framerusercontent.com/images/JVUMbFm3aewqZiVAl7BKDSdJZM.svg?width=330&height=183",
+          "width": 330,
+          "height": 182.984375,
+          "borderRadius": "0px"
+        },
+        {
+          "src": "https://framerusercontent.com/images/QBaiYgFmIoiUcbKsCfqVAF9VbEQ.png?width=1592&height=1796",
+          "width": 398,
+          "height": 449,
+          "borderRadius": "15px"
+        },
+        {
+          "src": "https://framerusercontent.com/images/hfvyDsPac58Ly9ncUeTa4m97wM.jpg?width=8192&height=5464",
+          "width": 957.890625,
+          "height": 392.390625,
+          "borderRadius": "50px"
+        },
+        {
+          "src": "https://framerusercontent.com/images/c47adjcgXMd76JeyAxU3USn90A.png?width=829&height=550",
+          "width": 468.9375,
+          "height": 298,
+          "borderRadius": "50px"
+        },
+        {
+          "src": "https://framerusercontent.com/images/hfvyDsPac58Ly9ncUeTa4m97wM.jpg?width=8192&height=5464",
+          "width": 468.953125,
+          "height": 298,
+          "borderRadius": "50px"
+        }
+      ]
+    },
+    "header": {
+      "rect": {},
+      "height": "86px",
+      "position": "relative"
+    }
+  },
+  "vp_1440": {
+    "banner": {
+      "rect": {},
+      "height": "550px",
+      "padding": "100px 0px 0px",
+      "bg": "rgba(0, 0, 0, 0)"
+    },
+    "h1": {
+      "text": "Cleaning services",
+      "fontSize": "65px",
+      "lineHeight": "70px",
+      "fontWeight": "500",
+      "color": "rgb(255, 255, 255)",
+      "textAlign": "center",
+      "rect": {}
+    },
+    "breadcrumb": {
+      "text": "Home",
+      "rect": {},
+      "style": {
+        "fontSize": "12px",
+        "padding": "0px",
+        "borderRadius": "0px",
+        "bg": "rgba(0, 0, 0, 0)"
+      }
+    },
+    "twoColContainer": {
+      "rect": null,
+      "width": null,
+      "maxWidth": null,
+      "gap": null,
+      "padding": null
+    },
+    "sidebar": {
+      "rect": null,
+      "width": null,
+      "padding": null,
+      "bg": null,
+      "borderRadius": null,
+      "rows": []
+    },
+    "mainContent": {
+      "rect": {},
+      "width": "930.531px",
+      "h2": {
+        "text": "Smart solar panel cleaning for higher efficiency and long-term savings",
+        "fontSize": "58px",
+        "lineHeight": "70px",
+        "fontWeight": "500"
+      },
+      "images": [
+        {
+          "src": "https://framerusercontent.com/images/JVUMbFm3aewqZiVAl7BKDSdJZM.svg?width=330&height=183",
+          "width": 330,
+          "height": 182.984375,
+          "borderRadius": "0px"
+        },
+        {
+          "src": "https://framerusercontent.com/images/QBaiYgFmIoiUcbKsCfqVAF9VbEQ.png?width=1592&height=1796",
+          "width": 398,
+          "height": 449,
+          "borderRadius": "15px"
+        },
+        {
+          "src": "https://framerusercontent.com/images/hfvyDsPac58Ly9ncUeTa4m97wM.jpg?width=8192&height=5464",
+          "width": 930.53125,
+          "height": 381.1875,
+          "borderRadius": "50px"
+        },
+        {
+          "src": "https://framerusercontent.com/images/c47adjcgXMd76JeyAxU3USn90A.png?width=829&height=550",
+          "width": 455.265625,
+          "height": 298,
+          "borderRadius": "50px"
+        },
+        {
+          "src": "https://framerusercontent.com/images/hfvyDsPac58Ly9ncUeTa4m97wM.jpg?width=8192&height=5464",
+          "width": 455.265625,
+          "height": 298,
+          "borderRadius": "50px"
+        }
+      ]
+    },
+    "header": {
+      "rect": {},
+      "height": "86px",
+      "position": "relative"
+    }
+  }
+}

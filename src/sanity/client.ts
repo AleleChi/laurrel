@@ -220,8 +220,13 @@ export async function getServicesPageData(): Promise<{
   if (client) {
     try {
       const query = `*[_type == "servicesPage"][0]{
-        hero,
-        services,
+        banner,
+        articleIntro,
+        services[]{
+          ...,
+          "imageSrc": image.asset->url,
+          "imageAlt": image.alt
+        },
         gettingStarted,
         faq,
         finalCta
@@ -231,8 +236,32 @@ export async function getServicesPageData(): Promise<{
         return {
           data: {
             meta: siteConfig.servicesPage.meta,
-            hero: res.hero || siteConfig.servicesPage.hero,
-            services: res.services || siteConfig.servicesPage.services,
+            banner: {
+              title: res.banner?.title || siteConfig.servicesPage.banner.title,
+              breadcrumb: siteConfig.servicesPage.banner.breadcrumb,
+              imageSrc: res.banner?.image?.asset?.url || siteConfig.servicesPage.banner.imageSrc,
+              altText: res.banner?.image?.alt || siteConfig.servicesPage.banner.altText,
+            },
+            articleIntro: res.articleIntro || siteConfig.servicesPage.articleIntro,
+            services: (res.services || siteConfig.servicesPage.services).map((s: any, idx: number) => {
+              const fallback = siteConfig.servicesPage.services[idx] || siteConfig.servicesPage.services[0];
+              return {
+                id: s.id || fallback.id,
+                anchor: s.anchor || fallback.anchor,
+                badge: s.badge || fallback.badge,
+                title: s.title || fallback.title,
+                headline: s.headline || fallback.headline,
+                paragraphs: s.paragraphs || fallback.paragraphs,
+                imageSrc: s.imageSrc || fallback.imageSrc,
+                imageAlt: s.imageAlt || fallback.imageAlt,
+                planningTitle: s.planningTitle || fallback.planningTitle,
+                planningIntro: s.planningIntro || fallback.planningIntro,
+                usefulInfoTitle: s.usefulInfoTitle || fallback.usefulInfoTitle,
+                usefulInfo: s.usefulInfo || fallback.usefulInfo,
+                extraNote: s.extraNote || fallback.extraNote,
+                ctaLabel: s.ctaLabel || fallback.ctaLabel,
+              };
+            }),
             gettingStarted: res.gettingStarted || siteConfig.servicesPage.gettingStarted,
             faq: res.faq || siteConfig.servicesPage.faq,
             finalCta: res.finalCta || siteConfig.servicesPage.finalCta,

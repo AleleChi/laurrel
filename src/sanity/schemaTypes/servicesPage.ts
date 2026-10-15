@@ -4,28 +4,29 @@ export const servicesPageSchema = {
   type: 'document',
   fields: [
     {
-      name: 'hero',
-      title: 'Hero / Banner Section',
+      name: 'banner',
+      title: 'Photographic Page Banner',
       type: 'object',
       fields: [
-        { name: 'heading', title: 'Main Heading (H1)', type: 'string', validation: (Rule: any) => Rule.required() },
-        { name: 'subtitle', title: 'Editorial Subtitle', type: 'string', validation: (Rule: any) => Rule.required() },
-        { name: 'intro', title: 'Introduction Text', type: 'text', validation: (Rule: any) => Rule.required() },
+        { name: 'title', title: 'Banner Title (H1)', type: 'string', validation: (Rule: any) => Rule.required() },
         {
-          name: 'primaryCta',
-          title: 'Primary CTA Button',
-          type: 'object',
-          fields: [{ name: 'label', title: 'Label', type: 'string' }],
+          name: 'image',
+          title: 'Banner Background Photograph',
+          type: 'image',
+          options: { hotspot: true },
+          fields: [{ name: 'alt', title: 'Alternative Text', type: 'string' }],
         },
-        {
-          name: 'secondaryCta',
-          title: 'Secondary CTA Button',
-          type: 'object',
-          fields: [
-            { name: 'label', title: 'Label', type: 'string' },
-            { name: 'href', title: 'Destination Anchor', type: 'string' },
-          ],
-        },
+        { name: 'breadcrumbLabel', title: 'Breadcrumb Label', type: 'string' },
+      ],
+    },
+    {
+      name: 'articleIntro',
+      title: 'Main Article Introduction',
+      type: 'object',
+      fields: [
+        { name: 'h2', title: 'Main Editorial H2', type: 'string', validation: (Rule: any) => Rule.required() },
+        { name: 'paragraph1', title: 'Paragraph 1', type: 'text', validation: (Rule: any) => Rule.required() },
+        { name: 'paragraph2', title: 'Paragraph 2', type: 'text', validation: (Rule: any) => Rule.required() },
       ],
     },
     {
@@ -40,7 +41,14 @@ export const servicesPageSchema = {
             { name: 'anchor', title: 'Anchor Slug', type: 'string' },
             { name: 'badge', title: 'Eyebrow Badge', type: 'string' },
             { name: 'title', title: 'Service Title', type: 'string' },
-            { name: 'headline', title: 'Service Headline', type: 'string' },
+            { name: 'headline', title: 'Service Headline (H2)', type: 'string' },
+            {
+              name: 'image',
+              title: 'Service Horizontal Photograph',
+              type: 'image',
+              options: { hotspot: true },
+              fields: [{ name: 'alt', title: 'Alternative Text', type: 'string' }],
+            },
             { name: 'paragraphs', title: 'Descriptive Paragraphs', type: 'array', of: [{ type: 'text' }] },
             { name: 'planningTitle', title: 'Planning Subsection Title', type: 'string' },
             { name: 'planningIntro', title: 'Planning Subsection Intro', type: 'text' },
