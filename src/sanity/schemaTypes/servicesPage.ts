@@ -118,5 +118,25 @@ export const servicesPageSchema = {
         { name: 'ctaLabel', title: 'CTA Label', type: 'string' },
       ],
     },
+    {
+      name: 'sidebarForm',
+      title: 'Sidebar Enquiry Form',
+      type: 'object',
+      fields: [
+        { name: 'heading', title: 'Form Heading', type: 'string' },
+        { name: 'supportingText', title: 'Supporting Text', type: 'text' },
+        { name: 'submitButtonText', title: 'Submit Button Label', type: 'string' },
+      ],
+    },
+    {
+      name: 'sidebarInfoPanel',
+      title: 'Sidebar Lime Information Panel',
+      type: 'object',
+      fields: [
+        { name: 'heading', title: 'Panel Heading', type: 'string' },
+        { name: 'body', title: 'Body Copy', type: 'text' },
+        { name: 'ctaText', title: 'CTA Button Text', type: 'string' },
+      ],
+    },
   ],
 };

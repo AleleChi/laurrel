@@ -215,6 +215,16 @@ export interface ServicesPageConfig {
     body: string;
     ctaLabel: string;
   };
+  sidebarForm: {
+    heading: string;
+    supportingText: string;
+    submitButtonText: string;
+  };
+  sidebarInfoPanel: {
+    heading: string;
+    body: string;
+    ctaText: string;
+  };
 }
 
 export interface SiteConfig {
@@ -744,6 +754,18 @@ export const siteConfig: SiteConfig = {
       body:
         'A cleaning job, a moving date or storage between addresses. Tell us about your plans and the service you need.',
       ctaLabel: 'Request a Quote',
+    },
+    sidebarForm: {
+      heading: 'Tell us what you need.',
+      supportingText:
+        "Share a few details about the service you're planning, and we'll review your enquiry.",
+      submitButtonText: 'Send Enquiry',
+    },
+    sidebarInfoPanel: {
+      heading: 'Planning more than one service?',
+      body:
+        "Moving out, cleaning a property or arranging storage between addresses? Tell us which services you need and the dates you're working with.",
+      ctaText: 'Request a Quote',
     },
   },
 };

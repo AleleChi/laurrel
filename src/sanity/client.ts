@@ -229,7 +229,9 @@ export async function getServicesPageData(): Promise<{
         },
         gettingStarted,
         faq,
-        finalCta
+        finalCta,
+        sidebarForm,
+        sidebarInfoPanel
       }`;
       const res = await client.fetch(query, {}, { next: { revalidate: 60 } });
       if (res) {
@@ -265,6 +267,8 @@ export async function getServicesPageData(): Promise<{
             gettingStarted: res.gettingStarted || siteConfig.servicesPage.gettingStarted,
             faq: res.faq || siteConfig.servicesPage.faq,
             finalCta: res.finalCta || siteConfig.servicesPage.finalCta,
+            sidebarForm: res.sidebarForm || siteConfig.servicesPage.sidebarForm,
+            sidebarInfoPanel: res.sidebarInfoPanel || siteConfig.servicesPage.sidebarInfoPanel,
           },
           source: 'sanity',
         };
