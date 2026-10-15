@@ -14,7 +14,7 @@ services:
     name: laurrel-backend-api
     runtime: node
     rootDir: backend
-    buildCommand: npm install && npm run build
+    buildCommand: npm ci --include=dev && npm run build
     startCommand: npm run start
     plan: starter # $7/month (or 'free' for staging evaluation)
     healthCheckPath: /health
