@@ -52,19 +52,24 @@ function processLocalGroundedResponse(
     };
   }
 
-  // 3. Pricing & Rates questions
-  if (text.includes('price') || text.includes('cost') || text.includes('rate') || text.includes('how much') || text.includes('quote')) {
+  // 3. Pricing & Rates questions (when no service enquiry is active yet)
+  if (
+    (text.includes('price') || text.includes('cost') || text.includes('rate') || text.includes('how much') || text.includes('quote')) &&
+    draft.services.length === 0
+  ) {
     return {
       reply:
-        'Laurrel Services does not publish generic flat rates because every home, office, and transition in Ottawa is different. We calculate clear, transparent quotes based on the size of the property, specific requirements, and schedule. Would you like to provide a few details so we can prepare an accurate quote for you?',
+        'I can help you request a quote. Which service do you need: cleaning, moving, storage, or a combination?',
       suggestedActions: [
-        { label: 'Start a quote here', action: 'start_quote' },
-        { label: 'Cleaning details', action: 'suggest_query', payload: 'What is included in cleaning?' },
-        { label: 'Moving details', action: 'suggest_query', payload: 'How does moving coordination work?' },
+        { label: 'Cleaning', action: 'suggest_query', payload: 'I need cleaning' },
+        { label: 'Moving', action: 'suggest_query', payload: 'I need moving' },
+        { label: 'Storage', action: 'suggest_query', payload: 'I need transitional storage' },
+        { label: 'Combined services', action: 'suggest_query', payload: 'I need combined services' },
       ],
       draft,
     };
   }
+
 
   // 4. Service Region questions
   if (text.includes('area') || text.includes('region') || text.includes('where') || text.includes('location') || text.includes('toronto') || text.includes('montreal')) {
@@ -83,43 +88,40 @@ function processLocalGroundedResponse(
     };
   }
 
-  // 5. Cleaning questions
-  if (text.includes('clean') && !text.includes('quote') && !text.includes('book')) {
+  // 5. Cleaning questions (informational overview when no enquiry in progress)
+  if (draft.services.length === 0 && text.includes('clean') && !text.includes('quote') && !text.includes('book')) {
     return {
       reply:
         'Our cleaning services in Ottawa focus on practical space preparation: move-in, move-out handovers, tenancy transitions, and office cleaning. We focus on the rooms, condition, and key dates rather than rigid generic packages.\n\nYou can explore our [Cleaning Services](/services#cleaning) overview or let me know what type of space you are preparing.',
       suggestedActions: [
-        { label: 'Move-out handover clean', action: 'suggest_query', payload: 'I need a move-out clean' },
-        { label: 'Move-in preparation', action: 'suggest_query', payload: 'I need a move-in clean' },
         { label: 'Request a cleaning quote', action: 'start_quote' },
+        { label: 'Move-out handover clean', action: 'suggest_query', payload: 'I need a move-out clean' },
       ],
       draft,
     };
   }
 
-  // 6. Moving questions
-  if (text.includes('mov') && !text.includes('quote') && !text.includes('book')) {
+  // 6. Moving questions (informational overview when no enquiry in progress)
+  if (draft.services.length === 0 && text.includes('mov') && !text.includes('quote') && !text.includes('book')) {
     return {
       reply:
         'Laurrel Services coordinates local residential and office moves throughout Ottawa. We manage vehicle capacity, crew allocation, and building access details like elevators and loading zones.\n\nYou can review our [Moving Services](/services#moving) details or tell me where in Ottawa you are moving.',
       suggestedActions: [
-        { label: 'Moving within Ottawa', action: 'suggest_query', payload: 'Moving within Ottawa' },
-        { label: 'Combine move with storage', action: 'suggest_query', payload: 'Can I store items during my move?' },
         { label: 'Get a moving estimate', action: 'start_quote' },
+        { label: 'Moving within Ottawa', action: 'suggest_query', payload: 'Moving within Ottawa' },
       ],
       draft,
     };
   }
 
-  // 7. Storage questions
-  if (text.includes('stor') && !text.includes('quote')) {
+  // 7. Storage questions (informational overview when no enquiry in progress)
+  if (draft.services.length === 0 && text.includes('stor') && !text.includes('quote')) {
     return {
       reply:
         'Our storage service provides transitional holding between moving dates or during home renovations in Ottawa. If your move-out and move-in dates don’t line up, we coordinate safe holding so your belongings stay protected.\n\nLearn more about our [Transitional Storage](/services#storage) options or tell me what timeframe you have in mind.',
       suggestedActions: [
-        { label: 'A few days to weeks', action: 'suggest_query', payload: 'I need short-term transitional storage' },
-        { label: 'One month or longer', action: 'suggest_query', payload: 'I need storage for a month or more' },
         { label: 'Request storage quote', action: 'start_quote' },
+        { label: 'Short-term holding', action: 'suggest_query', payload: 'I need short-term transitional storage' },
       ],
       draft,
     };
@@ -207,7 +209,13 @@ function processLocalGroundedResponse(
       text.match(/\b\d{1,2}\b/) ||
       (text.length >= 3 && !text.includes('clean') && !text.includes('mov') && !text.includes('human'))
     ) {
-      draft.preferredDate = userMessage.replace(/^timing:\s*/i, '');
+      const parts = userMessage.split(/[,;\n]/);
+      if (parts.length > 1 && !draft.details) {
+        draft.preferredDate = parts[0].trim();
+        draft.details = parts.slice(1).join(', ').trim();
+      } else {
+        draft.preferredDate = userMessage.replace(/^timing:\s*/i, '').trim();
+      }
     } else {
       return {
         reply: `Thanks. What date or timeframe do you have in mind for your ${draft.services.join(' & ')} in ${draft.serviceLocation}?`,
