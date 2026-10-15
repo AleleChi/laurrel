@@ -243,6 +243,53 @@ async function run() {
       console.log(`Saved: ${mobileHomeContactPath}`);
     }
 
+    // ========================================================
+    // 6. TABLET VIEWPORT (768PX)
+    // ========================================================
+    console.log('📸 6. Verifying Tablet 768px Experiences...');
+    await page.setViewport({ width: 768, height: 1024, deviceScaleFactor: 2 });
+
+    // Tablet Featured Section
+    await page.goto('http://localhost:3000', { waitUntil: 'domcontentloaded' });
+    await new Promise(r => setTimeout(r, 500));
+    await page.evaluate(() => {
+      const el = document.getElementById('when-plans-overlap');
+      if (el) {
+        const top = el.getBoundingClientRect().top + window.pageYOffset - 100;
+        window.scrollTo({ top, behavior: 'instant' });
+      }
+    });
+    await new Promise(r => setTimeout(r, 400));
+    const tabletFeatureEl = await page.$('#when-plans-overlap');
+    if (tabletFeatureEl) {
+      const tabletFeaturePath = path.join(outDir, 'tablet_featured_section_768.png');
+      await tabletFeatureEl.screenshot({ path: tabletFeaturePath });
+      console.log(`Saved: ${tabletFeaturePath}`);
+    }
+
+    // Tablet Homepage Contact Section
+    await page.evaluate(() => {
+      const el = document.getElementById('contact');
+      if (el) {
+        const top = el.getBoundingClientRect().top + window.pageYOffset - 100;
+        window.scrollTo({ top, behavior: 'instant' });
+      }
+    });
+    await new Promise(r => setTimeout(r, 400));
+    const tabletHomeContactEl = await page.$('#contact');
+    if (tabletHomeContactEl) {
+      const tabletHomeContactPath = path.join(outDir, 'tablet_homepage_contact_section_768.png');
+      await tabletHomeContactEl.screenshot({ path: tabletHomeContactPath });
+      console.log(`Saved: ${tabletHomeContactPath}`);
+    }
+
+    // Tablet Contact Page
+    await page.goto('http://localhost:3000/contact', { waitUntil: 'domcontentloaded' });
+    await new Promise(r => setTimeout(r, 500));
+    const tabletContactPath = path.join(outDir, 'tablet_contact_page_768_full.png');
+    await page.screenshot({ path: tabletContactPath, fullPage: true });
+    console.log(`Saved: ${tabletContactPath}`);
+
     // Mirror to brain artifact directory
     const artifactDir = path.join('C:', 'Users', 'alele', '.gemini', 'antigravity', 'brain', 'ae662322-3343-457e-82db-f6eb7bfa8b39');
     if (fs.existsSync(artifactDir)) {
