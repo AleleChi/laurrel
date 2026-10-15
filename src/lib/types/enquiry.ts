@@ -4,7 +4,8 @@ export type EnquiryIntent =
   | 'general_contact'
   | 'quote_request'
   | 'service_sidebar'
-  | 'ai_assisted_enquiry';
+  | 'ai_assisted_enquiry'
+  | 'human_handoff';
 
 export type EnquiryStatus =
   | 'new'

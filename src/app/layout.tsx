@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Manrope } from 'next/font/google';
 import './globals.css';
 import { siteConfig } from '@/content/site';
+import { LaurrelAssistantLauncher } from '@/components/assistant';
 
 const manrope = Manrope({
   subsets: ['latin'],
@@ -34,6 +35,7 @@ export default function RootLayout({
     <html lang="en-CA" className={manrope.variable}>
       <body className="font-sans antialiased bg-[#F8F7F4] text-[#202024] selection:bg-[#390044] selection:text-white">
         {children}
+        <LaurrelAssistantLauncher />
       </body>
     </html>
   );
