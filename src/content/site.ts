@@ -227,6 +227,52 @@ export interface ServicesPageConfig {
   };
 }
 
+export interface OverlappingPlansSituation {
+  id: string;
+  title: string;
+  description: string;
+  imageSrc: string;
+  imageAlt: string;
+}
+
+export interface OverlappingPlansConfig {
+  eyebrow: string;
+  headline: string;
+  intro: string;
+  situations: OverlappingPlansSituation[];
+  cta: {
+    label: string;
+  };
+}
+
+export interface RequestQuoteSectionConfig {
+  eyebrow: string;
+  headline: string;
+  body: string;
+  primaryCta: {
+    label: string;
+  };
+  secondaryLink: {
+    label: string;
+    href: string;
+  };
+}
+
+export interface HomeFaqItem {
+  question: string;
+  answer: string;
+}
+
+export interface HomeFaqConfig {
+  eyebrow: string;
+  headline: string;
+  items: HomeFaqItem[];
+  moreLink: {
+    label: string;
+    href: string;
+  };
+}
+
 export interface SiteConfig {
   companyName: string;
   tagline: string;
@@ -278,6 +324,9 @@ export interface SiteConfig {
   aboutPage: AboutPageConfig;
   servicesHighlight: ServicesHighlightConfig;
   servicesPage: ServicesPageConfig;
+  overlappingPlans: OverlappingPlansConfig;
+  requestQuoteSection: RequestQuoteSectionConfig;
+  homeFaq: HomeFaqConfig;
 }
 
 export const siteConfig: SiteConfig = {
@@ -766,6 +815,84 @@ export const siteConfig: SiteConfig = {
       body:
         "Moving out, cleaning a property or arranging storage between addresses? Tell us which services you need and the dates you're working with.",
       ctaText: 'Request a Quote',
+    },
+  },
+  overlappingPlans: {
+    eyebrow: 'WHEN PLANS OVERLAP',
+    headline: 'One property to leave. Another not quite ready.',
+    intro:
+      "Moving dates don't always line up. You may have to clear one property before the next is available, or arrange a final clean after the furniture has gone. Sometimes there's a gap when your belongings need somewhere to stay.\n\nTell us how your dates line up and what needs doing. Laurrel Services can review your cleaning, moving and storage requirements as part of the same enquiry.",
+    situations: [
+      {
+        id: 'handing-back-keys',
+        title: 'Handing back the keys',
+        description:
+          "Once the furniture is out, there's often cleaning to finish before the property is handed over. Include your handover date when enquiring.",
+        imageSrc: '/assets/videos/cleaning-poster.jpg',
+        imageAlt: 'Laurrel Services cleaning professional preparing an apartment interior in Ottawa for key handover',
+      },
+      {
+        id: 'between-addresses',
+        title: 'Between two addresses',
+        description:
+          'Your belongings may need somewhere to stay between moving out and moving in. Tell us the dates and what needs storing so the available arrangements can be discussed.',
+        imageSrc: '/assets/videos/storage-poster.jpg',
+        imageAlt: 'Laurrel Services secure storage arrangement for belongings between move-out and move-in dates',
+      },
+      {
+        id: 'making-room-renovations',
+        title: 'Making room for renovations',
+        description:
+          'Furniture may need to be moved or stored while work takes place. Cleaning may also be required afterwards. Let us know which parts of the job you need.',
+        imageSrc: '/assets/videos/moving-poster.jpg',
+        imageAlt: 'Laurrel Services moving team carefully relocating furniture to make room for home renovations in Ottawa',
+      },
+    ],
+    cta: {
+      label: 'Discuss Your Plans',
+    },
+  },
+  requestQuoteSection: {
+    eyebrow: 'GET STARTED',
+    headline: 'Tell us what needs doing.',
+    body:
+      'Choose the service you need and tell us where the work will take place, your preferred date and any details that may affect the job.\n\nYou can request cleaning, moving or storage individually, or include several requirements in one enquiry.',
+    primaryCta: {
+      label: 'Request a Quote',
+    },
+    secondaryLink: {
+      label: 'Explore Service Details',
+      href: '/services',
+    },
+  },
+  homeFaq: {
+    eyebrow: 'GOOD TO KNOW',
+    headline: 'A few answers before you get started.',
+    items: [
+      {
+        question: 'Do I need to request all three services?',
+        answer:
+          'No. You can enquire about cleaning, moving or storage on its own. If you need more than one, include the requirements in the same request.',
+      },
+      {
+        question: 'What should I have ready when requesting a quote?',
+        answer:
+          'A short description of the job, the location and your preferred date are a good starting point. For moving or storage, include an approximate description of the belongings involved.',
+      },
+      {
+        question: 'What if my move-out and move-in dates are different?',
+        answer:
+          'Include both dates and explain what needs to happen in between. If storage is required, mention what needs storing and for how long. Availability and arrangements will need to be confirmed.',
+      },
+      {
+        question: 'Can I request a service outside central Ottawa?',
+        answer:
+          'Include the service address or postal code in your enquiry. Laurrel can confirm whether the requested service is available in that location.',
+      },
+    ],
+    moreLink: {
+      label: 'More About Our Services',
+      href: '/services',
     },
   },
 };
