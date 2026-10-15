@@ -1,30 +1,82 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
-import { ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
-import { siteConfig, OverlappingPlansConfig } from '@/content/site';
+import {
+  ArrowRight,
+  ChevronLeft,
+  ChevronRight,
+  Sparkles,
+  Layers,
+  X,
+  CheckCircle2,
+  Calendar,
+} from 'lucide-react';
+import { siteConfig, OverlappingPlansConfig, OverlappingPlansSituation } from '@/content/site';
 
 interface WhenPlansOverlapSectionProps {
   content?: OverlappingPlansConfig;
-  onOpenQuote?: () => void;
+  onOpenQuote?: (services?: ('cleaning' | 'moving' | 'storage')[]) => void;
 }
 
 export const WhenPlansOverlapSection: React.FC<WhenPlansOverlapSectionProps> = ({
   content = siteConfig.overlappingPlans,
   onOpenQuote,
 }) => {
-  const [activeIndex, setActiveIndex] = useState(0);
-  const sliderRef = useRef<HTMLDivElement>(null);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [isTransitioning, setIsTransitioning] = useState(false);
+  const [detailModalOpen, setDetailModalOpen] = useState(false);
 
   const situations = content.situations;
+  const current = situations[currentIndex] || situations[0];
+
+  const handleSelectIndex = (newIndex: number) => {
+    if (newIndex === currentIndex || isTransitioning) return;
+    setIsTransitioning(true);
+    setTimeout(() => {
+      setCurrentIndex(newIndex);
+      setIsTransitioning(false);
+    }, 200);
+  };
 
   const handlePrev = () => {
-    setActiveIndex((prev) => (prev === 0 ? situations.length - 1 : prev - 1));
+    const nextIdx = currentIndex === 0 ? situations.length - 1 : currentIndex - 1;
+    handleSelectIndex(nextIdx);
   };
 
   const handleNext = () => {
-    setActiveIndex((prev) => (prev === situations.length - 1 ? 0 : prev + 1));
+    const nextIdx = currentIndex === situations.length - 1 ? 0 : currentIndex + 1;
+    handleSelectIndex(nextIdx);
+  };
+
+  // Close detail modal on Escape key
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && detailModalOpen) {
+        setDetailModalOpen(false);
+      }
+    };
+    if (detailModalOpen) {
+      document.body.style.overflow = 'hidden';
+      window.addEventListener('keydown', handleKeyDown);
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [detailModalOpen]);
+
+  const handleOpenDetailModal = () => {
+    setDetailModalOpen(true);
+  };
+
+  const handleQuoteFromDetail = () => {
+    setDetailModalOpen(false);
+    if (onOpenQuote) {
+      onOpenQuote(current.preselectedServices);
+    }
   };
 
   return (
@@ -34,7 +86,6 @@ export const WhenPlansOverlapSection: React.FC<WhenPlansOverlapSectionProps> = (
       className="w-full py-20 lg:py-28 px-6 sm:px-8 lg:px-12 xl:px-16 bg-[#F8F7F4] border-t border-[#202024]/8"
     >
       <div className="max-w-[1400px] xl:max-w-[1440px] 2xl:max-w-[1560px] mx-auto">
-        
         {/* Section Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 sm:mb-16 gap-8">
           <div className="max-w-3xl">
@@ -47,14 +98,14 @@ export const WhenPlansOverlapSection: React.FC<WhenPlansOverlapSectionProps> = (
             >
               {content.headline}
             </h2>
-            <div className="space-y-4 text-base sm:text-lg text-[#202024]/85 leading-relaxed font-normal">
+            <div className="space-y-3 text-base sm:text-lg text-[#202024]/85 leading-relaxed font-normal">
               {content.intro.split('\n\n').map((paragraph, idx) => (
                 <p key={idx}>{paragraph}</p>
               ))}
             </div>
           </div>
 
-          {/* Slider Arrow Controls (Desktop / Tablet) */}
+          {/* Navigation Controls on Desktop Header */}
           <div className="hidden sm:flex items-center gap-3 flex-shrink-0 mb-2">
             <button
               onClick={handlePrev}
@@ -73,86 +124,213 @@ export const WhenPlansOverlapSection: React.FC<WhenPlansOverlapSectionProps> = (
           </div>
         </div>
 
-        {/* Featured Situations Photographic Slider / Grid */}
-        <div
-          ref={sliderRef}
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 mb-12 sm:mb-16"
-        >
-          {situations.map((item, idx) => {
-            const isFeatured = idx === activeIndex;
-            return (
-              <div
-                key={item.id}
-                onMouseEnter={() => setActiveIndex(idx)}
-                className={`group flex flex-col rounded-[32px] sm:rounded-[36px] overflow-hidden bg-white border transition-all duration-300 shadow-xs hover:shadow-md ${
-                  isFeatured
-                    ? 'border-[#390044]/30 ring-1 ring-[#390044]/15'
-                    : 'border-[#202024]/10 hover:border-[#202024]/20'
-                }`}
-              >
-                {/* Horizontal / Card Photograph */}
-                <div className="relative w-full aspect-[16/11] overflow-hidden bg-[#202024]/5">
-                  <Image
-                    src={item.imageSrc}
-                    alt={item.imageAlt}
-                    fill
-                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 450px"
-                    className="object-cover object-center transition-transform duration-500 ease-out group-hover:scale-104"
-                  />
-                  <div className="absolute top-4 left-4">
-                    <span className="px-3.5 py-1.5 rounded-full text-xs font-semibold bg-[#F8F7F4]/90 backdrop-blur-md text-[#18181B] shadow-2xs">
-                      Situation 0{idx + 1}
-                    </span>
-                  </div>
+        {/* Featured Editorial Showcase: Single Photograph (Left 60-62%) + Lime Panel (Right 38-40%) */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-7 items-stretch">
+          
+          {/* Left Column: Substantial Photograph (~60% desktop width) */}
+          <div className="lg:col-span-7 relative min-h-[360px] sm:min-h-[460px] lg:min-h-[520px] rounded-[24px] sm:rounded-[26px] overflow-hidden bg-[#202024]/5 border border-[#202024]/8 shadow-sm">
+            <div
+              className={`relative w-full h-full transition-opacity duration-500 ease-out ${
+                isTransitioning ? 'opacity-40' : 'opacity-100'
+              }`}
+            >
+              <Image
+                src={current.imageSrc}
+                alt={current.imageAlt}
+                fill
+                priority
+                sizes="(max-width: 1024px) 100vw, 62vw"
+                className="object-cover object-center"
+              />
+            </div>
+          </div>
+
+          {/* Right Column: Lime Content Panel (~40% desktop width) */}
+          <div
+            className={`lg:col-span-5 bg-[#C8E80B] text-[#18181B] rounded-[24px] sm:rounded-[26px] p-8 sm:p-10 lg:p-11 border border-[#202024]/8 shadow-sm flex flex-col justify-between transition-opacity duration-500 ease-out ${
+              isTransitioning ? 'opacity-40' : 'opacity-100'
+            }`}
+          >
+            {/* Top Section */}
+            <div>
+              {/* Header inside Lime card: linear vector illustration + State Indicator */}
+              <div className="flex items-center justify-between mb-6">
+                <div className="w-11 h-11 rounded-2xl bg-[#18181B] text-[#C8E80B] flex items-center justify-center shadow-xs">
+                  <Layers className="w-5 h-5 text-[#C8E80B]" />
                 </div>
-
-                {/* Situation Content */}
-                <div className="p-7 sm:p-8 flex flex-col justify-between flex-1">
-                  <div>
-                    <h3 className="text-xl sm:text-2xl font-semibold text-[#18181B] tracking-tight mb-3">
-                      {item.title}
-                    </h3>
-                    <p className="text-sm sm:text-[15px] text-[#202024]/80 leading-relaxed font-normal">
-                      {item.description}
-                    </p>
-                  </div>
-
-                  <div className="pt-6 mt-6 border-t border-[#202024]/8 flex items-center justify-between text-xs font-semibold text-[#390044]">
-                    <span>Ottawa coordinated service</span>
-                    <ArrowRight className="w-4 h-4 text-[#390044] transition-transform duration-200 group-hover:translate-x-1" />
-                  </div>
+                <div className="flex items-center gap-1.5 text-xs font-bold tracking-wider text-[#18181B]/80 uppercase">
+                  <span>0{currentIndex + 1}</span>
+                  <span>/</span>
+                  <span>0{situations.length}</span>
                 </div>
               </div>
-            );
-          })}
-        </div>
 
-        {/* Mobile Dot Indicators */}
-        <div className="flex sm:hidden items-center justify-center gap-2 mb-10">
-          {situations.map((_, idx) => (
-            <button
-              key={idx}
-              onClick={() => setActiveIndex(idx)}
-              aria-label={`Go to slide ${idx + 1}`}
-              className={`h-2 rounded-full transition-all ${
-                idx === activeIndex ? 'w-7 bg-[#18181B]' : 'w-2 bg-[#202024]/20'
-              }`}
-            />
-          ))}
-        </div>
+              {/* Title */}
+              <h3 className="text-2xl sm:text-3xl lg:text-[34px] font-bold text-[#18181B] tracking-tight leading-[1.18] mb-4">
+                {current.title}
+              </h3>
 
-        {/* Section Action CTA */}
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 text-center">
-          <button
-            onClick={onOpenQuote}
-            className="inline-flex items-center gap-3 bg-[#18181B] hover:bg-[#390044] text-white px-8 py-4 rounded-full font-medium text-base transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#18181B] shadow-sm cursor-pointer"
-          >
-            <span>{content.cta.label}</span>
-            <ArrowRight className="w-4 h-4 text-white" />
-          </button>
-        </div>
+              {/* Description */}
+              <p className="text-sm sm:text-base lg:text-[17px] text-[#18181B]/85 leading-relaxed font-normal mb-6">
+                {current.description}
+              </p>
 
+              {/* Related Services */}
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-black/10 text-xs font-semibold text-[#18181B] mb-8">
+                <span>Related: {current.relatedServicesText}</span>
+              </div>
+            </div>
+
+            {/* Bottom Actions & Situation Switching */}
+            <div className="pt-6 border-t border-[#18181B]/15">
+              <div className="flex flex-wrap items-center gap-3 mb-6">
+                {/* View Details CTA with inner white arrow circle */}
+                <button
+                  type="button"
+                  onClick={handleOpenDetailModal}
+                  className="group inline-flex items-center gap-3 bg-[#18181B] hover:bg-[#390044] text-white pl-6 pr-2.5 py-2.5 rounded-full font-medium text-sm sm:text-base transition-colors duration-200 cursor-pointer shadow-xs focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#18181B]"
+                >
+                  <span>View Details</span>
+                  <div className="w-8 h-8 rounded-full bg-white text-[#18181B] flex items-center justify-center transition-transform group-hover:translate-x-0.5">
+                    <ArrowRight className="w-4 h-4 text-[#18181B]" />
+                  </div>
+                </button>
+
+                {/* Request a Quote Button */}
+                <button
+                  type="button"
+                  onClick={() => onOpenQuote && onOpenQuote(current.preselectedServices)}
+                  className="inline-flex items-center justify-center bg-white/85 hover:bg-white text-[#18181B] px-5 py-3 rounded-full font-medium text-sm sm:text-base transition-colors duration-200 cursor-pointer shadow-2xs focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#18181B]"
+                >
+                  <span>Request a Quote</span>
+                </button>
+              </div>
+
+              {/* Situation Switcher Tabs / Dots */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  {situations.map((sit, idx) => (
+                    <button
+                      key={sit.id}
+                      onClick={() => handleSelectIndex(idx)}
+                      aria-label={`Switch to ${sit.title}`}
+                      className={`h-2.5 rounded-full transition-all duration-300 cursor-pointer ${
+                        idx === currentIndex ? 'w-8 bg-[#18181B]' : 'w-2.5 bg-[#18181B]/30 hover:bg-[#18181B]/50'
+                      }`}
+                    />
+                  ))}
+                </div>
+
+                {/* Mobile / Compact Next/Prev buttons */}
+                <div className="flex sm:hidden items-center gap-2">
+                  <button
+                    onClick={handlePrev}
+                    aria-label="Previous situation"
+                    className="w-9 h-9 rounded-full bg-white/80 hover:bg-white text-[#18181B] flex items-center justify-center transition-colors cursor-pointer"
+                  >
+                    <ChevronLeft className="w-4 h-4 text-[#18181B]" />
+                  </button>
+                  <button
+                    onClick={handleNext}
+                    aria-label="Next situation"
+                    className="w-9 h-9 rounded-full bg-white/80 hover:bg-white text-[#18181B] flex items-center justify-center transition-colors cursor-pointer"
+                  >
+                    <ChevronRight className="w-4 h-4 text-[#18181B]" />
+                  </button>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
       </div>
+
+      {/* Accessible Situation Detail Modal */}
+      {detailModalOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-[#202024]/60 backdrop-blur-sm p-4 sm:p-6"
+          onClick={() => setDetailModalOpen(false)}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="situation-detail-title"
+        >
+          <div
+            className="relative w-full max-w-xl bg-white rounded-[28px] sm:rounded-[32px] p-6 sm:p-8 shadow-2xl border border-[#202024]/10 text-[#202024] animate-in fade-in zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="flex items-start justify-between gap-4 mb-5">
+              <div>
+                <span className="text-xs font-bold tracking-widest uppercase text-[#390044] mb-1.5 block">
+                  SITUATION DETAILS
+                </span>
+                <h3
+                  id="situation-detail-title"
+                  className="text-2xl sm:text-3xl font-semibold text-[#18181B] tracking-tight"
+                >
+                  {current.title}
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setDetailModalOpen(false)}
+                className="w-10 h-10 rounded-full bg-[#F8F7F4] hover:bg-[#EAE8E2] text-[#202024] flex items-center justify-center transition-colors cursor-pointer flex-shrink-0"
+                aria-label="Close dialog"
+              >
+                <X className="w-5 h-5 text-[#202024]" />
+              </button>
+            </div>
+
+            {/* Intro paragraph */}
+            <p className="text-base text-[#202024]/85 leading-relaxed mb-6">
+              {current.details.intro}
+            </p>
+
+            {/* Useful Information checklist */}
+            <div className="mb-6 bg-[#F8F7F4] rounded-2xl p-5 border border-[#202024]/8">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-[#18181B] mb-3">
+                Helpful details to include in your enquiry:
+              </h4>
+              <ul className="space-y-2.5">
+                {current.details.considerations.map((item, idx) => (
+                  <li key={idx} className="flex items-start gap-2.5 text-sm text-[#202024]/85 leading-normal">
+                    <CheckCircle2 className="w-4 h-4 text-[#390044] flex-shrink-0 mt-0.5" />
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Preselected Services */}
+            <div className="flex items-center justify-between mb-8 pb-4 border-b border-[#202024]/10">
+              <span className="text-xs font-medium text-[#202024]/70">Coordinated services:</span>
+              <span className="text-xs font-bold text-[#390044] bg-[#390044]/10 px-3 py-1 rounded-full">
+                {current.relatedServicesText}
+              </span>
+            </div>
+
+            {/* Action Button: Opens Quote Modal with preselection */}
+            <div className="flex flex-col sm:flex-row items-center justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setDetailModalOpen(false)}
+                className="w-full sm:w-auto px-5 py-3 rounded-full text-sm font-medium text-[#202024]/80 hover:bg-[#F2F1ED] transition-colors cursor-pointer text-center"
+              >
+                Close
+              </button>
+              <button
+                type="button"
+                onClick={handleQuoteFromDetail}
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-[#18181B] hover:bg-[#390044] text-white px-7 py-3.5 rounded-full text-sm font-medium transition-colors cursor-pointer shadow-sm"
+              >
+                <span>Request a Quote for this Situation</span>
+                <ArrowRight className="w-4 h-4 text-white" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 };

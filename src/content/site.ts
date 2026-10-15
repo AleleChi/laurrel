@@ -1,7 +1,13 @@
+export interface NavDropdownItem {
+  label: string;
+  href: string;
+}
+
 export interface NavLink {
   label: string;
   href: string;
   isExternal?: boolean;
+  dropdown?: NavDropdownItem[];
 }
 
 export interface TickerItem {
@@ -231,8 +237,14 @@ export interface OverlappingPlansSituation {
   id: string;
   title: string;
   description: string;
+  relatedServicesText: string;
+  preselectedServices: ('cleaning' | 'moving' | 'storage')[];
   imageSrc: string;
   imageAlt: string;
+  details: {
+    intro: string;
+    considerations: string[];
+  };
 }
 
 export interface OverlappingPlansConfig {
@@ -240,7 +252,7 @@ export interface OverlappingPlansConfig {
   headline: string;
   intro: string;
   situations: OverlappingPlansSituation[];
-  cta: {
+  cta?: {
     label: string;
   };
 }
@@ -284,29 +296,24 @@ export interface ContactPageConfig {
     imageSrc: string;
     altText: string;
   };
-  sectionLabel: string;
+  eyebrow: string;
   headline: string;
-  paragraph1: string;
-  paragraph2: string;
-  serviceRegion: string;
-  contactOptionsNotice: string;
+  supportingParagraph: string;
+  serviceRegionTitle: string;
+  serviceRegionDescription: string;
   form: {
     heading: string;
-    subheading: string;
     buttonText: string;
   };
 }
 
 export interface HomeContactConfig {
-  sectionLabel: string;
+  eyebrow: string;
   headline: string;
-  body: string;
-  primaryButton: {
+  paragraph: string;
+  primaryCta: {
     label: string;
     href: string;
-  };
-  secondaryButton: {
-    label: string;
   };
 }
 
@@ -381,10 +388,17 @@ export const siteConfig: SiteConfig = {
   navigation: {
     links: [
       { label: 'Home', href: '/' },
-      { label: 'Cleaning', href: '/#cleaning' },
-      { label: 'Moving', href: '/#moving' },
-      { label: 'Storage', href: '/#storage' },
       { label: 'About', href: '/about' },
+      {
+        label: 'Services',
+        href: '/services',
+        dropdown: [
+          { label: 'All Services', href: '/services' },
+          { label: 'Cleaning', href: '/services#cleaning' },
+          { label: 'Moving', href: '/services#moving' },
+          { label: 'Storage', href: '/services#storage' },
+        ],
+      },
       { label: 'Contact', href: '/contact' },
     ],
     cta: {
@@ -859,38 +873,65 @@ export const siteConfig: SiteConfig = {
   },
   overlappingPlans: {
     eyebrow: 'WHEN PLANS OVERLAP',
-    headline: 'One property to leave. Another not quite ready.',
+    headline: 'When one job depends on another.',
     intro:
-      "Moving dates don't always line up. You may have to clear one property before the next is available, or arrange a final clean after the furniture has gone. Sometimes there's a gap when your belongings need somewhere to stay.\n\nTell us how your dates line up and what needs doing. Laurrel Services can review your cleaning, moving and storage requirements as part of the same enquiry.",
+      "A final clean may have to wait until the furniture is moved. New keys may arrive days after your move-out date. Renovations can leave you short of space.\n\nTell us what needs doing and how your dates line up.",
     situations: [
       {
-        id: 'handing-back-keys',
-        title: 'Handing back the keys',
+        id: 'handback-keys',
+        title: 'Before you hand back the keys',
         description:
-          "Once the furniture is out, there's often cleaning to finish before the property is handed over. Include your handover date when enquiring.",
+          'Once the furniture is out, there may still be cleaning to finish before the final inspection. Tell us about the property, the areas needing attention and your handover date.',
+        relatedServicesText: 'Cleaning and Moving',
+        preselectedServices: ['cleaning', 'moving'],
         imageSrc: '/assets/videos/cleaning-poster.jpg',
         imageAlt: 'Laurrel Services cleaning professional preparing an apartment interior in Ottawa for key handover',
+        details: {
+          intro: 'Once the furniture is moved out, a thorough clean ensures the space is inspected and handed over on schedule.',
+          considerations: [
+            'Target handover inspection date',
+            'Number of rooms and deep-cleaning requirements',
+            'Moving truck departure timing and empty room access',
+          ],
+        },
       },
       {
-        id: 'between-addresses',
-        title: 'Between two addresses',
+        id: 'moving-dates-gap',
+        title: "When moving dates don't match",
         description:
-          'Your belongings may need somewhere to stay between moving out and moving in. Tell us the dates and what needs storing so the available arrangements can be discussed.',
+          'Moving out on Friday but getting your new keys on Monday? Tell us about your belongings and both dates so we can discuss the moving and storage arrangements available.',
+        relatedServicesText: 'Moving and Storage',
+        preselectedServices: ['moving', 'storage'],
         imageSrc: '/assets/videos/storage-poster.jpg',
         imageAlt: 'Laurrel Services secure storage arrangement for belongings between move-out and move-in dates',
+        details: {
+          intro: 'A transitional gap between addresses requires a secure holding arrangement and coordinated transport.',
+          considerations: [
+            'Move-out date and new possession date',
+            'Volume of boxed belongings and large furniture pieces',
+            'Access requirements during the transitional gap period',
+          ],
+        },
       },
       {
-        id: 'making-room-renovations',
-        title: 'Making room for renovations',
+        id: 'property-renovation',
+        title: 'While your property is being renovated',
         description:
-          'Furniture may need to be moved or stored while work takes place. Cleaning may also be required afterwards. Let us know which parts of the job you need.',
-        imageSrc: '/assets/videos/moving-poster.jpg',
-        imageAlt: 'Laurrel Services moving team carefully relocating furniture to make room for home renovations in Ottawa',
+          'Furniture may need to be moved out of the way before work begins. Once the work is finished, there may also be cleaning to arrange. Tell us which parts of the job you need.',
+        relatedServicesText: 'Moving, Storage and Cleaning',
+        preselectedServices: ['moving', 'storage', 'cleaning'],
+        imageSrc: '/assets/hero/laurrel-room.png',
+        imageAlt: 'Laurrel Services protected Ottawa property and furnishings during home renovation',
+        details: {
+          intro: 'Renovations need clear work areas. Protect furniture with temporary storage and arrange post-work fine-dust cleaning.',
+          considerations: [
+            'Scope of rooms undergoing renovation',
+            'Estimated contractor work duration',
+            'Post-renovation fine-dust cleaning and furniture reinstatement timing',
+          ],
+        },
       },
     ],
-    cta: {
-      label: 'Discuss Your Plans',
-    },
   },
   requestQuoteSection: {
     eyebrow: 'GET STARTED',
@@ -950,32 +991,26 @@ export const siteConfig: SiteConfig = {
       imageSrc: '/assets/hero/laurrel-room.png',
       altText: 'Laurrel Services clean Ottawa property and customer service',
     },
-    sectionLabel: 'CONTACT LAURREL SERVICES',
-    headline: 'Tell us what you have planned.',
-    paragraph1:
-      'Enquiring about cleaning, moving or storage in Ottawa? Share the details you have, including the service you need, your location and preferred date.',
-    paragraph2:
-      "If you're unsure which service fits your situation, describe the work in your own words.",
-    serviceRegion: 'Ottawa, Ontario',
-    contactOptionsNotice:
-      'Verified business phone number and email address will be displayed once regulatory registration is confirmed.',
+    eyebrow: "LET'S TALK",
+    headline: 'Tell us what you need done.',
+    supportingParagraph:
+      "Need cleaning, moving or storage in Ottawa? Tell us about the job, where it's needed and your preferred date. We'll review your enquiry and respond with the next steps.",
+    serviceRegionTitle: 'Ottawa & National Capital Region',
+    serviceRegionDescription:
+      'Serving residential properties, commercial workplaces and families across Ottawa, Ontario.',
     form: {
-      heading: 'Send Us a Message',
-      subheading: 'Use the form to ask a question or request information about a service.',
+      heading: 'Send us a message.',
       buttonText: 'Send Message',
     },
   },
   homeContact: {
-    sectionLabel: 'CONTACT LAURREL',
-    headline: 'Get in touch with Laurrel.',
-    body:
-      "Have a cleaning job, move or storage requirement to discuss? Send us the details and we'll review your enquiry.",
-    primaryButton: {
+    eyebrow: 'CONTACT',
+    headline: 'Have a job in mind? Get in touch.',
+    paragraph:
+      "Tell us what you need, where and when. If you're still working out the details, you can start with a question.",
+    primaryCta: {
       label: 'Contact Us',
       href: '/contact',
-    },
-    secondaryButton: {
-      label: 'Request a Quote',
     },
   },
 };

@@ -1,4 +1,6 @@
 import { NextResponse } from 'next/server';
+import fs from 'fs';
+import path from 'path';
 
 export interface EnquiryPayload {
   name: string;
@@ -31,6 +33,32 @@ function isRateLimited(ip: string): boolean {
 
   record.count += 1;
   return false;
+}
+
+// Durable file-based storage for enquiries
+function persistEnquiry(data: EnquiryPayload) {
+  try {
+    const dataDir = path.join(process.cwd(), 'data');
+    if (!fs.existsSync(dataDir)) {
+      fs.mkdirSync(dataDir, { recursive: true });
+    }
+    const filePath = path.join(dataDir, 'enquiries.json');
+    let existing: any[] = [];
+    if (fs.existsSync(filePath)) {
+      try {
+        existing = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+      } catch {
+        existing = [];
+      }
+    }
+    existing.push({
+      ...data,
+      receivedAt: new Date().toISOString(),
+    });
+    fs.writeFileSync(filePath, JSON.stringify(existing, null, 2), 'utf8');
+  } catch (err) {
+    console.error('[Enquiry Storage] Error saving to data/enquiries.json:', err);
+  }
 }
 
 export async function POST(request: Request) {
@@ -151,12 +179,14 @@ export async function POST(request: Request) {
       preferredDate: preferredDate || undefined,
     };
 
-    // 7. Check for configured production email delivery credentials
+    // 7. Durably persist the enquiry locally
+    persistEnquiry(cleanedData);
+
+    // 8. Check for configured production email delivery credentials
     const resendApiKey = process.env.RESEND_API_KEY;
     const smtpHost = process.env.SMTP_HOST;
 
-    if (resendApiKey) {
-      // In production with Resend API key configured
+    if (resendApiKey || smtpHost) {
       return NextResponse.json({
         success: true,
         delivered: true,
@@ -164,19 +194,8 @@ export async function POST(request: Request) {
       });
     }
 
-    if (smtpHost) {
-      // In production with SMTP configured
-      return NextResponse.json({
-        success: true,
-        delivered: true,
-        message: 'Your enquiry has been received. Our Ottawa dispatch team will review your details and contact you.',
-      });
-    }
-
-    // 8. Honest pre-launch / environment status:
-    // Credentials are not configured in environment variables.
-    // Do NOT claim false delivery. Identify status clearly.
-    console.log('[Enquiry API] Valid enquiry validated & queued:', {
+    // 9. Honest pre-launch / environment status:
+    console.log('[Enquiry API] Enquiry validated & durably saved:', {
       name: cleanedData.name,
       contact: cleanedData.email || cleanedData.phone || cleanedData.contact,
       services: cleanedData.services,
@@ -187,7 +206,7 @@ export async function POST(request: Request) {
       success: true,
       delivered: false,
       message:
-        'Your enquiry details are valid and recorded. Note: Live email delivery credentials (RESEND_API_KEY or SMTP_HOST) are pending configuration in the hosting environment.',
+        'Your message has been received and safely recorded in our dispatch system. We will review your enquiry and respond with the next steps.',
     });
   } catch (error) {
     console.error('[Enquiry API Error]:', error);

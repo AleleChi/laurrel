@@ -15,31 +15,41 @@ import { QuoteInquiryModal } from '@/components/ui/QuoteInquiryModal';
 
 export default function HomePage() {
   const [isQuoteModalOpen, setIsQuoteModalOpen] = useState(false);
+  const [quoteServices, setQuoteServices] = useState<('cleaning' | 'moving' | 'storage')[] | undefined>(undefined);
+
+  const handleOpenQuote = (services?: ('cleaning' | 'moving' | 'storage')[]) => {
+    setQuoteServices(services);
+    setIsQuoteModalOpen(true);
+  };
 
   return (
     <div className="min-h-screen flex flex-col bg-[#F8F7F4]">
       {/* Global Header */}
-      <SiteHeader onOpenQuote={() => setIsQuoteModalOpen(true)} />
+      <SiteHeader onOpenQuote={() => handleOpenQuote()} />
 
       {/* Main Experience: Hero, Ticker, About, Services Highlight, Overlapping Plans, Request Quote, FAQs & Contact */}
       <main className="flex-1">
-        <Hero onOpenQuote={() => setIsQuoteModalOpen(true)} />
+        <Hero onOpenQuote={() => handleOpenQuote()} />
         <ServiceTicker />
-        <AboutSection onOpenQuote={() => setIsQuoteModalOpen(true)} />
+        <AboutSection onOpenQuote={() => handleOpenQuote()} />
         <ServicesHighlightSection />
-        <WhenPlansOverlapSection onOpenQuote={() => setIsQuoteModalOpen(true)} />
-        <RequestQuoteSection onOpenQuote={() => setIsQuoteModalOpen(true)} />
+        <WhenPlansOverlapSection onOpenQuote={handleOpenQuote} />
+        <RequestQuoteSection onOpenQuote={() => handleOpenQuote()} />
         <HomeFaqSection />
-        <HomeContactSection onOpenQuote={() => setIsQuoteModalOpen(true)} />
+        <HomeContactSection />
       </main>
 
       {/* Global Laurrel Footer */}
-      <SiteFooter onOpenQuote={() => setIsQuoteModalOpen(true)} />
+      <SiteFooter onOpenQuote={() => handleOpenQuote()} />
 
       {/* Interactive Quote / Planning Inquiry Modal */}
       <QuoteInquiryModal
         isOpen={isQuoteModalOpen}
-        onClose={() => setIsQuoteModalOpen(false)}
+        onClose={() => {
+          setIsQuoteModalOpen(false);
+          setQuoteServices(undefined);
+        }}
+        initialServices={quoteServices}
       />
     </div>
   );

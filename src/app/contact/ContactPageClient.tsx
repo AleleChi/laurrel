@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Send, MapPin, ShieldCheck, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
+import { MapPin, Mail, Phone, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
 import { SiteHeader } from '@/components/layout/SiteHeader';
 import { SiteFooter } from '@/components/layout/SiteFooter';
 import { PageBanner } from '@/components/layout/PageBanner';
@@ -12,7 +12,7 @@ interface ContactPageClientProps {
   content?: ContactPageConfig;
 }
 
-type EnquiryTopic = 'Cleaning' | 'Moving' | 'Storage' | 'Multiple Services' | 'General Enquiry';
+type EnquiryType = 'General enquiry' | 'Cleaning' | 'Moving' | 'Storage' | 'Multiple services';
 
 export const ContactPageClient: React.FC<ContactPageClientProps> = ({
   content = siteConfig.contactPage,
@@ -21,7 +21,7 @@ export const ContactPageClient: React.FC<ContactPageClientProps> = ({
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
-  const [enquiryAbout, setEnquiryAbout] = useState<EnquiryTopic>('Cleaning');
+  const [enquiryType, setEnquiryType] = useState<EnquiryType>('General enquiry');
   const [message, setMessage] = useState('');
   const [honeypot, setHoneypot] = useState('');
 
@@ -42,11 +42,11 @@ export const ContactPageClient: React.FC<ContactPageClientProps> = ({
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
     if (!name.trim() || name.trim().length < 2) {
-      errors.name = 'Please provide your full name (at least 2 characters).';
+      errors.name = 'Please provide your full name.';
     }
 
     if (!email.trim() || !emailRegex.test(email.trim())) {
-      errors.email = 'Please provide a valid email address (e.g. name@example.com).';
+      errors.email = 'Please provide a valid email address.';
     }
 
     if (!message.trim() || message.trim().length < 5) {
@@ -82,7 +82,7 @@ export const ContactPageClient: React.FC<ContactPageClientProps> = ({
           name: name.trim(),
           email: email.trim(),
           phone: phone.trim() || undefined,
-          enquiryAbout,
+          enquiryAbout: enquiryType,
           message: message.trim(),
           website: honeypot.trim() || undefined,
         }),
@@ -115,6 +115,7 @@ export const ContactPageClient: React.FC<ContactPageClientProps> = ({
     setName('');
     setEmail('');
     setPhone('');
+    setEnquiryType('General enquiry');
     setMessage('');
   };
 
@@ -136,83 +137,85 @@ export const ContactPageClient: React.FC<ContactPageClientProps> = ({
         />
 
         {/* ========================================================= */}
-        {/* TWO-COLUMN CONTACT US EDITORIAL & FORM ARCHITECTURE       */}
+        {/* TWO-COLUMN CONTACT US EDITORIAL & OPEN FORM ARCHITECTURE  */}
         {/* ========================================================= */}
         <div className="w-full py-16 sm:py-20 lg:py-24 px-6 sm:px-8 lg:px-12 xl:px-16">
           <div className="max-w-[1400px] xl:max-w-[1440px] 2xl:max-w-[1560px] mx-auto">
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 xl:gap-16 items-start">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 xl:gap-20 items-start">
               
-              {/* Left Column: Context, Region & Contact Options (~50%) */}
-              <div className="lg:col-span-6 flex flex-col items-start pt-1">
-                <span className="text-xs font-bold tracking-widest uppercase text-[#390044] mb-3">
-                  {content.sectionLabel}
+              {/* Left Column: Editorial Introduction & Dark Contact Panels (~55% width) */}
+              <div className="lg:col-span-7 flex flex-col items-start">
+                <span className="text-xs font-bold tracking-widest uppercase text-[#390044] mb-3 block">
+                  {content.eyebrow}
                 </span>
 
-                <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-[54px] font-semibold text-[#18181B] tracking-[-0.03em] leading-[1.12] mb-6">
+                <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-[52px] font-semibold text-[#18181B] tracking-[-0.03em] leading-[1.12] mb-6">
                   {content.headline}
                 </h1>
 
-                <div className="space-y-4 text-base sm:text-lg lg:text-[19px] text-[#202024]/85 leading-relaxed font-normal mb-10">
-                  <p>{content.paragraph1}</p>
-                  <p>{content.paragraph2}</p>
-                </div>
+                <p className="text-base sm:text-lg lg:text-[18px] text-[#202024]/85 leading-relaxed font-normal mb-10 max-w-xl">
+                  {content.supportingParagraph}
+                </p>
 
-                {/* Service Region Card */}
-                <div className="w-full bg-white rounded-[28px] sm:rounded-[32px] p-6 sm:p-7 border border-[#202024]/10 shadow-xs mb-6 flex items-start gap-5">
-                  <div className="w-12 h-12 rounded-2xl bg-[#C8E80B] text-[#18181B] flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <MapPin className="w-6 h-6 text-[#18181B]" />
-                  </div>
-                  <div>
-                    <span className="text-xs font-bold tracking-widest uppercase text-[#390044] block mb-1">
-                      SERVICE REGION
-                    </span>
-                    <h3 className="text-xl font-semibold text-[#18181B] tracking-tight mb-1">
-                      {content.serviceRegion}
+                {/* Dark Contact Panels matching Solshine Reference Geometry */}
+                <div className="w-full max-w-xl">
+                  {/* Top Wide Dark Panel: Service Region */}
+                  <div className="w-full bg-[#18181B] text-white rounded-[22px] p-7 sm:p-8 text-center flex flex-col items-center justify-center mb-4 border border-black/10 shadow-sm">
+                    <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center mb-3">
+                      <MapPin className="w-5 h-5 text-[#C8E80B]" />
+                    </div>
+                    <h3 className="text-lg sm:text-xl font-semibold text-white tracking-tight mb-1.5">
+                      {content.serviceRegionTitle}
                     </h3>
-                    <p className="text-sm text-[#202024]/75 leading-relaxed font-normal">
-                      Serving central Ottawa, Kanata, Nepean, Gloucester, Orleans and surrounding National Capital Region locations.
+                    <p className="text-sm text-white/75 leading-relaxed max-w-md font-normal">
+                      {content.serviceRegionDescription}
                     </p>
                   </div>
-                </div>
 
-                {/* Contact Notice Card (Factual Integrity per AGENTS.md) */}
-                <div className="w-full bg-[#F2F1ED] rounded-[28px] sm:rounded-[32px] p-6 sm:p-7 border border-[#202024]/10 shadow-xs flex items-start gap-5">
-                  <div className="w-12 h-12 rounded-2xl bg-[#18181B] text-[#C8E80B] flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <ShieldCheck className="w-6 h-6 text-[#C8E80B]" />
-                  </div>
-                  <div>
-                    <span className="text-xs font-bold tracking-widest uppercase text-[#390044] block mb-1">
-                      VERIFIED CONTACT NOTICE
-                    </span>
-                    <h3 className="text-lg sm:text-xl font-semibold text-[#18181B] tracking-tight mb-1">
-                      Direct Dispatch Communication
-                    </h3>
-                    <p className="text-sm text-[#202024]/75 leading-relaxed font-normal">
-                      {content.contactOptionsNotice} Initial enquiries are promptly reviewed by our Ottawa service queue.
-                    </p>
+                  {/* Bottom Two Dark Panels Side by Side */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
+                    {/* Left Small Dark Card */}
+                    <div className="bg-[#18181B] text-white rounded-[20px] p-6 text-center flex flex-col items-center justify-center border border-black/10 shadow-sm">
+                      <div className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center mb-2.5">
+                        <Mail className="w-4 h-4 text-[#C8E80B]" />
+                      </div>
+                      <h4 className="text-base font-semibold text-white tracking-tight mb-1">
+                        Online Dispatch Queue
+                      </h4>
+                      <p className="text-xs text-white/70 leading-relaxed font-normal">
+                        Enquiries reviewed daily by our Ottawa service queue
+                      </p>
+                    </div>
+
+                    {/* Right Small Dark Card */}
+                    <div className="bg-[#18181B] text-white rounded-[20px] p-6 text-center flex flex-col items-center justify-center border border-black/10 shadow-sm">
+                      <div className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center mb-2.5">
+                        <Phone className="w-4 h-4 text-[#C8E80B]" />
+                      </div>
+                      <h4 className="text-base font-semibold text-white tracking-tight mb-1">
+                        Direct Enquiry System
+                      </h4>
+                      <p className="text-xs text-white/70 leading-relaxed font-normal">
+                        Prompt callback arranged upon request
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
 
-              {/* Right Column: Send Us a Message Form Card (~50%) */}
-              <div className="lg:col-span-6 bg-white rounded-[32px] sm:rounded-[36px] p-8 sm:p-10 xl:p-12 border border-[#202024]/10 shadow-xs">
+              {/* Right Column: Clean Open Form directly on page canvas (~45% width) */}
+              <div className="lg:col-span-5 w-full pt-1">
                 {submissionResult ? (
-                  <div className="py-6 flex flex-col items-start space-y-4">
-                    <div className="w-14 h-14 rounded-full bg-[#C8E80B] text-[#18181B] flex items-center justify-center">
-                      <CheckCircle2 className="w-7 h-7 text-[#18181B]" />
+                  <div className="py-8 px-6 sm:px-8 bg-white rounded-[24px] border border-[#202024]/10 shadow-xs flex flex-col items-start space-y-4">
+                    <div className="w-12 h-12 rounded-full bg-[#C8E80B] text-[#18181B] flex items-center justify-center">
+                      <CheckCircle2 className="w-6 h-6 text-[#18181B]" />
                     </div>
-                    <h2 className="text-2xl sm:text-3xl font-semibold text-[#18181B] tracking-tight">
+                    <h2 className="text-2xl font-semibold text-[#18181B] tracking-tight">
                       Message Sent
                     </h2>
                     <p className="text-base text-[#202024]/85 leading-relaxed font-normal">
                       {submissionResult.message}
                     </p>
-
-                    {!submissionResult.delivered && (
-                      <div className="p-4 rounded-2xl bg-[#F8F7F4] border border-[#202024]/10 text-xs sm:text-sm text-[#202024]/75 leading-relaxed">
-                        <strong>Pre-launch status:</strong> External email credentials (Resend/SMTP) are pending in environment configuration. Your message is safely recorded in development dispatch.
-                      </div>
-                    )}
 
                     <button
                       type="button"
@@ -223,20 +226,15 @@ export const ContactPageClient: React.FC<ContactPageClientProps> = ({
                     </button>
                   </div>
                 ) : (
-                  <form onSubmit={handleSubmit} noValidate className="flex flex-col space-y-6">
-                    {/* Header */}
-                    <div>
-                      <h2 className="text-2xl sm:text-3xl font-semibold text-[#18181B] tracking-tight">
-                        {content.form.heading}
-                      </h2>
-                      <p className="text-sm sm:text-base text-[#202024]/75 leading-relaxed mt-2 font-normal">
-                        {content.form.subheading}
-                      </p>
-                    </div>
+                  <form onSubmit={handleSubmit} noValidate className="flex flex-col space-y-5">
+                    {/* Form Heading */}
+                    <h2 className="text-2xl sm:text-3xl font-semibold text-[#18181B] tracking-tight mb-1">
+                      {content.form.heading}
+                    </h2>
 
                     {/* General Error Banner */}
                     {errorMessage && (
-                      <div className="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-xs sm:text-sm text-rose-800 flex items-start gap-2.5">
+                      <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-xs sm:text-sm text-rose-800 flex items-start gap-2.5">
                         <AlertCircle className="w-4 h-4 text-rose-600 flex-shrink-0 mt-0.5" />
                         <span>{errorMessage}</span>
                       </div>
@@ -260,9 +258,9 @@ export const ContactPageClient: React.FC<ContactPageClientProps> = ({
                     <div>
                       <label
                         htmlFor="contact-full-name"
-                        className="block text-xs font-semibold text-[#18181B] mb-1.5"
+                        className="block text-xs font-medium text-[#18181B]/80 mb-1.5"
                       >
-                        Full name <span className="text-rose-500">*</span>
+                        Full name *
                       </label>
                       <input
                         type="text"
@@ -275,8 +273,8 @@ export const ContactPageClient: React.FC<ContactPageClientProps> = ({
                           setName(e.target.value);
                           if (fieldErrors.name) setFieldErrors((p) => ({ ...p, name: undefined }));
                         }}
-                        className={`w-full px-4 py-3.5 rounded-2xl bg-[#F8F7F4] border text-sm text-[#18181B] placeholder-[#202024]/40 focus:outline-none focus:ring-2 focus:ring-[#18181B] transition-colors ${
-                          fieldErrors.name ? 'border-rose-400' : 'border-[#202024]/12'
+                        className={`w-full h-[52px] sm:h-[54px] px-4 rounded-xl bg-white border text-sm text-[#18181B] placeholder-[#202024]/40 focus:outline-none focus:border-[#18181B] focus:ring-1 focus:ring-[#18181B] transition-colors ${
+                          fieldErrors.name ? 'border-rose-400' : 'border-[#202024]/15'
                         }`}
                       />
                       {fieldErrors.name && (
@@ -288,9 +286,9 @@ export const ContactPageClient: React.FC<ContactPageClientProps> = ({
                     <div>
                       <label
                         htmlFor="contact-email"
-                        className="block text-xs font-semibold text-[#18181B] mb-1.5"
+                        className="block text-xs font-medium text-[#18181B]/80 mb-1.5"
                       >
-                        Email address <span className="text-rose-500">*</span>
+                        Email address *
                       </label>
                       <input
                         type="email"
@@ -303,8 +301,8 @@ export const ContactPageClient: React.FC<ContactPageClientProps> = ({
                           setEmail(e.target.value);
                           if (fieldErrors.email) setFieldErrors((p) => ({ ...p, email: undefined }));
                         }}
-                        className={`w-full px-4 py-3.5 rounded-2xl bg-[#F8F7F4] border text-sm text-[#18181B] placeholder-[#202024]/40 focus:outline-none focus:ring-2 focus:ring-[#18181B] transition-colors ${
-                          fieldErrors.email ? 'border-rose-400' : 'border-[#202024]/12'
+                        className={`w-full h-[52px] sm:h-[54px] px-4 rounded-xl bg-white border text-sm text-[#18181B] placeholder-[#202024]/40 focus:outline-none focus:border-[#18181B] focus:ring-1 focus:ring-[#18181B] transition-colors ${
+                          fieldErrors.email ? 'border-rose-400' : 'border-[#202024]/15'
                         }`}
                       />
                       {fieldErrors.email && (
@@ -316,7 +314,7 @@ export const ContactPageClient: React.FC<ContactPageClientProps> = ({
                     <div>
                       <label
                         htmlFor="contact-phone"
-                        className="block text-xs font-semibold text-[#18181B] mb-1.5"
+                        className="block text-xs font-medium text-[#18181B]/80 mb-1.5"
                       >
                         Phone number <span className="text-xs text-[#202024]/50 font-normal">(optional)</span>
                       </label>
@@ -327,67 +325,54 @@ export const ContactPageClient: React.FC<ContactPageClientProps> = ({
                         placeholder="Your phone number"
                         value={phone}
                         onChange={(e) => setPhone(e.target.value)}
-                        className="w-full px-4 py-3.5 rounded-2xl bg-[#F8F7F4] border border-[#202024]/12 text-sm text-[#18181B] placeholder-[#202024]/40 focus:outline-none focus:ring-2 focus:ring-[#18181B] transition-colors"
+                        className="w-full h-[52px] sm:h-[54px] px-4 rounded-xl bg-white border border-[#202024]/15 text-sm text-[#18181B] placeholder-[#202024]/40 focus:outline-none focus:border-[#18181B] focus:ring-1 focus:ring-[#18181B] transition-colors"
                       />
                     </div>
 
-                    {/* What is your enquiry about? */}
+                    {/* Enquiry Type (Accessible Native Select) */}
                     <div>
                       <label
-                        htmlFor="contact-enquiry-about"
-                        className="block text-xs font-semibold text-[#18181B] mb-2"
+                        htmlFor="contact-enquiry-type"
+                        className="block text-xs font-medium text-[#18181B]/80 mb-1.5"
                       >
-                        What is your enquiry about?
+                        Enquiry type
                       </label>
-                      <div
-                        role="group"
-                        aria-label="Enquiry Topic"
-                        className="flex flex-wrap gap-2"
+                      <select
+                        id="contact-enquiry-type"
+                        name="enquiryType"
+                        value={enquiryType}
+                        onChange={(e) => setEnquiryType(e.target.value as EnquiryType)}
+                        className="w-full h-[52px] sm:h-[54px] px-4 rounded-xl bg-white border border-[#202024]/15 text-sm text-[#18181B] focus:outline-none focus:border-[#18181B] focus:ring-1 focus:ring-[#18181B] transition-colors cursor-pointer"
                       >
-                        {(
-                          ['Cleaning', 'Moving', 'Storage', 'Multiple Services', 'General Enquiry'] as EnquiryTopic[]
-                        ).map((topic) => {
-                          const isSelected = enquiryAbout === topic;
-                          return (
-                            <button
-                              key={topic}
-                              type="button"
-                              onClick={() => setEnquiryAbout(topic)}
-                              className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer ${
-                                isSelected
-                                  ? 'bg-[#C8E80B] text-[#18181B] font-semibold shadow-2xs'
-                                  : 'bg-[#F2F1ED] hover:bg-[#EAE8E2] text-[#202024]'
-                              }`}
-                              aria-pressed={isSelected}
-                            >
-                              {topic}
-                            </button>
-                          );
-                        })}
-                      </div>
+                        <option value="General enquiry">General enquiry</option>
+                        <option value="Cleaning">Cleaning</option>
+                        <option value="Moving">Moving</option>
+                        <option value="Storage">Storage</option>
+                        <option value="Multiple services">Multiple services</option>
+                      </select>
                     </div>
 
                     {/* Your Message */}
                     <div>
                       <label
                         htmlFor="contact-message"
-                        className="block text-xs font-semibold text-[#18181B] mb-1.5"
+                        className="block text-xs font-medium text-[#18181B]/80 mb-1.5"
                       >
-                        Your message <span className="text-rose-500">*</span>
+                        Your message *
                       </label>
                       <textarea
                         id="contact-message"
                         name="message"
                         required
                         rows={4}
-                        placeholder="Describe what you have planned, where the work will take place and your preferred date."
+                        placeholder="Tell us about the job, where it's needed and your preferred date."
                         value={message}
                         onChange={(e) => {
                           setMessage(e.target.value);
                           if (fieldErrors.message) setFieldErrors((p) => ({ ...p, message: undefined }));
                         }}
-                        className={`w-full px-4 py-3.5 rounded-2xl bg-[#F8F7F4] border text-sm text-[#18181B] placeholder-[#202024]/40 focus:outline-none focus:ring-2 focus:ring-[#18181B] transition-colors resize-none ${
-                          fieldErrors.message ? 'border-rose-400' : 'border-[#202024]/12'
+                        className={`w-full p-4 rounded-xl bg-white border text-sm text-[#18181B] placeholder-[#202024]/40 focus:outline-none focus:border-[#18181B] focus:ring-1 focus:ring-[#18181B] transition-colors resize-none ${
+                          fieldErrors.message ? 'border-rose-400' : 'border-[#202024]/15'
                         }`}
                       />
                       {fieldErrors.message && (
@@ -395,23 +380,20 @@ export const ContactPageClient: React.FC<ContactPageClientProps> = ({
                       )}
                     </div>
 
-                    {/* Submit Button */}
+                    {/* Submit Button: Compact Black Button */}
                     <div className="pt-2">
                       <button
                         type="submit"
                         disabled={isSubmitting}
-                        className="inline-flex items-center justify-center gap-2.5 bg-[#18181B] hover:bg-[#390044] active:scale-[0.99] text-white px-8 py-4 rounded-full text-sm sm:text-base font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#18181B] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-xs w-full sm:w-auto"
+                        className="inline-flex items-center justify-center bg-[#18181B] hover:bg-[#390044] text-white px-7 py-3.5 rounded-full text-sm sm:text-base font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#18181B] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-xs"
                       >
                         {isSubmitting ? (
-                          <>
+                          <div className="flex items-center gap-2">
                             <Loader2 className="w-4 h-4 animate-spin text-white" />
                             <span>Sending...</span>
-                          </>
+                          </div>
                         ) : (
-                          <>
-                            <span>{content.form.buttonText}</span>
-                            <Send className="w-4 h-4 text-white" />
-                          </>
+                          <span>{content.form.buttonText}</span>
                         )}
                       </button>
                     </div>
@@ -422,6 +404,31 @@ export const ContactPageClient: React.FC<ContactPageClientProps> = ({
             </div>
           </div>
         </div>
+
+        {/* ========================================================= */}
+        {/* PHASE 10: FULL-WIDTH FACTUAL OTTAWA SERVICE REGION PANEL  */}
+        {/* ========================================================= */}
+        <div className="w-full max-w-[1400px] xl:max-w-[1440px] 2xl:max-w-[1560px] mx-auto px-6 sm:px-8 lg:px-12 xl:px-16 pb-20">
+          <div className="bg-[#F2F1ED] rounded-[24px] p-8 sm:p-12 border border-[#202024]/8 text-center flex flex-col items-center justify-center">
+            <div className="w-12 h-12 rounded-2xl bg-[#C8E80B] text-[#18181B] flex items-center justify-center mb-4">
+              <MapPin className="w-6 h-6 text-[#18181B]" />
+            </div>
+            <h3 className="text-xl sm:text-2xl font-semibold text-[#18181B] tracking-tight mb-2">
+              Ottawa & National Capital Region Service
+            </h3>
+            <p className="text-sm sm:text-base text-[#202024]/75 max-w-xl leading-relaxed font-normal mb-4">
+              Centrally coordinating cleaning, moving, and storage across Ottawa, Kanata, Nepean, Gloucester, Orleans, and surrounding communities.
+            </p>
+            <div className="flex flex-wrap items-center justify-center gap-2 text-xs font-semibold text-[#390044]">
+              <span className="px-3 py-1 rounded-full bg-white/70">Ottawa</span>
+              <span className="px-3 py-1 rounded-full bg-white/70">Kanata</span>
+              <span className="px-3 py-1 rounded-full bg-white/70">Nepean</span>
+              <span className="px-3 py-1 rounded-full bg-white/70">Gloucester</span>
+              <span className="px-3 py-1 rounded-full bg-white/70">Orleans</span>
+            </div>
+          </div>
+        </div>
+
       </main>
 
       {/* Global Footer */}

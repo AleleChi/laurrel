@@ -8,6 +8,7 @@ interface QuoteInquiryModalProps {
   isOpen: boolean;
   onClose: () => void;
   initialService?: 'cleaning' | 'moving' | 'storage' | 'general';
+  initialServices?: ('cleaning' | 'moving' | 'storage')[];
 }
 
 type ServiceType = 'cleaning' | 'moving' | 'storage';
@@ -16,6 +17,7 @@ export const QuoteInquiryModal: React.FC<QuoteInquiryModalProps> = ({
   isOpen,
   onClose,
   initialService = 'general',
+  initialServices,
 }) => {
   const [selectedServices, setSelectedServices] = useState<ServiceType[]>([]);
   const [name, setName] = useState('');
@@ -30,10 +32,12 @@ export const QuoteInquiryModal: React.FC<QuoteInquiryModalProps> = ({
     message: string;
   } | null>(null);
 
-  // Sync initial service when opened
+  // Sync initial services when opened
   useEffect(() => {
     if (isOpen) {
-      if (initialService !== 'general') {
+      if (initialServices && initialServices.length > 0) {
+        setSelectedServices(initialServices);
+      } else if (initialService !== 'general') {
         setSelectedServices([initialService]);
       } else {
         setSelectedServices(['cleaning']);
@@ -41,7 +45,7 @@ export const QuoteInquiryModal: React.FC<QuoteInquiryModalProps> = ({
       setFormError(null);
       setSubmissionResult(null);
     }
-  }, [isOpen, initialService]);
+  }, [isOpen, initialService, initialServices]);
 
   // Handle escape key & scroll lock
   useEffect(() => {
