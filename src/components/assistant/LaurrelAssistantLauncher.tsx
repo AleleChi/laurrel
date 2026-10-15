@@ -26,29 +26,21 @@ export default function LaurrelAssistantLauncher() {
           aria-haspopup="dialog"
           aria-expanded={isOpen}
           aria-label={isOpen ? 'Close Laurrel Assistant' : 'Open Laurrel Assistant'}
-          className={`relative group flex items-center gap-2.5 px-4 py-3 rounded-full shadow-lg border border-[#390044]/20 transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-[#C8E80B]/50 ${
+          className={`relative group flex items-center gap-2.5 px-4.5 py-3 rounded-full shadow-lg border border-[#390044]/20 transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-[#390044]/30 ${
             isOpen
               ? 'bg-[#202024] text-white hover:bg-black'
-              : 'bg-[#390044] text-white hover:bg-[#390044]/90 hover:scale-[1.02]'
+              : 'bg-[#390044] text-white hover:bg-[#390044]/90'
           }`}
         >
           {isOpen ? (
-            <X className="w-5 h-5 text-white" />
+            <X className="w-5 h-5 text-white shrink-0" />
           ) : (
-            <MessageSquare className="w-5 h-5 text-[#C8E80B]" />
+            <MessageSquare className="w-5 h-5 text-white shrink-0" />
           )}
 
-          <span className="text-xs font-semibold tracking-wide pr-0.5">
+          <span className="text-sm font-semibold tracking-normal text-white">
             {isOpen ? 'Close Assistant' : 'Laurrel Assistant'}
           </span>
-
-          {/* Restrained lime status indicator */}
-          {!isOpen && (
-            <span
-              className="w-2 h-2 rounded-full bg-[#C8E80B] shadow-[0_0_8px_rgba(200,232,11,0.6)]"
-              aria-hidden="true"
-            />
-          )}
         </button>
       </aside>
 

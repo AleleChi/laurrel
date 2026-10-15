@@ -87,7 +87,7 @@ function processLocalGroundedResponse(
   if (text.includes('clean') && !text.includes('quote') && !text.includes('book')) {
     return {
       reply:
-        'Our cleaning services in Ottawa focus on practical space preparation: move-in, move-out handovers, tenancy transitions, and office cleaning. We focus on the rooms, condition, and key dates rather than rigid generic packages. Are you preparing to move in or move out of a property?',
+        'Our cleaning services in Ottawa focus on practical space preparation: move-in, move-out handovers, tenancy transitions, and office cleaning. We focus on the rooms, condition, and key dates rather than rigid generic packages.\n\nYou can explore our [Cleaning Services](/services#cleaning) overview or let me know what type of space you are preparing.',
       suggestedActions: [
         { label: 'Move-out handover clean', action: 'suggest_query', payload: 'I need a move-out clean' },
         { label: 'Move-in preparation', action: 'suggest_query', payload: 'I need a move-in clean' },
@@ -101,7 +101,7 @@ function processLocalGroundedResponse(
   if (text.includes('mov') && !text.includes('quote') && !text.includes('book')) {
     return {
       reply:
-        'Laurrel Services coordinates local residential and office moves throughout Ottawa. We manage vehicle capacity, crew allocation, and building access details like elevators and loading zones. Are you moving within Ottawa or arriving from another area?',
+        'Laurrel Services coordinates local residential and office moves throughout Ottawa. We manage vehicle capacity, crew allocation, and building access details like elevators and loading zones.\n\nYou can review our [Moving Services](/services#moving) details or tell me where in Ottawa you are moving.',
       suggestedActions: [
         { label: 'Moving within Ottawa', action: 'suggest_query', payload: 'Moving within Ottawa' },
         { label: 'Combine move with storage', action: 'suggest_query', payload: 'Can I store items during my move?' },
@@ -115,7 +115,7 @@ function processLocalGroundedResponse(
   if (text.includes('stor') && !text.includes('quote')) {
     return {
       reply:
-        'Our storage service provides transitional holding between moving dates or during home renovations in Ottawa. If your move-out and move-in dates don’t line up, we coordinate safe holding so your belongings stay protected. How long do you expect your items to need storage?',
+        'Our storage service provides transitional holding between moving dates or during home renovations in Ottawa. If your move-out and move-in dates don’t line up, we coordinate safe holding so your belongings stay protected.\n\nLearn more about our [Transitional Storage](/services#storage) options or tell me what timeframe you have in mind.',
       suggestedActions: [
         { label: 'A few days to weeks', action: 'suggest_query', payload: 'I need short-term transitional storage' },
         { label: 'One month or longer', action: 'suggest_query', payload: 'I need storage for a month or more' },
