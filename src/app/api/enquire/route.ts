@@ -5,7 +5,8 @@ export interface EnquiryPayload {
   email?: string;
   phone?: string;
   contact?: string;
-  services: ('cleaning' | 'moving' | 'storage')[];
+  services?: ('cleaning' | 'moving' | 'storage' | 'general')[];
+  enquiryAbout?: string;
   message?: string;
   details?: string;
   preferredDate?: string;
@@ -99,19 +100,27 @@ export async function POST(request: Request) {
       );
     }
 
-    // 5. Service Category Validation
-    const validServices = ['cleaning', 'moving', 'storage'] as const;
-    const services = Array.isArray(body.services)
-      ? body.services.filter((s): s is 'cleaning' | 'moving' | 'storage' =>
-          validServices.includes(s as any)
-        )
-      : [];
+    // 5. Service Category or Enquiry Topic Validation
+    const validServices = ['cleaning', 'moving', 'storage', 'general'] as const;
+    let services: ('cleaning' | 'moving' | 'storage' | 'general')[] = [];
+
+    if (Array.isArray(body.services)) {
+      services = body.services.filter((s): s is 'cleaning' | 'moving' | 'storage' | 'general' =>
+        validServices.includes(s as any)
+      );
+    }
+
+    if (services.length === 0 && body.enquiryAbout) {
+      const about = body.enquiryAbout.toLowerCase();
+      if (about.includes('clean')) services.push('cleaning');
+      if (about.includes('mov')) services.push('moving');
+      if (about.includes('stor')) services.push('storage');
+      if (about.includes('multiple')) services.push('cleaning', 'moving', 'storage');
+      if (services.length === 0) services.push('general');
+    }
 
     if (services.length === 0) {
-      return NextResponse.json(
-        { error: 'Please select at least one service category (Cleaning, Moving, or Storage).' },
-        { status: 400 }
-      );
+      services.push('general');
     }
 
     // 6. Message / Details Validation

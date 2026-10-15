@@ -273,6 +273,43 @@ export interface HomeFaqConfig {
   };
 }
 
+export interface ContactPageConfig {
+  meta: {
+    title: string;
+    description: string;
+  };
+  banner: {
+    title: string;
+    breadcrumb: { label: string; href: string }[];
+    imageSrc: string;
+    altText: string;
+  };
+  sectionLabel: string;
+  headline: string;
+  paragraph1: string;
+  paragraph2: string;
+  serviceRegion: string;
+  contactOptionsNotice: string;
+  form: {
+    heading: string;
+    subheading: string;
+    buttonText: string;
+  };
+}
+
+export interface HomeContactConfig {
+  sectionLabel: string;
+  headline: string;
+  body: string;
+  primaryButton: {
+    label: string;
+    href: string;
+  };
+  secondaryButton: {
+    label: string;
+  };
+}
+
 export interface SiteConfig {
   companyName: string;
   tagline: string;
@@ -327,6 +364,8 @@ export interface SiteConfig {
   overlappingPlans: OverlappingPlansConfig;
   requestQuoteSection: RequestQuoteSectionConfig;
   homeFaq: HomeFaqConfig;
+  contactPage: ContactPageConfig;
+  homeContact: HomeContactConfig;
 }
 
 export const siteConfig: SiteConfig = {
@@ -346,6 +385,7 @@ export const siteConfig: SiteConfig = {
       { label: 'Moving', href: '/#moving' },
       { label: 'Storage', href: '/#storage' },
       { label: 'About', href: '/about' },
+      { label: 'Contact', href: '/contact' },
     ],
     cta: {
       label: 'Get a Quote',
@@ -893,6 +933,49 @@ export const siteConfig: SiteConfig = {
     moreLink: {
       label: 'More About Our Services',
       href: '/services',
+    },
+  },
+  contactPage: {
+    meta: {
+      title: 'Contact Us | Laurrel Services Ottawa',
+      description:
+        'Get in touch with Laurrel Services for cleaning, moving and storage in Ottawa. Send an enquiry or discuss your property transition plans.',
+    },
+    banner: {
+      title: 'Contact Us',
+      breadcrumb: [
+        { label: 'Home', href: '/' },
+        { label: 'Contact Us', href: '/contact' },
+      ],
+      imageSrc: '/assets/hero/laurrel-room.png',
+      altText: 'Laurrel Services clean Ottawa property and customer service',
+    },
+    sectionLabel: 'CONTACT LAURREL SERVICES',
+    headline: 'Tell us what you have planned.',
+    paragraph1:
+      'Enquiring about cleaning, moving or storage in Ottawa? Share the details you have, including the service you need, your location and preferred date.',
+    paragraph2:
+      "If you're unsure which service fits your situation, describe the work in your own words.",
+    serviceRegion: 'Ottawa, Ontario',
+    contactOptionsNotice:
+      'Verified business phone number and email address will be displayed once regulatory registration is confirmed.',
+    form: {
+      heading: 'Send Us a Message',
+      subheading: 'Use the form to ask a question or request information about a service.',
+      buttonText: 'Send Message',
+    },
+  },
+  homeContact: {
+    sectionLabel: 'CONTACT LAURREL',
+    headline: 'Get in touch with Laurrel.',
+    body:
+      "Have a cleaning job, move or storage requirement to discuss? Send us the details and we'll review your enquiry.",
+    primaryButton: {
+      label: 'Contact Us',
+      href: '/contact',
+    },
+    secondaryButton: {
+      label: 'Request a Quote',
     },
   },
 };

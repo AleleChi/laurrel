@@ -10,6 +10,7 @@ import { ServicesHighlightSection } from '@/components/home/ServicesHighlightSec
 import { WhenPlansOverlapSection } from '@/components/home/WhenPlansOverlapSection';
 import { RequestQuoteSection } from '@/components/home/RequestQuoteSection';
 import { HomeFaqSection } from '@/components/home/HomeFaqSection';
+import { HomeContactSection } from '@/components/home/HomeContactSection';
 import { QuoteInquiryModal } from '@/components/ui/QuoteInquiryModal';
 
 export default function HomePage() {
@@ -20,7 +21,7 @@ export default function HomePage() {
       {/* Global Header */}
       <SiteHeader onOpenQuote={() => setIsQuoteModalOpen(true)} />
 
-      {/* Main Experience: Hero, Ticker, About, Services Highlight, Overlapping Plans, Request Quote & FAQs */}
+      {/* Main Experience: Hero, Ticker, About, Services Highlight, Overlapping Plans, Request Quote, FAQs & Contact */}
       <main className="flex-1">
         <Hero onOpenQuote={() => setIsQuoteModalOpen(true)} />
         <ServiceTicker />
@@ -29,6 +30,7 @@ export default function HomePage() {
         <WhenPlansOverlapSection onOpenQuote={() => setIsQuoteModalOpen(true)} />
         <RequestQuoteSection onOpenQuote={() => setIsQuoteModalOpen(true)} />
         <HomeFaqSection />
+        <HomeContactSection onOpenQuote={() => setIsQuoteModalOpen(true)} />
       </main>
 
       {/* Global Laurrel Footer */}
