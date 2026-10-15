@@ -4,8 +4,10 @@ import {
   HomepageAboutConfig,
   AboutPageConfig,
   ServicesHighlightConfig,
+  ServicesPageConfig,
   SiteConfig,
 } from '@/content/site';
+
 
 
 export const projectId = process.env.NEXT_PUBLIC_SANITY_PROJECT_ID;
@@ -207,3 +209,45 @@ export async function getAboutPageData(): Promise<{
     source: 'local',
   };
 }
+
+/**
+ * Fetch Dedicated Services Page data with fallback to local centralized config
+ */
+export async function getServicesPageData(): Promise<{
+  data: ServicesPageConfig;
+  source: 'sanity' | 'local';
+}> {
+  if (client) {
+    try {
+      const query = `*[_type == "servicesPage"][0]{
+        hero,
+        services,
+        gettingStarted,
+        faq,
+        finalCta
+      }`;
+      const res = await client.fetch(query, {}, { next: { revalidate: 60 } });
+      if (res) {
+        return {
+          data: {
+            meta: siteConfig.servicesPage.meta,
+            hero: res.hero || siteConfig.servicesPage.hero,
+            services: res.services || siteConfig.servicesPage.services,
+            gettingStarted: res.gettingStarted || siteConfig.servicesPage.gettingStarted,
+            faq: res.faq || siteConfig.servicesPage.faq,
+            finalCta: res.finalCta || siteConfig.servicesPage.finalCta,
+          },
+          source: 'sanity',
+        };
+      }
+    } catch (error) {
+      console.warn('[CMS warning] Could not fetch servicesPage from Sanity; falling back to local content:', error);
+    }
+  }
+
+  return {
+    data: siteConfig.servicesPage,
+    source: 'local',
+  };
+}
+

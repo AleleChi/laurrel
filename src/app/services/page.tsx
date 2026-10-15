@@ -1,22 +1,28 @@
 import type { Metadata } from 'next';
-import { siteConfig } from '@/content/site';
+import { getServicesPageData } from '@/sanity/client';
 import { ServicesPageClient } from './ServicesPageClient';
 
-export const metadata: Metadata = {
-  title: siteConfig.servicesPage.meta.title,
-  description: siteConfig.servicesPage.meta.description,
-  openGraph: {
-    title: siteConfig.servicesPage.meta.title,
-    description: siteConfig.servicesPage.meta.description,
-    locale: 'en_CA',
-    type: 'website',
-  },
-  alternates: {
-    canonical: 'https://laurrelservices.ca/services',
-  },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const { data } = await getServicesPageData();
 
-export default function ServicesPage() {
+  return {
+    title: data.meta.title,
+    description: data.meta.description,
+    openGraph: {
+      title: data.meta.title,
+      description: data.meta.description,
+      locale: 'en_CA',
+      type: 'website',
+    },
+    alternates: {
+      canonical: 'https://laurrelservices.ca/services',
+    },
+  };
+}
+
+export default async function ServicesPage() {
+  const { data } = await getServicesPageData();
+
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
@@ -42,7 +48,7 @@ export default function ServicesPage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      <ServicesPageClient />
+      <ServicesPageClient content={data} />
     </>
   );
 }
