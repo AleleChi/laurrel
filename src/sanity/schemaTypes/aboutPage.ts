@@ -68,20 +68,18 @@ export const aboutPageSchema = {
         { name: 'eyebrow', title: 'Eyebrow', type: 'string' },
         { name: 'headline', title: 'Headline (H2)', type: 'string' },
         { name: 'intro', title: 'Introductory Statement', type: 'text' },
-        { name: 'statNumber', title: 'Large Typographic Number (e.g. 03)', type: 'string' },
-        { name: 'statLabel', title: 'Typographic Label (e.g. CORE SERVICE AREAS)', type: 'string' },
         {
-          name: 'services',
-          title: 'Core Services',
+          name: 'columns',
+          title: 'Three Information Columns',
           type: 'array',
           of: [
             {
               type: 'object',
               fields: [
-                { name: 'number', title: 'Service Number (e.g. 01)', type: 'string' },
-                { name: 'title', title: 'Service Name', type: 'string' },
+                { name: 'category', title: 'Category Label (e.g. CLEANING)', type: 'string' },
+                { name: 'displayWord', title: 'Large Display Word (e.g. Clean.)', type: 'string' },
                 { name: 'description', title: 'Description', type: 'text' },
-                { name: 'href', title: 'Destination Anchor', type: 'string' },
+                { name: 'href', title: 'Destination Anchor (optional)', type: 'string' },
               ],
             },
           ],

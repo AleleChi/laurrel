@@ -46,14 +46,12 @@ export const AboutPageClient: React.FC<AboutPageClientProps> = ({ content }) => 
           altText={content.aboutCompany.altText}
         />
 
-        {/* Section 03: What We Do (Solshine 3-Stat Rhythm: 2-Col Header + 3 Equal Typographic Service Columns) */}
+        {/* Section 03: What We Do (Solshine 3-Column Typographic Information Section) */}
         <AboutWhatWeDoSection
           eyebrow={content.whatWeDo.eyebrow}
           headline={content.whatWeDo.headline}
           intro={content.whatWeDo.intro}
-          statNumber={content.whatWeDo.statNumber}
-          statLabel={content.whatWeDo.statLabel}
-          services={content.whatWeDo.services}
+          columns={content.whatWeDo.columns || content.whatWeDo.services}
         />
 
         {/* Section 04: Why Laurrel Services (Edge-to-Edge Lime #C8E80B + 2x2 Black Circular Tiles with Lime Linework + Standing Cutout Subject) */}

@@ -1,0 +1,347 @@
+{
+  "desktop_1440": {
+    "top": 1629,
+    "width": 1440,
+    "height": 814.625,
+    "padding": "128px 0px",
+    "bg": "rgb(248, 247, 244)",
+    "eyebrow": "WHAT WE DO",
+    "h2": {
+      "text": "There's more than one way to get a space ready.",
+      "fontSize": "62px",
+      "lineHeight": "62px",
+      "fontWeight": "500",
+      "width": 722.328125,
+      "height": 124,
+      "left": 78
+    },
+    "intro": {
+      "text": "Not every job starts with a move. Sometimes it's a property that needs cleaning, furniture that needs relocating or belongings that need somewhere to stay. Laurrel Services offers all three, so you can start with the work that matters to you.",
+      "fontSize": "19px",
+      "lineHeight": "28px",
+      "width": 497.65625,
+      "height": 140,
+      "left": 864.328125
+    },
+    "colMetrics": [
+      {
+        "colWidth": 385.328125,
+        "colLeft": 78,
+        "colTop": 2032.5,
+        "labelText": "CLEANING",
+        "ruleWidth": 385.328125,
+        "ruleTop": 2068.5,
+        "displayWordText": "Clean.",
+        "displayWordFontSize": "96px",
+        "displayWordLineHeight": "96px",
+        "displayWordFontWeight": "600",
+        "displayWordTop": 2101.5,
+        "descText": "Whether a property is occupied or being prepared for its next use, tell us about the rooms, their condition and the cleaning work you have in mind."
+      },
+      {
+        "colWidth": 385.328125,
+        "colLeft": 527.328125,
+        "colTop": 2032.5,
+        "labelText": "MOVING",
+        "ruleWidth": 385.328125,
+        "ruleTop": 2068.5,
+        "displayWordText": "Move.",
+        "displayWordFontSize": "96px",
+        "displayWordLineHeight": "96px",
+        "displayWordFontWeight": "600",
+        "displayWordTop": 2101.5,
+        "descText": "Changing addresses involves more than transporting boxes. The belongings, access at each property and preferred date all matter when planning a move."
+      },
+      {
+        "colWidth": 385.34375,
+        "colLeft": 976.65625,
+        "colTop": 2032.5,
+        "labelText": "STORAGE",
+        "ruleWidth": 385.34375,
+        "ruleTop": 2068.5,
+        "displayWordText": "Store.",
+        "displayWordFontSize": "96px",
+        "displayWordLineHeight": "96px",
+        "displayWordFontWeight": "600",
+        "displayWordTop": 2101.5,
+        "descText": "Between properties, renovating or making extra room? Tell us what needs storing and how long you expect to need the space."
+      }
+    ]
+  },
+  "desktop_1840": {
+    "top": 1629,
+    "width": 1840,
+    "height": 814.625,
+    "padding": "128px 0px",
+    "bg": "rgb(248, 247, 244)",
+    "eyebrow": "WHAT WE DO",
+    "h2": {
+      "text": "There's more than one way to get a space ready.",
+      "fontSize": "62px",
+      "lineHeight": "62px",
+      "fontWeight": "500",
+      "width": 722.328125,
+      "height": 124,
+      "left": 278
+    },
+    "intro": {
+      "text": "Not every job starts with a move. Sometimes it's a property that needs cleaning, furniture that needs relocating or belongings that need somewhere to stay. Laurrel Services offers all three, so you can start with the work that matters to you.",
+      "fontSize": "19px",
+      "lineHeight": "28px",
+      "width": 497.65625,
+      "height": 140,
+      "left": 1064.328125
+    },
+    "colMetrics": [
+      {
+        "colWidth": 385.328125,
+        "colLeft": 278,
+        "colTop": 2032.5,
+        "labelText": "CLEANING",
+        "ruleWidth": 385.328125,
+        "ruleTop": 2068.5,
+        "displayWordText": "Clean.",
+        "displayWordFontSize": "96px",
+        "displayWordLineHeight": "96px",
+        "displayWordFontWeight": "600",
+        "displayWordTop": 2101.5,
+        "descText": "Whether a property is occupied or being prepared for its next use, tell us about the rooms, their condition and the cleaning work you have in mind."
+      },
+      {
+        "colWidth": 385.328125,
+        "colLeft": 727.328125,
+        "colTop": 2032.5,
+        "labelText": "MOVING",
+        "ruleWidth": 385.328125,
+        "ruleTop": 2068.5,
+        "displayWordText": "Move.",
+        "displayWordFontSize": "96px",
+        "displayWordLineHeight": "96px",
+        "displayWordFontWeight": "600",
+        "displayWordTop": 2101.5,
+        "descText": "Changing addresses involves more than transporting boxes. The belongings, access at each property and preferred date all matter when planning a move."
+      },
+      {
+        "colWidth": 385.34375,
+        "colLeft": 1176.65625,
+        "colTop": 2032.5,
+        "labelText": "STORAGE",
+        "ruleWidth": 385.34375,
+        "ruleTop": 2068.5,
+        "displayWordText": "Store.",
+        "displayWordFontSize": "96px",
+        "displayWordLineHeight": "96px",
+        "displayWordFontWeight": "600",
+        "displayWordTop": 2101.5,
+        "descText": "Between properties, renovating or making extra room? Tell us what needs storing and how long you expect to need the space."
+      }
+    ]
+  },
+  "laptop_1024": {
+    "top": 1751,
+    "width": 1024,
+    "height": 874.15625,
+    "padding": "128px 0px",
+    "bg": "rgb(248, 247, 244)",
+    "eyebrow": "WHAT WE DO",
+    "h2": {
+      "text": "There's more than one way to get a space ready.",
+      "fontSize": "56px",
+      "lineHeight": "56px",
+      "fontWeight": "500",
+      "width": 518,
+      "height": 168,
+      "left": 48
+    },
+    "intro": {
+      "text": "Not every job starts with a move. Sometimes it's a property that needs cleaning, furniture that needs relocating or belongings that need somewhere to stay. Laurrel Services offers all three, so you can start with the work that matters to you.",
+      "fontSize": "18px",
+      "lineHeight": "28px",
+      "width": 354,
+      "height": 196,
+      "left": 622
+    },
+    "colMetrics": [
+      {
+        "colWidth": 277.328125,
+        "colLeft": 48,
+        "colTop": 2198.5,
+        "labelText": "CLEANING",
+        "ruleWidth": 277.328125,
+        "ruleTop": 2234.5,
+        "displayWordText": "Clean.",
+        "displayWordFontSize": "84px",
+        "displayWordLineHeight": "84px",
+        "displayWordFontWeight": "600",
+        "displayWordTop": 2267.5,
+        "descText": "Whether a property is occupied or being prepared for its next use, tell us about the rooms, their condition and the cleaning work you have in mind."
+      },
+      {
+        "colWidth": 277.328125,
+        "colLeft": 373.328125,
+        "colTop": 2198.5,
+        "labelText": "MOVING",
+        "ruleWidth": 277.328125,
+        "ruleTop": 2234.5,
+        "displayWordText": "Move.",
+        "displayWordFontSize": "84px",
+        "displayWordLineHeight": "84px",
+        "displayWordFontWeight": "600",
+        "displayWordTop": 2267.5,
+        "descText": "Changing addresses involves more than transporting boxes. The belongings, access at each property and preferred date all matter when planning a move."
+      },
+      {
+        "colWidth": 277.34375,
+        "colLeft": 698.65625,
+        "colTop": 2198.5,
+        "labelText": "STORAGE",
+        "ruleWidth": 277.34375,
+        "ruleTop": 2234.5,
+        "displayWordText": "Store.",
+        "displayWordFontSize": "84px",
+        "displayWordLineHeight": "84px",
+        "displayWordFontWeight": "600",
+        "displayWordTop": 2267.5,
+        "descText": "Between properties, renovating or making extra room? Tell us what needs storing and how long you expect to need the space."
+      }
+    ]
+  },
+  "tablet_768": {
+    "top": 2107,
+    "width": 768,
+    "height": 909.21875,
+    "padding": "96px 0px",
+    "bg": "rgb(248, 247, 244)",
+    "eyebrow": "WHAT WE DO",
+    "h2": {
+      "text": "There's more than one way to get a space ready.",
+      "fontSize": "48px",
+      "lineHeight": "48px",
+      "fontWeight": "500",
+      "width": 704,
+      "height": 96,
+      "left": 32
+    },
+    "intro": {
+      "text": "Not every job starts with a move. Sometimes it's a property that needs cleaning, furniture that needs relocating or belongings that need somewhere to stay. Laurrel Services offers all three, so you can start with the work that matters to you.",
+      "fontSize": "18px",
+      "lineHeight": "28px",
+      "width": 560,
+      "height": 112,
+      "left": 32
+    },
+    "colMetrics": [
+      {
+        "colWidth": 208,
+        "colLeft": 32,
+        "colTop": 2578.5,
+        "labelText": "CLEANING",
+        "ruleWidth": 208,
+        "ruleTop": 2614.5,
+        "displayWordText": "Clean.",
+        "displayWordFontSize": "72px",
+        "displayWordLineHeight": "72px",
+        "displayWordFontWeight": "600",
+        "displayWordTop": 2647.5,
+        "descText": "Whether a property is occupied or being prepared for its next use, tell us about the rooms, their condition and the cleaning work you have in mind."
+      },
+      {
+        "colWidth": 208,
+        "colLeft": 280,
+        "colTop": 2578.5,
+        "labelText": "MOVING",
+        "ruleWidth": 208,
+        "ruleTop": 2614.5,
+        "displayWordText": "Move.",
+        "displayWordFontSize": "72px",
+        "displayWordLineHeight": "72px",
+        "displayWordFontWeight": "600",
+        "displayWordTop": 2647.5,
+        "descText": "Changing addresses involves more than transporting boxes. The belongings, access at each property and preferred date all matter when planning a move."
+      },
+      {
+        "colWidth": 208,
+        "colLeft": 528,
+        "colTop": 2578.5,
+        "labelText": "STORAGE",
+        "ruleWidth": 208,
+        "ruleTop": 2614.5,
+        "displayWordText": "Store.",
+        "displayWordFontSize": "72px",
+        "displayWordLineHeight": "72px",
+        "displayWordFontWeight": "600",
+        "displayWordTop": 2647.5,
+        "descText": "Between properties, renovating or making extra room? Tell us what needs storing and how long you expect to need the space."
+      }
+    ]
+  },
+  "mobile_390": {
+    "top": 2021.734375,
+    "width": 390,
+    "height": 1283.1875,
+    "padding": "80px 0px",
+    "bg": "rgb(248, 247, 244)",
+    "eyebrow": "WHAT WE DO",
+    "h2": {
+      "text": "There's more than one way to get a space ready.",
+      "fontSize": "30px",
+      "lineHeight": "32.4px",
+      "fontWeight": "500",
+      "width": 342,
+      "height": 64.78125,
+      "left": 24
+    },
+    "intro": {
+      "text": "Not every job starts with a move. Sometimes it's a property that needs cleaning, furniture that needs relocating or belongings that need somewhere to stay. Laurrel Services offers all three, so you can start with the work that matters to you.",
+      "fontSize": "16px",
+      "lineHeight": "25.92px",
+      "width": 342,
+      "height": 155.4375,
+      "left": 24
+    },
+    "colMetrics": [
+      {
+        "colWidth": 342,
+        "colLeft": 24,
+        "colTop": 2467.953125,
+        "labelText": "CLEANING",
+        "ruleWidth": 342,
+        "ruleTop": 2501.953125,
+        "displayWordText": "Clean.",
+        "displayWordFontSize": "60px",
+        "displayWordLineHeight": "57px",
+        "displayWordFontWeight": "600",
+        "displayWordTop": 2526.953125,
+        "descText": "Whether a property is occupied or being prepared for its next use, tell us about the rooms, their condition and the cleaning work you have in mind."
+      },
+      {
+        "colWidth": 342,
+        "colLeft": 24,
+        "colTop": 2747.578125,
+        "labelText": "MOVING",
+        "ruleWidth": 342,
+        "ruleTop": 2781.578125,
+        "displayWordText": "Move.",
+        "displayWordFontSize": "60px",
+        "displayWordLineHeight": "57px",
+        "displayWordFontWeight": "600",
+        "displayWordTop": 2806.578125,
+        "descText": "Changing addresses involves more than transporting boxes. The belongings, access at each property and preferred date all matter when planning a move."
+      },
+      {
+        "colWidth": 342,
+        "colLeft": 24,
+        "colTop": 3027.203125,
+        "labelText": "STORAGE",
+        "ruleWidth": 342,
+        "ruleTop": 3061.203125,
+        "displayWordText": "Store.",
+        "displayWordFontSize": "60px",
+        "displayWordLineHeight": "57px",
+        "displayWordFontWeight": "600",
+        "displayWordTop": 3086.203125,
+        "descText": "Between properties, renovating or making extra room? Tell us what needs storing and how long you expect to need the space."
+      }
+    ]
+  }
+}

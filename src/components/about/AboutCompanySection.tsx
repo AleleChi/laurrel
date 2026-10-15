@@ -3,6 +3,8 @@
 import React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { motion, useReducedMotion } from 'framer-motion';
+import { MOTION_EASE, MOTION_DURATIONS, VIEWPORT_CONFIG } from '@/utils/motion';
 
 interface EmphasisPoint {
   id: string;
@@ -42,94 +44,171 @@ export const AboutCompanySection: React.FC<AboutCompanySectionProps> = ({
   imageSrc,
   altText,
 }) => {
+  const shouldReduceMotion = useReducedMotion();
+
+  // Left Image Animation
+  const imageVariants = {
+    hidden: {
+      opacity: 0,
+      y: shouldReduceMotion ? 0 : 20,
+    },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: {
+        duration: shouldReduceMotion ? 0.05 : MOTION_DURATIONS.deliberate,
+        ease: MOTION_EASE,
+      },
+    },
+  };
+
+  // Right Column Staggered Container
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: shouldReduceMotion ? 0 : 0.09,
+        delayChildren: shouldReduceMotion ? 0 : 0.05,
+      },
+    },
+  };
+
+  // Child Elements Animation
+  const itemVariants = {
+    hidden: {
+      opacity: 0,
+      y: shouldReduceMotion ? 0 : 16,
+    },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: {
+        duration: shouldReduceMotion ? 0.05 : MOTION_DURATIONS.standard,
+        ease: MOTION_EASE,
+      },
+    },
+  };
+
   return (
-    <section className="w-full bg-[#F8F7F4] py-20 lg:py-28 overflow-hidden">
-      <div className="max-w-7xl mx-auto px-6 sm:px-8">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center">
-          {/* Dominant Service Photograph (Left, ~42% width) */}
-          <div className="lg:col-span-5 w-full">
-            <div className="relative w-full aspect-[4/5] sm:aspect-[450/490] max-w-[480px] mx-auto lg:mx-0 rounded-[40px] lg:rounded-[50px] overflow-hidden shadow-sm bg-[#202024]/5">
+    <section className="w-full bg-[#F8F7F4] py-20 sm:py-24 lg:py-32 overflow-hidden border-b border-[#202024]/10">
+      <div className="max-w-[1380px] mx-auto px-6 sm:px-8 lg:px-12">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 xl:gap-14 items-center">
+          
+          {/* 1. Dominant Left Editorial Image Column (~42% width) */}
+          <motion.div
+            initial="hidden"
+            whileInView="visible"
+            viewport={VIEWPORT_CONFIG}
+            variants={imageVariants}
+            className="lg:col-span-5 w-full flex justify-center lg:justify-start"
+          >
+            <div className="relative w-full max-w-[540px] h-[500px] sm:h-[600px] lg:h-[660px] xl:h-[680px] rounded-[28px] sm:rounded-[32px] overflow-hidden bg-[#202024]/5 shadow-sm">
               <Image
                 src={imageSrc}
                 alt={altText}
                 fill
-                loading="eager"
-                sizes="(max-width: 1024px) 100vw, 480px"
-                className="object-cover object-center"
+                priority
+                sizes="(max-width: 1024px) 100vw, 540px"
+                className="object-cover object-left sm:object-center"
               />
             </div>
-          </div>
+          </motion.div>
 
-          {/* Editorial Introduction Content (Right, ~58% width) */}
-          <div className="lg:col-span-7 flex flex-col justify-center">
-            {/* Section Eyebrow Label (No badges, plain uppercase) */}
-            <span className="text-xs font-semibold tracking-wider text-[#390044] uppercase mb-4 block">
+          {/* 2. Dominant Right Editorial Content Column (~58% width) */}
+          <motion.div
+            initial="hidden"
+            whileInView="visible"
+            viewport={VIEWPORT_CONFIG}
+            variants={containerVariants}
+            className="lg:col-span-7 flex flex-col justify-center lg:pl-2 xl:pl-4"
+          >
+            {/* Eyebrow Label */}
+            <motion.span
+              variants={itemVariants}
+              className="text-[14px] sm:text-[16px] font-bold tracking-tight uppercase text-[#390044] mb-4 sm:mb-5 block"
+            >
               {eyebrow}
-            </span>
+            </motion.span>
 
-            {/* Major H2 Headline */}
-            <h2 className="text-3xl sm:text-4xl lg:text-[48px] xl:text-[52px] font-medium leading-[1.12] tracking-[-0.03em] text-[#202024] mb-6">
-              {headline}
-            </h2>
+            {/* Massive Dominant H2 Headline */}
+            <motion.h2
+              variants={itemVariants}
+              className="text-4xl sm:text-6xl lg:text-[68px] xl:text-[76px] font-bold leading-[0.98] tracking-[-0.04em] text-[#202024] mb-6 sm:mb-8"
+            >
+              Cleaning, moving and storage.<br className="hidden sm:inline" /> All in one place.
+            </motion.h2>
 
             {/* Editorial Paragraphs */}
-            <div className="space-y-4 text-base sm:text-lg leading-relaxed text-[#202024]/80 mb-6 max-w-2xl">
+            <motion.div
+              variants={itemVariants}
+              className="space-y-4 sm:space-y-5 text-base sm:text-lg xl:text-[19px] leading-[1.6] text-[#202024]/80 mb-8 max-w-[620px]"
+            >
               <p>{paragraph1}</p>
               <p>{paragraph2}</p>
-            </div>
+            </motion.div>
 
-            {/* Two Restrained Emphasis Statements with Original Vector Icons */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 py-5 mb-8 border-t border-b border-[#202024]/10 max-w-2xl">
+            {/* Two-Point Feature Row */}
+            <motion.div
+              variants={itemVariants}
+              className="border-t border-b border-[#202024]/15 py-6 mb-10 max-w-[620px] grid grid-cols-1 sm:grid-cols-2 gap-6"
+            >
               {emphasisPoints.map((item, index) => (
                 <div key={item.id || index} className="flex items-start gap-3.5">
-                  <div className="w-10 h-10 rounded-full bg-[#390044]/10 text-[#390044] flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <div className="w-10 h-10 rounded-full bg-[#390044]/10 text-[#390044] flex items-center justify-center shrink-0 mt-0.5">
                     {index === 0 ? (
-                      /* Icon 1: Calendar / Scheduled booking */
+                      /* Icon 1: Verified Service Booking (Rosette / Shield Check) */
                       <svg
-                        className="w-5 h-5 stroke-current stroke-[1.8] fill-none"
+                        className="w-5 h-5 fill-current"
                         viewBox="0 0 24 24"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
                         aria-hidden="true"
                       >
-                        <rect x="3" y="4" width="18" height="18" rx="3" />
-                        <line x1="16" y1="2" x2="16" y2="6" />
-                        <line x1="8" y1="2" x2="8" y2="6" />
-                        <line x1="3" y1="10" x2="21" y2="10" />
-                        <path d="m9 16 2 2 4-4" />
+                        <path d="M12 2l2.4 2.2 3.2-.4 1.3 2.9 3 .9-.3 3.2 2 2.5-2 2.5.3 3.2-3 .9-1.3 2.9-3.2-.4L12 22l-2.4-2.2-3.2.4-1.3-2.9-3-.9.3-3.2-2-2.5 2-2.5-.3-3.2 3-.9 1.3-2.9 3.2.4L12 2zm-1.4 14.2l6-6-1.4-1.4-4.6 4.6-2.2-2.2-1.4 1.4 3.6 3.6z" />
                       </svg>
                     ) : (
-                      /* Icon 2: Connected services / Multi-service layers */
+                      /* Icon 2: Connected Multi-Service Coordination */
                       <svg
-                        className="w-5 h-5 stroke-current stroke-[1.8] fill-none"
+                        className="w-5 h-5 fill-current"
                         viewBox="0 0 24 24"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
                         aria-hidden="true"
                       >
-                        <path d="M12 2 2 7l10 5 10-5-10-5Z" />
-                        <path d="m2 17 10 5 10-5" />
-                        <path d="m2 12 10 5 10-5" />
+                        <path d="M12 2L2 7l10 5 10-5-10-5zm0 8.5L4.5 7 12 3.5 19.5 7 12 10.5zm-8 4.3l8 4 8-4v2.5l-8 4-8-4v-2.5zm0-4.3l8 4 8-4v2.5l-8 4-8-4v-2.5z" />
                       </svg>
                     )}
                   </div>
-                  <p className="text-sm sm:text-[15px] font-medium leading-snug text-[#202024]">
+                  <p className="text-[15px] sm:text-[16px] font-semibold text-[#202024] leading-snug">
                     {item.text}
                   </p>
                 </div>
               ))}
-            </div>
+            </motion.div>
 
-            {/* Call to Action Button */}
-            <div>
+            {/* Solshine-Style Premium CTA Button with Hover Arrow Animation */}
+            <motion.div variants={itemVariants} className="pt-1">
               <Link
                 href={cta.href}
-                className="inline-flex items-center justify-center px-7 py-3.5 bg-[#C8E80B] text-[#202024] font-semibold text-sm sm:text-base rounded-full transition-all duration-200 hover:bg-[#b5d309] shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#390044]"
+                className="group inline-flex items-center justify-between h-[58px] sm:h-[62px] pl-7 pr-2.5 bg-[#C8E80B] hover:bg-[#b5d309] rounded-full transition-all duration-200 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#390044]"
               >
-                {cta.label}
+                <span className="text-[16px] sm:text-[17px] font-bold text-[#202024] tracking-tight pr-2">
+                  {cta.label}
+                </span>
+                <span className="w-11 h-11 sm:w-12 sm:h-12 bg-white rounded-full flex items-center justify-center shrink-0 ml-4 shadow-sm transition-transform duration-200 group-hover:translate-x-1">
+                  <svg
+                    className="w-5 h-5 text-[#202024] stroke-current stroke-[2] fill-none"
+                    viewBox="0 0 24 24"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
+                  >
+                    <line x1="5" y1="12" x2="19" y2="12" />
+                    <polyline points="12 5 19 12 12 19" />
+                  </svg>
+                </span>
               </Link>
-            </div>
-          </div>
+            </motion.div>
+
+          </motion.div>
+
         </div>
       </div>
     </section>

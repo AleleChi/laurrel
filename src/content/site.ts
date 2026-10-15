@@ -88,11 +88,21 @@ export interface AboutPageConfig {
     intro: string;
     statNumber?: string;
     statLabel?: string;
-    services: {
+    columns: {
+      category: string;
+      displayWord: string;
+      description: string;
+      href?: string;
+      number?: string;
+      title?: string;
+    }[];
+    services?: {
       number?: string;
       title: string;
       description: string;
       href: string;
+      category?: string;
+      displayWord?: string;
     }[];
   };
   whyLaurrel: {
@@ -343,31 +353,29 @@ export const siteConfig: SiteConfig = {
     },
     whatWeDo: {
       eyebrow: 'WHAT WE DO',
-      headline: 'Three services for homes, moves and everything in between.',
+      headline: "There's more than one way to get a space ready.",
       intro:
-        'Whether preparing a home for handover, moving across Ottawa or storing furniture between leases, we keep every booking organised, punctual and straightforward.',
-      statNumber: '03',
-      statLabel: 'CORE SERVICE AREAS',
-      services: [
+        "Not every job starts with a move. Sometimes it's a property that needs cleaning, furniture that needs relocating or belongings that need somewhere to stay. Laurrel Services offers all three, so you can start with the work that matters to you.",
+      columns: [
         {
-          number: '01',
-          title: 'Cleaning',
+          category: 'CLEANING',
+          displayWord: 'Clean.',
           description:
-            'Turnover cleans, move-in preparation, deep cleans and ongoing residential maintenance across Ottawa properties.',
+            'Whether a property is occupied or being prepared for its next use, tell us about the rooms, their condition and the cleaning work you have in mind.',
           href: '/#cleaning',
         },
         {
-          number: '02',
-          title: 'Moving',
+          category: 'MOVING',
+          displayWord: 'Move.',
           description:
-            'Careful loading, secure transit, protective blanket wrapping and dependable arrival windows across Ottawa.',
+            'Changing addresses involves more than transporting boxes. The belongings, access at each property and preferred date all matter when planning a move.',
           href: '/#moving',
         },
         {
-          number: '03',
-          title: 'Storage',
+          category: 'STORAGE',
+          displayWord: 'Store.',
           description:
-            'Coordinated temporary or seasonal storage options arranged alongside cleaning or moving jobs.',
+            'Between properties, renovating or making extra room? Tell us what needs storing and how long you expect to need the space.',
           href: '/#storage',
         },
       ],
@@ -379,33 +387,33 @@ export const siteConfig: SiteConfig = {
         'Cleaning, moving and storage each require different arrangements. Knowing what’s involved helps you make better decisions before confirming a service.',
       items: [
         {
-          id: 'contact',
-          title: 'One Point of Contact',
+          id: 'enquiry',
+          title: 'One enquiry for related jobs',
           description:
-            'Coordinate cleaning, moving or interim storage through a single responsive team without chasing separate contractors.',
+            'If your plans involve cleaning, moving and storage, include everything in the same request. The requirements can then be reviewed together.',
         },
         {
-          id: 'coordination',
-          title: 'Direct Ottawa Coordination',
+          id: 'details',
+          title: 'Details before decisions',
           description:
-            'Local scheduling, clear arrival windows and realistic estimates designed around your handover or moving timetable.',
+            'The property, belongings, access conditions and dates all matter. Understanding these details is the starting point for discussing a service.',
         },
         {
-          id: 'crews',
-          title: 'Trained & Equipped Crews',
+          id: 'one-service',
+          title: 'One service is fine too',
           description:
-            'Equipped with professional equipment, clean moving supplies and systematic workflows for consistent results.',
+            "You can enquire about cleaning, moving or storage independently. There's no need to request more than the job requires.",
         },
         {
-          id: 'pricing',
-          title: 'Clear Upfront Pricing',
+          id: 'dates',
+          title: 'Plan around your dates',
           description:
-            'Itemised, transparent estimates without hidden surcharges, unexpected fees or vague verbal promises.',
+            'Moving dates, property handovers and renovations can involve different deadlines. Include your preferred dates when making an enquiry.',
         },
       ],
       imageSrc: '/assets/hero/laurrel-room.png',
       altText: 'Prepared residential space in Ottawa arranged by Laurrel Services',
-      cutoutImageSrc: '/assets/about/mover-cutout.png',
+      cutoutImageSrc: '/assets/about/mover-cutout-trimmed.png',
       cutoutAltText: 'Laurrel Services moving specialist holding a packaged carton',
     },
     marquee: {

@@ -116,9 +116,12 @@ export async function getAboutPageData(): Promise<{
               eyebrow: res.whatWeDo?.eyebrow || siteConfig.aboutPage.whatWeDo.eyebrow,
               headline: res.whatWeDo?.headline || siteConfig.aboutPage.whatWeDo.headline,
               intro: res.whatWeDo?.intro || siteConfig.aboutPage.whatWeDo.intro,
-              statNumber: res.whatWeDo?.statNumber || siteConfig.aboutPage.whatWeDo.statNumber,
-              statLabel: res.whatWeDo?.statLabel || siteConfig.aboutPage.whatWeDo.statLabel,
-              services: res.whatWeDo?.services || siteConfig.aboutPage.whatWeDo.services,
+              columns: (res.whatWeDo?.columns || res.whatWeDo?.services || siteConfig.aboutPage.whatWeDo.columns || []).map((col: any) => ({
+                category: col.category || (col.title ? col.title.toUpperCase() : ''),
+                displayWord: col.displayWord || (col.title ? `${col.title}.` : ''),
+                description: col.description || '',
+                href: col.href || '',
+              })),
             },
             whyLaurrel: {
               eyebrow: res.whyLaurrel?.eyebrow || siteConfig.aboutPage.whyLaurrel.eyebrow,

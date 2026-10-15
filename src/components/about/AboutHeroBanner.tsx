@@ -3,6 +3,8 @@
 import React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { motion, useReducedMotion } from 'framer-motion';
+import { MOTION_EASE, MOTION_DURATIONS } from '@/utils/motion';
 
 interface AboutHeroBannerProps {
   title: string;
@@ -17,9 +19,43 @@ export const AboutHeroBanner: React.FC<AboutHeroBannerProps> = ({
   imageSrc,
   altText,
 }) => {
+  const shouldReduceMotion = useReducedMotion();
+
+  const titleVariants = {
+    hidden: {
+      opacity: 0,
+      y: shouldReduceMotion ? 0 : 20,
+    },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: {
+        duration: shouldReduceMotion ? 0.05 : MOTION_DURATIONS.deliberate,
+        delay: shouldReduceMotion ? 0 : 0.1,
+        ease: MOTION_EASE,
+      },
+    },
+  };
+
+  const breadcrumbVariants = {
+    hidden: {
+      opacity: 0,
+      y: shouldReduceMotion ? 0 : 12,
+    },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: {
+        duration: shouldReduceMotion ? 0.05 : MOTION_DURATIONS.medium,
+        delay: shouldReduceMotion ? 0 : 0.28,
+        ease: MOTION_EASE,
+      },
+    },
+  };
+
   return (
     <div className="relative w-full min-h-[500px] lg:h-[550px] flex items-center justify-center overflow-hidden bg-[#202024]">
-      {/* Full-bleed background photograph */}
+      {/* Full-bleed background photograph (loads eagerly without blocking text) */}
       <Image
         src={imageSrc}
         alt={altText}
@@ -38,12 +74,20 @@ export const AboutHeroBanner: React.FC<AboutHeroBannerProps> = ({
 
       {/* Centred safe-area content below floating header */}
       <div className="relative z-10 w-full max-w-5xl mx-auto px-6 sm:px-8 pt-32 sm:pt-36 lg:pt-40 pb-16 flex flex-col items-center justify-center text-center">
-        <h1 className="text-4xl sm:text-5xl lg:text-[65px] font-medium text-white tracking-[-0.03em] leading-[1.08] max-w-4xl">
+        <motion.h1
+          initial="hidden"
+          animate="visible"
+          variants={titleVariants}
+          className="text-4xl sm:text-5xl lg:text-[65px] font-medium text-white tracking-[-0.03em] leading-[1.08] max-w-4xl"
+        >
           {title}
-        </h1>
+        </motion.h1>
 
         {/* Semantic breadcrumb directly beneath H1 */}
-        <nav
+        <motion.nav
+          initial="hidden"
+          animate="visible"
+          variants={breadcrumbVariants}
           aria-label="Breadcrumbs"
           className="mt-6 flex items-center justify-center gap-2.5 text-sm sm:text-base font-medium text-white/90"
         >
@@ -71,7 +115,7 @@ export const AboutHeroBanner: React.FC<AboutHeroBannerProps> = ({
               </React.Fragment>
             );
           })}
-        </nav>
+        </motion.nav>
       </div>
     </div>
   );
