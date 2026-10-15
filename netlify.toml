@@ -1,9 +1,21 @@
+# =========================================================
+# LAURREL SERVICES — NETLIFY PRODUCTION DEPLOYMENT
+# =========================================================
+# Next.js 14 App Router on Netlify uses the automatic Next.js Runtime (v5).
+# Manual plugin declarations are omitted per Netlify's official Next.js runtime guidance.
+
 [build]
   command = "npm run build"
   publish = ".next"
 
-[[plugins]]
-  package = "@netlify/plugin-nextjs"
-
 [build.environment]
   NODE_VERSION = "20"
+
+# Production Security Headers
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=()"

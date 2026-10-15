@@ -1,9 +1,9 @@
 import type { Metadata } from 'next';
-import { siteConfig } from '@/content/site';
+import { getContactPageData } from '@/sanity/client';
 import { ContactPageClient } from './ContactPageClient';
 
 export async function generateMetadata(): Promise<Metadata> {
-  const content = siteConfig.contactPage;
+  const { data: content } = await getContactPageData();
 
   return {
     title: content.meta.title,
@@ -29,7 +29,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function ContactPage() {
-  const content = siteConfig.contactPage;
+  const { data: content } = await getContactPageData();
 
   // Structured Data (JSON-LD) for BreadcrumbList
   const jsonLd = {

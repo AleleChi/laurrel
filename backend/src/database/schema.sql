@@ -127,3 +127,21 @@ CREATE TABLE IF NOT EXISTS audit_logs (
 
 CREATE INDEX IF NOT EXISTS idx_audit_logs_event_type ON audit_logs(event_type);
 CREATE INDEX IF NOT EXISTS idx_audit_logs_created_at ON audit_logs(created_at DESC);
+
+-- 7. Administrator Accounts Table
+CREATE TABLE IF NOT EXISTS admin_users (
+    id VARCHAR(64) PRIMARY KEY,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    role VARCHAR(32) NOT NULL DEFAULT 'admin', -- 'owner', 'admin', 'dispatcher'
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    password_reset_token VARCHAR(128),
+    password_reset_expires TIMESTAMPTZ,
+    last_login_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_admin_users_email ON admin_users(email);
+CREATE INDEX IF NOT EXISTS idx_admin_users_role ON admin_users(role);

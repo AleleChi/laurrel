@@ -9,14 +9,30 @@ import {
   StorageIllustration,
 } from '@/components/icons/services';
 import { siteConfig, ServicesHighlightConfig } from '@/content/site';
+import { getHomeServicesData, isCmsConfigured } from '@/sanity/client';
+import { useState, useEffect } from 'react';
 
 interface ServicesHighlightSectionProps {
   content?: ServicesHighlightConfig;
 }
 
 export const ServicesHighlightSection: React.FC<ServicesHighlightSectionProps> = ({
-  content = siteConfig.servicesHighlight,
+  content,
 }) => {
+  const [activeContent, setActiveContent] = useState<ServicesHighlightConfig>(
+    content || siteConfig.servicesHighlight
+  );
+
+  useEffect(() => {
+    if (isCmsConfigured && !content) {
+      getHomeServicesData().then((res) => {
+        if (res?.data) {
+          setActiveContent(res.data);
+        }
+      }).catch(() => {});
+    }
+  }, [content]);
+
   const shouldReduceMotion = useReducedMotion();
 
   // Left Column Animation Variants
@@ -94,7 +110,7 @@ export const ServicesHighlightSection: React.FC<ServicesHighlightSectionProps> =
               variants={itemVariants}
               className="text-xs sm:text-sm font-bold tracking-[0.14em] uppercase text-[#18181B] mb-5 sm:mb-6"
             >
-              {content.eyebrow}
+              {activeContent.eyebrow}
             </motion.div>
 
             {/* 2. Large Editorial Headline */}
@@ -102,18 +118,18 @@ export const ServicesHighlightSection: React.FC<ServicesHighlightSectionProps> =
               variants={itemVariants}
               className="text-[36px] sm:text-[46px] md:text-[52px] lg:text-[56px] xl:text-[62px] 2xl:text-[68px] font-medium tracking-[-0.035em] leading-[1.08] text-[#18181B] mb-8 sm:mb-10 lg:mb-14 max-w-[540px]"
             >
-              {content.headline}
+              {activeContent.headline}
             </motion.h2>
 
             {/* 3. Black CTA Button with White Arrow Holder */}
             <motion.div variants={itemVariants}>
               <Link
-                href={content.cta.href}
+                href={activeContent.cta.href}
                 className="group relative inline-flex items-center justify-between gap-5 bg-[#18181B] hover:bg-black text-white pl-7 pr-3 py-2.5 rounded-[50px] transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#18181B] shadow-sm hover:shadow-md cursor-pointer"
-                aria-label={`${content.cta.label} — Navigate to dedicated Services page`}
+                aria-label={`${activeContent.cta.label} — Navigate to dedicated Services page`}
               >
                 <span className="text-[17px] sm:text-[18px] font-medium tracking-tight text-white pr-2 select-none">
-                  {content.cta.label}
+                  {activeContent.cta.label}
                 </span>
 
                 {/* White Arrow Holder */}
@@ -142,7 +158,7 @@ export const ServicesHighlightSection: React.FC<ServicesHighlightSectionProps> =
           {/* RIGHT COLUMN: 3 Service Rows with Animated Illustrations  */}
           {/* ========================================================= */}
           <div className="lg:col-span-7 xl:col-span-7 flex flex-col space-y-12 sm:space-y-14 lg:space-y-16 pt-2 lg:pt-3">
-            {content.services.map((service, index) => (
+            {activeContent.services.map((service, index) => (
               <motion.div
                 key={service.id}
                 custom={index}

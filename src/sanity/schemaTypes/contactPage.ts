@@ -3,6 +3,30 @@ export const contactPageSchema = {
   title: 'Contact Page & Location Settings',
   type: 'document',
   fields: [
+    // 0. Page Hero Banner Media
+    {
+      name: 'banner',
+      title: 'Hero Banner',
+      type: 'object',
+      fields: [
+        { name: 'title', title: 'Banner Title', type: 'string', initialValue: 'Contact Us' },
+        {
+          name: 'image',
+          title: 'Banner Background Photograph',
+          type: 'image',
+          options: { hotspot: true },
+          fields: [
+            {
+              name: 'alt',
+              title: 'Alternative Text',
+              type: 'string',
+              description: 'Accessible description for screen readers.',
+              validation: (Rule: any) => Rule.required(),
+            },
+          ],
+        },
+      ],
+    },
     // 1. Editorial & Contact Introduction
     {
       name: 'eyebrow',

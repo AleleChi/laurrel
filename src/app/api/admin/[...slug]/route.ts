@@ -1,14 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getAdminSessionFromRequest } from '@/lib/auth/session';
 import { readAllEnquiries, updateEnquiryStatus } from '@/lib/db/enquiries';
 
 export async function GET(req: NextRequest, { params }: { params: { slug: string[] } }) {
+  const session = getAdminSessionFromRequest(req);
   const secret = process.env.ADMIN_API_SECRET;
-  const authHeader = req.headers.get('authorization');
   const tokenHeader = req.headers.get('x-admin-token');
-  const provided = tokenHeader || (authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null);
+  const isDirectSecretCall = secret && tokenHeader === secret;
 
-  if (secret && provided !== secret) {
-    return NextResponse.json({ error: 'Unauthorized: Invalid admin credentials.' }, { status: 401 });
+  if (!session && !isDirectSecretCall) {
+    return NextResponse.json(
+      { error: 'Unauthorized: Valid administrator session or credentials required.' },
+      { status: 401 }
+    );
   }
 
   // Forward to Render backend if configured
@@ -21,7 +25,7 @@ export async function GET(req: NextRequest, { params }: { params: { slug: string
 
       const res = await fetch(target, {
         headers: {
-          'x-admin-token': provided || secret || '',
+          ...(secret ? { 'x-admin-token': secret } : {}),
         },
       });
 
@@ -42,7 +46,6 @@ export async function GET(req: NextRequest, { params }: { params: { slug: string
       newEnquiries: all.filter((e) => e.status === 'new').length,
       reviewed: all.filter((e) => e.status === 'under_review').length,
       scheduled: all.filter((e) => e.status === 'accepted' || e.status === 'quoted').length,
-
       failedDeliveries: 0,
       pendingHandoffs: 0,
     });
@@ -64,17 +67,20 @@ export async function GET(req: NextRequest, { params }: { params: { slug: string
     return NextResponse.json({ handoffs: [] });
   }
 
-  return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  return NextResponse.json({ error: 'Endpoint not found' }, { status: 404 });
 }
 
 export async function PATCH(req: NextRequest, { params }: { params: { slug: string[] } }) {
+  const session = getAdminSessionFromRequest(req);
   const secret = process.env.ADMIN_API_SECRET;
-  const authHeader = req.headers.get('authorization');
   const tokenHeader = req.headers.get('x-admin-token');
-  const provided = tokenHeader || (authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null);
+  const isDirectSecretCall = secret && tokenHeader === secret;
 
-  if (secret && provided !== secret) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (!session && !isDirectSecretCall) {
+    return NextResponse.json(
+      { error: 'Unauthorized: Valid administrator session required.' },
+      { status: 401 }
+    );
   }
 
   const backendUrl = process.env.BACKEND_API_URL || process.env.API_BASE_URL;
@@ -88,7 +94,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { slug: stri
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
-          'x-admin-token': provided || secret || '',
+          ...(secret ? { 'x-admin-token': secret } : {}),
         },
         body: JSON.stringify(body),
       });
@@ -104,9 +110,10 @@ export async function PATCH(req: NextRequest, { params }: { params: { slug: stri
   if (params.slug[0] === 'enquiries' && params.slug[2] === 'status') {
     const id = params.slug[1];
     const { status, note, author } = await req.json();
-    const updated = await updateEnquiryStatus(id, status, author || 'admin', note);
+    const actor = author || (session ? session.user.name : 'Administrator');
+    const updated = await updateEnquiryStatus(id, status, actor, note);
     return NextResponse.json({ success: true, enquiry: updated });
   }
 
-  return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  return NextResponse.json({ error: 'Endpoint not found' }, { status: 404 });
 }

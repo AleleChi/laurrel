@@ -30,7 +30,7 @@ This inventory catalogs every visual asset on the website, maps each to its corr
 | **ART-01** | Home (`/`) | Services Highlight| `ServicesHighlight` | `ServiceIllustrations.tsx` (SVG) | `homeServices` → `services[0].illustration` | Vector | Yes (Icon Type) | Approved minimal line-art |
 | **ART-02** | Home (`/`) | Services Highlight| `ServicesHighlight` | `ServiceIllustrations.tsx` (SVG) | `homeServices` → `services[1].illustration` | Vector | Yes (Icon Type) | Approved minimal line-art |
 | **ART-03** | Home (`/`) | Services Highlight| `ServicesHighlight` | `ServiceIllustrations.tsx` (SVG) | `homeServices` → `services[2].illustration` | Vector | Yes (Icon Type) | Approved minimal line-art |
-| **IMG-03** | Home (`/`) | When Plans Overlap| `WhenPlansOverlap` | `/assets/services/solshine-service-storage.png` | Fallback / `siteConfig` | 16:10 | Planned | Replace with combined transition photo |
+| **IMG-03** | Home (`/`) | When Plans Overlap| `WhenPlansOverlap` | `/assets/videos/cleaning-poster.jpg` | `homeOverlappingPlans` → `situations[].image` | 16:10 | **Yes** | Replace with authentic Ottawa residential transition photo |
 | **IMG-04** | About (`/about`) | Top Banner | `AboutPageClient` | `/assets/hero/laurrel-room.png` | `aboutPage` → `banner.image` | 21:9 Wide | **Yes** | Architectural Ottawa exterior / interior |
 | **IMG-05** | About (`/about`) | Company Story | `AboutPageClient` | `/assets/hero/laurrel-room.png` | `aboutPage` → `aboutCompany.image` | 4:3 | **Yes** | Team meeting / dispatch room |
 | **IMG-06** | About (`/about`) | Why Laurrel | `AboutPageClient` | `/assets/videos/moving-poster.jpg` | `aboutPage` → `whyLaurrel.image` | 16:11 | **Yes** | Moving vehicle prep / equipment |

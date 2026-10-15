@@ -6,6 +6,7 @@ import { enquireRouter } from './routes/enquire';
 import { assistantRouter } from './routes/assistant';
 import { adminRouter } from './routes/admin';
 import { runMigrations } from './database/migrate';
+import { bootstrapOwnerAccount } from './database/adminRepo';
 
 dotenv.config();
 
@@ -53,11 +54,12 @@ app.get('/', (_req, res) => {
   });
 });
 
-// Run database migrations on startup if DATABASE_URL is configured
+// Run database migrations and bootstrap owner on startup if DATABASE_URL is configured
 if (process.env.DATABASE_URL) {
   runMigrations()
-    .then((res) => {
+    .then(async (res) => {
       console.log('[Startup Migration]:', res.message);
+      await bootstrapOwnerAccount();
     })
     .catch((err) => {
       console.warn('[Startup Migration Warning]:', err.message);

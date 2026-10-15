@@ -5,6 +5,8 @@ import {
   AboutPageConfig,
   ServicesHighlightConfig,
   ServicesPageConfig,
+  OverlappingPlansConfig,
+  ContactPageConfig,
   SiteConfig,
 } from '@/content/site';
 
@@ -402,4 +404,133 @@ export async function getServicesPageData(): Promise<{
     source: 'local',
   };
 }
+
+/**
+ * Fetch Homepage When Plans Overlap Section data with fallback to local centralized config
+ */
+export async function getOverlappingPlansData(): Promise<{
+  data: OverlappingPlansConfig;
+  source: 'sanity' | 'local';
+}> {
+  if (client) {
+    try {
+      const query = `*[_type == "homeOverlappingPlans"][0]{
+        eyebrow,
+        headline,
+        intro,
+        situations[]{
+          id,
+          title,
+          description,
+          relatedServicesText,
+          preselectedServices,
+          "imageSrc": image.asset->url,
+          "imageAlt": image.alt,
+          details
+        }
+      }`;
+      const res = await client.fetch(query, {}, { next: { revalidate: 60 } });
+      if (res && res.situations && res.situations.length > 0) {
+        return {
+          data: {
+            eyebrow: res.eyebrow || siteConfig.overlappingPlans.eyebrow,
+            headline: res.headline || siteConfig.overlappingPlans.headline,
+            intro: res.intro || siteConfig.overlappingPlans.intro,
+            situations: res.situations.map((sit: any, idx: number) => {
+              const fallback = siteConfig.overlappingPlans.situations[idx] || siteConfig.overlappingPlans.situations[0];
+              return {
+                id: sit.id || fallback.id,
+                title: sit.title || fallback.title,
+                description: sit.description || fallback.description,
+                relatedServicesText: sit.relatedServicesText || fallback.relatedServicesText,
+                preselectedServices: sit.preselectedServices || fallback.preselectedServices,
+                imageSrc: sit.imageSrc || fallback.imageSrc,
+                imageAlt: sit.imageAlt || fallback.imageAlt,
+                details: sit.details || fallback.details,
+              };
+            }),
+            cta: siteConfig.overlappingPlans.cta,
+          },
+          source: 'sanity',
+        };
+      }
+    } catch (err) {
+      console.warn('[CMS warning] Could not fetch homeOverlappingPlans from Sanity; falling back to local content:', err);
+    }
+  }
+
+  return {
+    data: siteConfig.overlappingPlans,
+    source: 'local',
+  };
+}
+
+/**
+ * Fetch Dedicated Contact Page data with fallback to local centralized config
+ */
+export async function getContactPageData(): Promise<{
+  data: ContactPageConfig;
+  source: 'sanity' | 'local';
+}> {
+  if (client) {
+    try {
+      const query = `*[_type == "contactPage"][0]{
+        eyebrow,
+        headline,
+        supportingParagraph,
+        businessEmail,
+        businessPhone,
+        formHeading,
+        formButtonText,
+        hasPublicOffice,
+        officeAddress,
+        googleMapsPlaceId,
+        locationHeading,
+        serviceRegionDescription,
+        confirmedServiceAreas,
+        "bannerImage": banner.image.asset->url,
+        "bannerAlt": banner.image.alt,
+        "bannerTitle": banner.title
+      }`;
+      const res = await client.fetch(query, {}, { next: { revalidate: 60 } });
+      if (res) {
+        return {
+          data: {
+            meta: siteConfig.contactPage.meta,
+            banner: {
+              title: res.bannerTitle || siteConfig.contactPage.banner.title,
+              breadcrumb: siteConfig.contactPage.banner.breadcrumb,
+              imageSrc: res.bannerImage || siteConfig.contactPage.banner.imageSrc,
+              altText: res.bannerAlt || siteConfig.contactPage.banner.altText,
+            },
+            eyebrow: res.eyebrow || siteConfig.contactPage.eyebrow,
+            headline: res.headline || siteConfig.contactPage.headline,
+            supportingParagraph: res.supportingParagraph || siteConfig.contactPage.supportingParagraph,
+            businessEmail: res.businessEmail || siteConfig.contactPage.businessEmail,
+            businessPhone: res.businessPhone || siteConfig.contactPage.businessPhone,
+            hasPublicOffice: res.hasPublicOffice ?? siteConfig.contactPage.hasPublicOffice,
+            officeAddress: res.officeAddress || siteConfig.contactPage.officeAddress,
+            googleMapsPlaceId: res.googleMapsPlaceId || siteConfig.contactPage.googleMapsPlaceId,
+            locationHeading: res.locationHeading || siteConfig.contactPage.locationHeading,
+            serviceRegionDescription: res.serviceRegionDescription || siteConfig.contactPage.serviceRegionDescription,
+            confirmedServiceAreas: res.confirmedServiceAreas || siteConfig.contactPage.confirmedServiceAreas,
+            form: {
+              heading: res.formHeading || siteConfig.contactPage.form.heading,
+              buttonText: res.formButtonText || siteConfig.contactPage.form.buttonText,
+            },
+          },
+          source: 'sanity',
+        };
+      }
+    } catch (err) {
+      console.warn('[CMS warning] Could not fetch contactPage from Sanity; falling back to local content:', err);
+    }
+  }
+
+  return {
+    data: siteConfig.contactPage,
+    source: 'local',
+  };
+}
+
 

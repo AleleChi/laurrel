@@ -13,6 +13,7 @@ import {
   Calendar,
 } from 'lucide-react';
 import { siteConfig, OverlappingPlansConfig, OverlappingPlansSituation } from '@/content/site';
+import { getOverlappingPlansData, isCmsConfigured } from '@/sanity/client';
 
 interface WhenPlansOverlapSectionProps {
   content?: OverlappingPlansConfig;
@@ -20,14 +21,27 @@ interface WhenPlansOverlapSectionProps {
 }
 
 export const WhenPlansOverlapSection: React.FC<WhenPlansOverlapSectionProps> = ({
-  content = siteConfig.overlappingPlans,
+  content,
   onOpenQuote,
 }) => {
+  const [activeContent, setActiveContent] = useState<OverlappingPlansConfig>(
+    content || siteConfig.overlappingPlans
+  );
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
 
-  const situations = content.situations;
+  useEffect(() => {
+    if (isCmsConfigured && !content) {
+      getOverlappingPlansData().then((res) => {
+        if (res?.data) {
+          setActiveContent(res.data);
+        }
+      }).catch(() => {});
+    }
+  }, [content]);
+
+  const situations = activeContent.situations;
   const current = situations[currentIndex] || situations[0];
 
   const handleSelectIndex = (newIndex: number) => {
@@ -90,16 +104,16 @@ export const WhenPlansOverlapSection: React.FC<WhenPlansOverlapSectionProps> = (
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 sm:mb-16 gap-8">
           <div className="max-w-3xl">
             <span className="text-xs font-bold tracking-widest uppercase text-[#390044] mb-3 block">
-              {content.eyebrow}
+              {activeContent.eyebrow}
             </span>
             <h2
               id="when-plans-overlap-heading"
               className="text-3xl sm:text-4xl md:text-5xl lg:text-[52px] font-semibold text-[#18181B] tracking-[-0.03em] leading-[1.12] mb-6"
             >
-              {content.headline}
+              {activeContent.headline}
             </h2>
             <div className="space-y-3 text-base sm:text-lg text-[#202024]/85 leading-relaxed font-normal">
-              {content.intro.split('\n\n').map((paragraph, idx) => (
+              {activeContent.intro.split('\n\n').map((paragraph, idx) => (
                 <p key={idx}>{paragraph}</p>
               ))}
             </div>

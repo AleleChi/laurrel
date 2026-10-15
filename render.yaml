@@ -1,3 +1,14 @@
+# =========================================================
+# LAURREL SERVICES — RENDER PRODUCTION BLUEPRINT
+# =========================================================
+# Infrastructure Cost & Plan Overview:
+# - Web Service: 'starter' plan is $7 USD / month (24/7 dedicated, 512MB RAM, no spin-down).
+#   To use zero-cost evaluation tier, set plan: free (spins down after 15 min idle).
+# - PostgreSQL Database: 'starter' plan is $7 USD / month (1GB storage, daily automated backups).
+#   To use evaluation database, set plan: free (active for 30 days).
+# Total Starter monthly recurring cost: $14 USD / month.
+# =========================================================
+
 services:
   - type: web
     name: laurrel-backend-api
@@ -5,7 +16,7 @@ services:
     rootDir: backend
     buildCommand: npm install && npm run build
     startCommand: npm run start
-    plan: starter
+    plan: starter # $7/month (or 'free' for staging evaluation)
     healthCheckPath: /health
     envVars:
       - key: NODE_ENV
@@ -17,22 +28,28 @@ services:
           name: laurrel-postgres
           property: connectionString
       - key: FRONTEND_ORIGIN
-        sync: false
+        sync: false # Set to your Netlify URL (e.g. https://laurrelservices.ca or https://staging--laurrel.netlify.app)
       - key: ADMIN_API_SECRET
-        generateValue: true
+        generateValue: true # Secure 32-character master API token generated automatically by Render
+      - key: ADMIN_SESSION_SECRET
+        generateValue: true # Cryptographic secret for signing session cookies
+      - key: ADMIN_OWNER_EMAIL
+        value: owner@laurrelservices.ca # Update to business owner's email
+      - key: ADMIN_OWNER_PASSWORD
+        generateValue: true # Initial owner password generated automatically by Render
       - key: GEMINI_API_KEY
-        sync: false
+        sync: false # Obtain from Google AI Studio
       - key: EMAIL_PROVIDER
-        value: resend
+        value: resend # 'resend' (preferred) or 'smtp'
       - key: RESEND_API_KEY
-        sync: false
+        sync: false # Set your verified Resend API key
       - key: EMAIL_FROM
-        value: Laurrel Dispatch <dispatch@laurrelservices.ca>
+        sync: false # Set your verified sender (e.g. "Laurrel Dispatch <dispatch@laurrelservices.ca>" or "onboarding@resend.dev")
       - key: ENQUIRY_TO_EMAIL
-        value: info@laurrelservices.ca
+        sync: false # Set your intake mailbox address (e.g. info@laurrelservices.ca)
 
 databases:
   - name: laurrel-postgres
-    plan: starter
+    plan: starter # $7/month with automated backups (or 'free' for 30-day eval)
     databaseName: laurrel_production
     user: laurrel_admin

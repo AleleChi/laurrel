@@ -8,14 +8,19 @@ export class ResendEmailProvider implements IEmailProvider {
 
   constructor() {
     this.apiKey = process.env.RESEND_API_KEY || '';
-    this.fromAddress = process.env.EMAIL_FROM || 'Laurrel Dispatch <dispatch@laurrelservices.ca>';
-    this.toAddress = process.env.ENQUIRY_TO_EMAIL || process.env.DISPATCH_EMAIL_TO || 'info@laurrelservices.ca';
+    this.fromAddress = process.env.EMAIL_FROM || 'Laurrel Dispatch <onboarding@resend.dev>';
+    this.toAddress = process.env.ENQUIRY_TO_EMAIL || process.env.DISPATCH_EMAIL_TO || '';
   }
 
   async sendEnquiryNotification(record: EnquiryRecord): Promise<EmailDispatchResult> {
     if (!this.apiKey) {
       console.warn('[Resend Provider] RESEND_API_KEY not configured. Skipping live email dispatch.');
       return { success: false, provider: 'resend', error: 'RESEND_API_KEY is not configured' };
+    }
+
+    if (!this.toAddress) {
+      console.warn('[Resend Provider] ENQUIRY_TO_EMAIL destination is not configured. Skipping live email dispatch.');
+      return { success: false, provider: 'resend', error: 'ENQUIRY_TO_EMAIL destination is not configured' };
     }
 
     const servicesLabel = record.services.map((s) => s.toUpperCase()).join(', ');

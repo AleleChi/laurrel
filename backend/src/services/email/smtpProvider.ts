@@ -8,8 +8,8 @@ export class SmtpEmailProvider implements IEmailProvider {
   private toAddress: string;
 
   constructor() {
-    this.fromAddress = process.env.EMAIL_FROM || 'Laurrel Dispatch <dispatch@laurrelservices.ca>';
-    this.toAddress = process.env.ENQUIRY_TO_EMAIL || process.env.DISPATCH_EMAIL_TO || 'info@laurrelservices.ca';
+    this.fromAddress = process.env.EMAIL_FROM || process.env.SMTP_USER || '';
+    this.toAddress = process.env.ENQUIRY_TO_EMAIL || process.env.DISPATCH_EMAIL_TO || '';
 
     const host = process.env.SMTP_HOST;
     const port = parseInt(process.env.SMTP_PORT || '587', 10);

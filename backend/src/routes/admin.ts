@@ -6,11 +6,94 @@ import {
   updateEnquiryStatus,
   listAiHandoffs,
 } from '../database/enquiryRepo';
+import {
+  findAdminByEmail,
+  verifyPassword,
+  recordAdminLogin,
+  createPasswordResetToken,
+} from '../database/adminRepo';
 
 export const adminRouter = Router();
 
 // Apply authentication to all admin routes
 adminRouter.use('/api/admin', requireAdminAuth);
+
+/**
+ * POST /api/admin/auth/login - Authenticate administrator credentials
+ */
+adminRouter.post('/api/admin/auth/login', async (req: Request, res: Response) => {
+  try {
+    const { email, password } = req.body;
+    if (!email || !password) {
+      res.status(400).json({ error: 'Email and password are required.' });
+      return;
+    }
+
+    // 1. Check PostgreSQL admin_users table
+    const admin = await findAdminByEmail(email);
+    if (admin) {
+      const valid = verifyPassword(password, admin.passwordHash);
+      if (valid) {
+        await recordAdminLogin(admin.id);
+        res.status(200).json({
+          success: true,
+          user: {
+            id: admin.id,
+            email: admin.email,
+            name: admin.name,
+            role: admin.role,
+          },
+        });
+        return;
+      }
+    }
+
+    // 2. Owner bootstrap fallback via environment variable
+    const ownerEmail = process.env.ADMIN_OWNER_EMAIL || 'owner@laurrelservices.ca';
+    const ownerPassword = process.env.ADMIN_OWNER_PASSWORD;
+    if (ownerPassword && email.trim().toLowerCase() === ownerEmail.toLowerCase() && password === ownerPassword) {
+      res.status(200).json({
+        success: true,
+        user: {
+          id: 'admin_owner_bootstrap',
+          email: ownerEmail,
+          name: 'Laurrel Owner Admin',
+          role: 'owner',
+        },
+      });
+      return;
+    }
+
+    res.status(401).json({ error: 'Invalid administrator email or password.' });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/**
+ * POST /api/admin/auth/recover - Request password recovery instructions
+ */
+adminRouter.post('/api/admin/auth/recover', async (req: Request, res: Response) => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      res.status(400).json({ error: 'Email is required.' });
+      return;
+    }
+
+    const token = await createPasswordResetToken(email);
+    if (token) {
+      console.log(`[Admin Recovery] Generated password reset token for ${email}: ${token}`);
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'If an authorized administrator account exists for this email address, password recovery instructions have been prepared.',
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 /**
  * GET /api/admin/stats - High-level metrics for dashboard

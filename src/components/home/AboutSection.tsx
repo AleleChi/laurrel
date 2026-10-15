@@ -5,6 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Button } from '../ui/Button';
 import { siteConfig } from '@/content/site';
+import { getHomeAboutData, isCmsConfigured } from '@/sanity/client';
 
 interface AboutSectionProps {
   onOpenQuote?: () => void;
@@ -12,10 +13,20 @@ interface AboutSectionProps {
 }
 
 export const AboutSection: React.FC<AboutSectionProps> = ({ initialData }) => {
-  const about = initialData || siteConfig.about;
+  const [about, setAbout] = useState(initialData || siteConfig.about);
   const sectionRef = useRef<HTMLElement | null>(null);
   const [isVisible, setIsVisible] = useState(false);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+
+  useEffect(() => {
+    if (isCmsConfigured && !initialData) {
+      getHomeAboutData().then((res) => {
+        if (res?.data) {
+          setAbout(res.data);
+        }
+      }).catch(() => {});
+    }
+  }, [initialData]);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
