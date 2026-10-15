@@ -71,8 +71,30 @@ export async function POST(request: Request) {
       );
     }
 
+    // 2b. Server-side forwarding to dedicated Render Backend API if configured
+    const backendUrl = process.env.BACKEND_API_URL || process.env.API_BASE_URL;
+    if (backendUrl) {
+      try {
+        const target = `${backendUrl.replace(/\/$/, '')}/api/enquire`;
+        const res = await fetch(target, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-forwarded-for': ip,
+          },
+          body: JSON.stringify(rawBody),
+        });
+
+        const data = await res.json();
+        return NextResponse.json(data, { status: res.status });
+      } catch (forwardErr) {
+        console.warn('[Enquiry API] Backend API forward failed; falling back to local handler:', forwardErr);
+      }
+    }
+
     // 3. Durably persist structured record
     const record = await createEnquiryRecord(rawBody as EnquiryPayload);
+
 
     // 4. Email delivery via Resend API if configured
     const resendApiKey = process.env.RESEND_API_KEY;

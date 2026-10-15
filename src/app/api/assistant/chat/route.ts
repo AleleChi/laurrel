@@ -59,12 +59,38 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Forward to dedicated Render backend if configured
+    const backendUrl = process.env.BACKEND_API_URL || process.env.API_BASE_URL;
+    if (backendUrl) {
+      try {
+        const target = `${backendUrl.replace(/\/$/, '')}/api/assistant/chat`;
+        const res = await fetch(target, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-forwarded-for': clientIp,
+          },
+          body: JSON.stringify({
+            messages: sanitizedMessages,
+            draft: body.draft,
+            sessionId: body.sessionId,
+          }),
+        });
+
+        const data = await res.json();
+        return NextResponse.json(data, { status: res.status });
+      } catch (forwardErr) {
+        console.warn('[Assistant API] Backend forward failed, falling back to local engine:', forwardErr);
+      }
+    }
+
     // Call server-side assistant engine
     const response = await processAssistantChat({
       messages: sanitizedMessages,
       draft: body.draft,
       sessionId: body.sessionId,
     });
+
 
     return NextResponse.json(response);
   } catch (error) {

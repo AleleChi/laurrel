@@ -28,6 +28,125 @@ export const client = projectId
 export const isCmsConfigured = Boolean(projectId);
 
 /**
+ * Fetch Homepage Hero & Rotating Service Video data with fallback to local centralized config
+ */
+export async function getHomeHeroData(): Promise<{
+  data: typeof siteConfig.hero;
+  source: 'sanity' | 'local';
+}> {
+  if (client) {
+    try {
+      const query = `*[_type == "homeHero"][0]{
+        eyebrow,
+        headline,
+        body,
+        primaryCta,
+        secondaryCta,
+        supportCard,
+        "cleaningVideoFile": cleaningVideo.asset->url,
+        cleaningVideoUrl,
+        "cleaningPoster": cleaningPoster.asset->url,
+        "cleaningPosterAlt": cleaningPoster.alt,
+        "movingVideoFile": movingVideo.asset->url,
+        movingVideoUrl,
+        "movingPoster": movingPoster.asset->url,
+        "movingPosterAlt": movingPoster.alt,
+        "storageVideoFile": storageVideo.asset->url,
+        storageVideoUrl,
+        "storagePoster": storagePoster.asset->url,
+        "storagePosterAlt": storagePoster.alt,
+        "fallbackImage": fallbackImage.asset->url,
+        "fallbackAlt": fallbackImage.alt
+      }`;
+      const res = await client.fetch(query, {}, { next: { revalidate: 60 } });
+      if (res) {
+        const defaultHero = siteConfig.hero;
+        const defaultVideos = defaultHero.media.videos || [];
+
+        const cleaningSrc = res.cleaningVideoFile || res.cleaningVideoUrl || defaultVideos[0]?.src || '/assets/videos/clean.mp4';
+        const cleaningPoster = res.cleaningPoster || defaultVideos[0]?.poster || '/assets/videos/cleaning-poster.jpg';
+
+        const movingSrc = res.movingVideoFile || res.movingVideoUrl || defaultVideos[1]?.src || '/assets/videos/movinng.mp4';
+        const movingPoster = res.movingPoster || defaultVideos[1]?.poster || '/assets/videos/moving-poster.jpg';
+
+        const storageSrc = res.storageVideoFile || res.storageVideoUrl || defaultVideos[2]?.src || '/assets/videos/storagge.mp4';
+        const storagePoster = res.storagePoster || defaultVideos[2]?.poster || '/assets/videos/storage-poster.jpg';
+
+        return {
+          data: {
+            eyebrow: res.eyebrow || defaultHero.eyebrow,
+            headline: {
+              line1: res.headline?.line1 || defaultHero.headline.line1,
+              line2: res.headline?.line2 || defaultHero.headline.line2,
+              line3: res.headline?.line3 || defaultHero.headline.line3,
+            },
+            body: res.body || defaultHero.body,
+            primaryCta: {
+              label: res.primaryCta?.label || defaultHero.primaryCta.label,
+              href: res.primaryCta?.href || defaultHero.primaryCta.href,
+            },
+            secondaryCta: {
+              label: res.secondaryCta?.label || defaultHero.secondaryCta.label,
+              href: res.secondaryCta?.href || defaultHero.secondaryCta.href,
+            },
+            supportCard: {
+              heading: res.supportCard?.heading || defaultHero.supportCard.heading,
+              body: res.supportCard?.body || defaultHero.supportCard.body,
+              actionText: res.supportCard?.actionText || defaultHero.supportCard.actionText,
+            },
+            media: {
+              imageSrc: res.fallbackImage || defaultHero.media.imageSrc,
+              altText: res.fallbackAlt || defaultHero.media.altText,
+              videos: [
+                {
+                  id: 'hero-video-cleaning',
+                  service: 'Cleaning',
+                  serviceKey: 'cleaning',
+                  src: cleaningSrc,
+                  poster: cleaningPoster,
+                  description: res.cleaningPosterAlt || defaultVideos[0]?.description || 'Laurrel cleaning service',
+                  order: 1,
+                  objectPosition: defaultVideos[0]?.objectPosition || 'center 45%',
+                },
+                {
+                  id: 'hero-video-moving',
+                  service: 'Moving',
+                  serviceKey: 'moving',
+                  src: movingSrc,
+                  poster: movingPoster,
+                  description: res.movingPosterAlt || defaultVideos[1]?.description || 'Laurrel moving service',
+                  order: 2,
+                  objectPosition: defaultVideos[1]?.objectPosition || 'center 45%',
+                },
+                {
+                  id: 'hero-video-storage',
+                  service: 'Storage',
+                  serviceKey: 'storage',
+                  src: storageSrc,
+                  poster: storagePoster,
+                  description: res.storagePosterAlt || defaultVideos[2]?.description || 'Laurrel storage service',
+                  order: 3,
+                  objectPosition: defaultVideos[2]?.objectPosition || 'center 45%',
+                },
+              ],
+            },
+          },
+          source: 'sanity',
+        };
+      }
+    } catch (err) {
+      console.warn('[CMS warning] Could not fetch homeHero from Sanity; falling back to local content:', err);
+    }
+  }
+
+  return {
+    data: siteConfig.hero,
+    source: 'local',
+  };
+}
+
+
+/**
  * Fetch Homepage About section data with fallback to local centralized config
  */
 export async function getHomeAboutData(): Promise<{

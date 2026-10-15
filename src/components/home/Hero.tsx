@@ -5,13 +5,27 @@ import { MessageSquare, ChevronRight } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { HeroVideoRotator } from './HeroVideoRotator';
 import { siteConfig } from '@/content/site';
+import { useState, useEffect } from 'react';
+import { getHomeHeroData, isCmsConfigured } from '@/sanity/client';
 
 interface HeroProps {
   onOpenQuote: () => void;
+  initialData?: typeof siteConfig.hero;
 }
 
-export const Hero: React.FC<HeroProps> = ({ onOpenQuote }) => {
-  const { hero } = siteConfig;
+export const Hero: React.FC<HeroProps> = ({ onOpenQuote, initialData }) => {
+  const [hero, setHero] = useState(initialData || siteConfig.hero);
+
+  useEffect(() => {
+    if (isCmsConfigured && !initialData) {
+      getHomeHeroData().then((res) => {
+        if (res?.data) {
+          setHero(res.data);
+        }
+      }).catch(() => {});
+    }
+  }, [initialData]);
+
 
   return (
     <section

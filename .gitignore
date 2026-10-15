@@ -25,5 +25,20 @@ Thumbs.db
 *.tsbuildinfo
 scratch/
 
+# Sanity Studio & Backend artifacts
+studio/.sanity/
+studio/dist/
+backend/dist/
+backend/node_modules/
+coverage/
+
 # Local data & customer submissions
 data/
+
+# Unreferenced raw video scratch files (keep only active clean.mp4, movinng.mp4, storagge.mp4)
+public/assets/videos/Creating_*
+public/assets/videos/cleaning_laurrel.mp4
+public/assets/videos/moving.mp4
+public/assets/videos/storage.mp4
+
+
