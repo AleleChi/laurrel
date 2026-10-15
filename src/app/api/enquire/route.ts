@@ -179,27 +179,58 @@ export async function POST(request: Request) {
       preferredDate: preferredDate || undefined,
     };
 
-    // 7. Durably persist the enquiry locally
+    // 7. Durably persist the enquiry locally as backup
     persistEnquiry(cleanedData);
 
-    // 8. Check for configured production email delivery credentials
+    // 8. Real email delivery via Resend API if configured
     const resendApiKey = process.env.RESEND_API_KEY;
-    const smtpHost = process.env.SMTP_HOST;
+    const recipientEmail = process.env.DISPATCH_EMAIL_TO || 'info@laurrelservices.ca';
 
-    if (resendApiKey || smtpHost) {
-      return NextResponse.json({
-        success: true,
-        delivered: true,
-        message: 'Your enquiry has been received. Our Ottawa dispatch team will review your details and contact you.',
-      });
+    if (resendApiKey) {
+      try {
+        const res = await fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${resendApiKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            from: 'Laurrel Enquiries <notifications@laurrelservices.ca>',
+            to: recipientEmail,
+            subject: `[Laurrel Services Enquiry] ${cleanedData.services?.join(', ').toUpperCase()} - ${cleanedData.name}`,
+            html: `
+              <h2>New Laurrel Services Customer Enquiry</h2>
+              <p><strong>Name:</strong> ${cleanedData.name}</p>
+              <p><strong>Email:</strong> ${cleanedData.email || 'Not provided'}</p>
+              <p><strong>Phone:</strong> ${cleanedData.phone || 'Not provided'}</p>
+              <p><strong>Services:</strong> ${cleanedData.services?.join(', ') || 'General'}</p>
+              <p><strong>Message:</strong></p>
+              <p style="white-space: pre-line;">${cleanedData.message}</p>
+              <hr />
+              <p style="color: #666; font-size: 12px;">Received at ${new Date().toISOString()} from Ottawa Contact Page.</p>
+            `,
+          }),
+        });
+
+        if (res.ok) {
+          console.log('[Enquiry API] Enquiry dispatched via email provider.');
+          return NextResponse.json({
+            success: true,
+            delivered: true,
+            message: 'Your enquiry has been received and forwarded to our Ottawa team. We will review your details and contact you shortly.',
+          });
+        }
+      } catch (deliveryErr) {
+        console.error('[Enquiry API] Email dispatch error:', deliveryErr);
+        // Falls back to safe durable local queue
+      }
     }
 
-    // 9. Honest pre-launch / environment status:
-    console.log('[Enquiry API] Enquiry validated & durably saved:', {
-      name: cleanedData.name,
-      contact: cleanedData.email || cleanedData.phone || cleanedData.contact,
-      services: cleanedData.services,
-      messageLength: cleanedData.message?.length,
+    // 9. Honest status for development / local queue mode (no PII logged):
+    console.log('[Enquiry API] Enquiry validated & recorded in dispatch queue:', {
+      receivedAt: new Date().toISOString(),
+      serviceCategories: cleanedData.services,
+      hasPhone: Boolean(cleanedData.phone),
     });
 
     return NextResponse.json({

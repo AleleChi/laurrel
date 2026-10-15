@@ -24,3 +24,6 @@ Thumbs.db
 # Build info & Scratch
 *.tsbuildinfo
 scratch/
+
+# Local data & customer submissions
+data/

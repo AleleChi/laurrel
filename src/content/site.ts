@@ -299,8 +299,14 @@ export interface ContactPageConfig {
   eyebrow: string;
   headline: string;
   supportingParagraph: string;
-  serviceRegionTitle: string;
+  businessEmail?: string;
+  businessPhone?: string;
+  hasPublicOffice: boolean; // Mode A (public office) if true; Mode B (service-area) if false
+  officeAddress?: string;
+  googleMapsPlaceId?: string;
+  locationHeading: string;
   serviceRegionDescription: string;
+  confirmedServiceAreas?: string[];
   form: {
     heading: string;
     buttonText: string;
@@ -995,9 +1001,15 @@ export const siteConfig: SiteConfig = {
     headline: 'Tell us what you need done.',
     supportingParagraph:
       "Need cleaning, moving or storage in Ottawa? Tell us about the job, where it's needed and your preferred date. We'll review your enquiry and respond with the next steps.",
-    serviceRegionTitle: 'Ottawa & National Capital Region',
+    businessEmail: '', // Left blank until verified business email is confirmed
+    businessPhone: '', // Left blank until verified business phone is confirmed
+    hasPublicOffice: false, // Default: Mode B (Service-area business)
+    officeAddress: '',
+    googleMapsPlaceId: '',
+    locationHeading: 'Ottawa & National Capital Region',
     serviceRegionDescription:
-      'Serving residential properties, commercial workplaces and families across Ottawa, Ontario.',
+      'Centrally coordinating cleaning, moving, and storage arrangements across Ottawa, Ontario and the National Capital Region.',
+    confirmedServiceAreas: ['Ottawa', 'National Capital Region'],
     form: {
       heading: 'Send us a message.',
       buttonText: 'Send Message',

@@ -5,6 +5,7 @@ import { MapPin, Mail, Phone, CheckCircle2, AlertCircle, Loader2 } from 'lucide-
 import { SiteHeader } from '@/components/layout/SiteHeader';
 import { SiteFooter } from '@/components/layout/SiteFooter';
 import { PageBanner } from '@/components/layout/PageBanner';
+import { ContactLocationMap } from '@/components/contact/ContactLocationMap';
 import { QuoteInquiryModal } from '@/components/ui/QuoteInquiryModal';
 import { siteConfig, ContactPageConfig } from '@/content/site';
 
@@ -143,8 +144,8 @@ export const ContactPageClient: React.FC<ContactPageClientProps> = ({
           <div className="max-w-[1400px] xl:max-w-[1440px] 2xl:max-w-[1560px] mx-auto">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 xl:gap-20 items-start">
               
-              {/* Left Column: Editorial Introduction & Dark Contact Panels (~55% width) */}
-              <div className="lg:col-span-7 flex flex-col items-start">
+              {/* Left Column: Editorial Introduction & Straightforward Typographic Contact Details (~55% width) */}
+              <div className="lg:col-span-7 flex flex-col items-start pr-0 lg:pr-6">
                 <span className="text-xs font-bold tracking-widest uppercase text-[#390044] mb-3 block">
                   {content.eyebrow}
                 </span>
@@ -153,50 +154,91 @@ export const ContactPageClient: React.FC<ContactPageClientProps> = ({
                   {content.headline}
                 </h1>
 
-                <p className="text-base sm:text-lg lg:text-[18px] text-[#202024]/85 leading-relaxed font-normal mb-10 max-w-xl">
+                <p className="text-base sm:text-lg lg:text-[18px] text-[#202024]/85 leading-relaxed font-normal mb-8 max-w-xl">
                   {content.supportingParagraph}
                 </p>
 
-                {/* Dark Contact Panels matching Solshine Reference Geometry */}
-                <div className="w-full max-w-xl">
-                  {/* Top Wide Dark Panel: Service Region */}
-                  <div className="w-full bg-[#18181B] text-white rounded-[22px] p-7 sm:p-8 text-center flex flex-col items-center justify-center mb-4 border border-black/10 shadow-sm">
-                    <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center mb-3">
-                      <MapPin className="w-5 h-5 text-[#C8E80B]" />
-                    </div>
-                    <h3 className="text-lg sm:text-xl font-semibold text-white tracking-tight mb-1.5">
-                      {content.serviceRegionTitle}
-                    </h3>
-                    <p className="text-sm text-white/75 leading-relaxed max-w-md font-normal">
-                      {content.serviceRegionDescription}
-                    </p>
-                  </div>
-
-                  {/* Bottom Two Dark Panels Side by Side */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
-                    {/* Left Small Dark Card */}
-                    <div className="bg-[#18181B] text-white rounded-[20px] p-6 text-center flex flex-col items-center justify-center border border-black/10 shadow-sm">
-                      <div className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center mb-2.5">
-                        <Mail className="w-4 h-4 text-[#C8E80B]" />
+                {/* Straightforward Typographic Contact Information (No decorative cards or fake systems) */}
+                <div className="w-full max-w-xl border-t border-[#202024]/10 pt-6 space-y-6">
+                  {/* Verified Business Email (Clickable mailto:) if available */}
+                  {content.businessEmail && content.businessEmail.trim().length > 0 && (
+                    <div className="flex items-start gap-4">
+                      <div className="w-10 h-10 rounded-xl bg-white border border-[#202024]/10 flex items-center justify-center flex-shrink-0">
+                        <Mail className="w-4 h-4 text-[#390044]" />
                       </div>
-                      <h4 className="text-base font-semibold text-white tracking-tight mb-1">
-                        Online Dispatch Queue
-                      </h4>
-                      <p className="text-xs text-white/70 leading-relaxed font-normal">
-                        Enquiries reviewed daily by our Ottawa service queue
+                      <div>
+                        <span className="block text-xs font-semibold uppercase tracking-wider text-[#202024]/60 mb-0.5">
+                          Email Enquiries
+                        </span>
+                        <a
+                          href={`mailto:${content.businessEmail}`}
+                          className="text-base font-semibold text-[#18181B] hover:text-[#390044] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#390044] rounded"
+                        >
+                          {content.businessEmail}
+                        </a>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Verified Business Phone (Clickable tel:) if available */}
+                  {content.businessPhone && content.businessPhone.trim().length > 0 && (
+                    <div className="flex items-start gap-4">
+                      <div className="w-10 h-10 rounded-xl bg-white border border-[#202024]/10 flex items-center justify-center flex-shrink-0">
+                        <Phone className="w-4 h-4 text-[#390044]" />
+                      </div>
+                      <div>
+                        <span className="block text-xs font-semibold uppercase tracking-wider text-[#202024]/60 mb-0.5">
+                          Phone Enquiries
+                        </span>
+                        <a
+                          href={`tel:${content.businessPhone}`}
+                          className="text-base font-semibold text-[#18181B] hover:text-[#390044] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#390044] rounded"
+                        >
+                          {content.businessPhone}
+                        </a>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Verified Office Address if Mode A */}
+                  {content.hasPublicOffice && content.officeAddress && content.officeAddress.trim().length > 0 && (
+                    <div className="flex items-start gap-4">
+                      <div className="w-10 h-10 rounded-xl bg-white border border-[#202024]/10 flex items-center justify-center flex-shrink-0">
+                        <MapPin className="w-4 h-4 text-[#390044]" />
+                      </div>
+                      <div>
+                        <span className="block text-xs font-semibold uppercase tracking-wider text-[#202024]/60 mb-0.5">
+                          Public Office Location
+                        </span>
+                        <p className="text-base font-semibold text-[#18181B]">
+                          {content.officeAddress}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Operational Notes: Form as Primary Contact Method */}
+                  <div className="flex items-start gap-3.5 pt-2">
+                    <div className="w-2 h-2 rounded-full bg-[#390044] mt-2 flex-shrink-0" />
+                    <div>
+                      <span className="block text-xs font-semibold uppercase tracking-wider text-[#202024]/60 mb-0.5">
+                        Direct Enquiries
+                      </span>
+                      <p className="text-sm sm:text-base text-[#202024]/85 leading-relaxed font-normal">
+                        Use the enquiry form to share your property details, scheduling requirements, or service combinations. Our Ottawa team reviews requests directly.
                       </p>
                     </div>
+                  </div>
 
-                    {/* Right Small Dark Card */}
-                    <div className="bg-[#18181B] text-white rounded-[20px] p-6 text-center flex flex-col items-center justify-center border border-black/10 shadow-sm">
-                      <div className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center mb-2.5">
-                        <Phone className="w-4 h-4 text-[#C8E80B]" />
-                      </div>
-                      <h4 className="text-base font-semibold text-white tracking-tight mb-1">
-                        Direct Enquiry System
-                      </h4>
-                      <p className="text-xs text-white/70 leading-relaxed font-normal">
-                        Prompt callback arranged upon request
+                  {/* Verified Geographic Region */}
+                  <div className="flex items-start gap-3.5">
+                    <div className="w-2 h-2 rounded-full bg-[#390044] mt-2 flex-shrink-0" />
+                    <div>
+                      <span className="block text-xs font-semibold uppercase tracking-wider text-[#202024]/60 mb-0.5">
+                        Service Region
+                      </span>
+                      <p className="text-sm sm:text-base text-[#202024]/85 leading-relaxed font-normal">
+                        Centrally serving residential and commercial properties across Ottawa, Ontario and the National Capital Region.
                       </p>
                     </div>
                   </div>
@@ -204,9 +246,9 @@ export const ContactPageClient: React.FC<ContactPageClientProps> = ({
               </div>
 
               {/* Right Column: Clean Open Form directly on page canvas (~45% width) */}
-              <div className="lg:col-span-5 w-full pt-1">
+              <div id="contact-form-container" className="lg:col-span-5 w-full pt-1">
                 {submissionResult ? (
-                  <div className="py-8 px-6 sm:px-8 bg-white rounded-[24px] border border-[#202024]/10 shadow-xs flex flex-col items-start space-y-4">
+                  <div id="contact-form-success" className="py-8 px-6 sm:px-8 bg-white rounded-[24px] border border-[#202024]/10 shadow-xs flex flex-col items-start space-y-4">
                     <div className="w-12 h-12 rounded-full bg-[#C8E80B] text-[#18181B] flex items-center justify-center">
                       <CheckCircle2 className="w-6 h-6 text-[#18181B]" />
                     </div>
@@ -226,7 +268,7 @@ export const ContactPageClient: React.FC<ContactPageClientProps> = ({
                     </button>
                   </div>
                 ) : (
-                  <form onSubmit={handleSubmit} noValidate className="flex flex-col space-y-5">
+                  <form id="contact-form" onSubmit={handleSubmit} noValidate className="flex flex-col space-y-5">
                     {/* Form Heading */}
                     <h2 className="text-2xl sm:text-3xl font-semibold text-[#18181B] tracking-tight mb-1">
                       {content.form.heading}
@@ -385,7 +427,7 @@ export const ContactPageClient: React.FC<ContactPageClientProps> = ({
                       <button
                         type="submit"
                         disabled={isSubmitting}
-                        className="inline-flex items-center justify-center bg-[#18181B] hover:bg-[#390044] text-white px-7 py-3.5 rounded-full text-sm sm:text-base font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#18181B] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-xs"
+                        className="inline-flex items-center justify-center bg-[#18181B] hover:bg-[#390044] text-white px-7 py-3.5 rounded-xl text-sm sm:text-base font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#18181B] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-xs"
                       >
                         {isSubmitting ? (
                           <div className="flex items-center gap-2">
@@ -406,28 +448,15 @@ export const ContactPageClient: React.FC<ContactPageClientProps> = ({
         </div>
 
         {/* ========================================================= */}
-        {/* PHASE 10: FULL-WIDTH FACTUAL OTTAWA SERVICE REGION PANEL  */}
+        {/* REAL GOOGLE MAPS SERVICE AREA INTEGRATION                 */}
         {/* ========================================================= */}
-        <div className="w-full max-w-[1400px] xl:max-w-[1440px] 2xl:max-w-[1560px] mx-auto px-6 sm:px-8 lg:px-12 xl:px-16 pb-20">
-          <div className="bg-[#F2F1ED] rounded-[24px] p-8 sm:p-12 border border-[#202024]/8 text-center flex flex-col items-center justify-center">
-            <div className="w-12 h-12 rounded-2xl bg-[#C8E80B] text-[#18181B] flex items-center justify-center mb-4">
-              <MapPin className="w-6 h-6 text-[#18181B]" />
-            </div>
-            <h3 className="text-xl sm:text-2xl font-semibold text-[#18181B] tracking-tight mb-2">
-              Ottawa & National Capital Region Service
-            </h3>
-            <p className="text-sm sm:text-base text-[#202024]/75 max-w-xl leading-relaxed font-normal mb-4">
-              Centrally coordinating cleaning, moving, and storage across Ottawa, Kanata, Nepean, Gloucester, Orleans, and surrounding communities.
-            </p>
-            <div className="flex flex-wrap items-center justify-center gap-2 text-xs font-semibold text-[#390044]">
-              <span className="px-3 py-1 rounded-full bg-white/70">Ottawa</span>
-              <span className="px-3 py-1 rounded-full bg-white/70">Kanata</span>
-              <span className="px-3 py-1 rounded-full bg-white/70">Nepean</span>
-              <span className="px-3 py-1 rounded-full bg-white/70">Gloucester</span>
-              <span className="px-3 py-1 rounded-full bg-white/70">Orleans</span>
-            </div>
-          </div>
-        </div>
+        <ContactLocationMap
+          hasPublicOffice={content.hasPublicOffice}
+          officeAddress={content.officeAddress}
+          googleMapsPlaceId={content.googleMapsPlaceId}
+          locationHeading={content.locationHeading}
+          serviceRegionDescription={content.serviceRegionDescription}
+        />
 
       </main>
 
