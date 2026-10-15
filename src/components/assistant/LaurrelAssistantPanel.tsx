@@ -378,17 +378,17 @@ export default function LaurrelAssistantPanel({ isOpen, onClose }: LaurrelAssist
       className="fixed inset-0 sm:inset-auto sm:bottom-5 sm:right-5 z-50 w-full sm:w-[400px] sm:max-w-[calc(100vw-32px)] h-[100dvh] sm:h-[min(580px,calc(100dvh-100px))] flex flex-col bg-[#FAF9F6] border-0 sm:border sm:border-[#202024]/12 rounded-none sm:rounded-[16px] shadow-[0_12px_40px_rgba(32,32,36,0.16)] overflow-hidden text-[#202024] animate-in fade-in duration-200"
     >
       {/* Header */}
-      <header className="bg-[#390044] text-white px-4.5 py-3 flex items-center justify-between shrink-0 border-b border-white/10 select-none">
-        <div className="flex flex-col">
-          <h2 className="text-[15px] font-bold tracking-tight text-white leading-tight">
+      <header className="bg-[#390044] text-white px-5 py-3.5 flex items-center justify-between shrink-0 border-b border-white/10 select-none">
+        <div className="flex flex-col text-left min-w-0 flex-1 mr-3">
+          <h2 className="text-[15px] font-bold tracking-tight text-white leading-tight truncate">
             Laurrel Assistant
           </h2>
-          <p className="text-[12px] text-white/75 font-normal leading-normal">
+          <p className="text-[12px] text-white/75 font-normal leading-normal truncate">
             AI-powered customer assistant
           </p>
         </div>
 
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1 shrink-0">
           <button
             type="button"
             onClick={handleNewConversation}
