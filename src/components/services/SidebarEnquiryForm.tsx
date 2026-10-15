@@ -1,9 +1,19 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Send, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
+import { CheckCircle2 } from 'lucide-react';
+import {
+  FormField,
+  FormInput,
+  FormTextarea,
+  ServiceMultiSelect,
+  SubmitButton,
+  FormError,
+} from '@/components/forms';
+import { ServiceCategory, EnquiryPayload } from '@/lib/types/enquiry';
+import { validateEnquiry } from '@/lib/validation/enquiry';
 
-export type ServiceOption = 'cleaning' | 'moving' | 'storage';
+export type ServiceOption = ServiceCategory;
 
 interface SidebarEnquiryFormProps {
   heading?: string;
@@ -20,24 +30,20 @@ export const SidebarEnquiryForm: React.FC<SidebarEnquiryFormProps> = ({
   serviceContext = 'cleaning',
   onServiceContextChange,
 }) => {
-  const [selectedServices, setSelectedServices] = useState<ServiceOption[]>(['cleaning']);
+  const [selectedServices, setSelectedServices] = useState<ServiceCategory[]>(['cleaning']);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [message, setMessage] = useState('');
-  const [honeypot, setHoneypot] = useState(''); // Anti-spam honeypot
+  const [honeypot, setHoneypot] = useState('');
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [fieldErrors, setFieldErrors] = useState<{
-    name?: string;
-    email?: string;
-    message?: string;
-    services?: string;
-  }>({});
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [submissionResult, setSubmissionResult] = useState<{
     success: boolean;
     delivered: boolean;
+    referenceId?: string;
     message: string;
   } | null>(null);
 
@@ -50,71 +56,48 @@ export const SidebarEnquiryForm: React.FC<SidebarEnquiryFormProps> = ({
     }
   }, [serviceContext]);
 
-  const handleToggleService = (service: ServiceOption) => {
-    let next: ServiceOption[];
-    if (selectedServices.includes(service)) {
-      if (selectedServices.length > 1) {
-        next = selectedServices.filter((s) => s !== service);
-      } else {
-        return; // Keep at least one selected
-      }
-    } else {
-      next = [...selectedServices, service];
-    }
+  const handleServicesChange = (next: ServiceCategory[]) => {
     setSelectedServices(next);
     if (fieldErrors.services) {
-      setFieldErrors((prev) => ({ ...prev, services: undefined }));
+      setFieldErrors((prev) => {
+        const copy = { ...prev };
+        delete copy.services;
+        return copy;
+      });
     }
     if (onServiceContextChange) {
-      onServiceContextChange(next.length === 3 ? 'all' : next[0]);
+      onServiceContextChange(next.length === 3 ? 'all' : next[0] || 'all');
     }
-  };
-
-  const handleSelectAllServices = () => {
-    setSelectedServices(['cleaning', 'moving', 'storage']);
-    if (onServiceContextChange) {
-      onServiceContextChange('all');
-    }
-  };
-
-  const validate = (): boolean => {
-    const errors: typeof fieldErrors = {};
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-    if (!name.trim() || name.trim().length < 2) {
-      errors.name = 'Please provide your full name (at least 2 characters).';
-    }
-
-    if (!email.trim() || !emailRegex.test(email.trim())) {
-      errors.email = 'Please provide a valid email address (e.g. name@example.com).';
-    }
-
-    if (selectedServices.length === 0) {
-      errors.services = 'Please select at least one service.';
-    }
-
-    if (!message.trim() || message.trim().length < 5) {
-      errors.message = 'Please share a few details about what you need (at least 5 characters).';
-    }
-
-    setFieldErrors(errors);
-    return Object.keys(errors).length === 0;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage(null);
 
-    // Honeypot check for bots
-    if (honeypot.trim().length > 0) {
-      setErrorMessage('Invalid submission detected.');
+    const payload: EnquiryPayload = {
+      intent: 'service_sidebar',
+      source: 'web_services_sidebar',
+      name: name.trim(),
+      email: email.trim(),
+      phone: phone.trim() || undefined,
+      services: selectedServices,
+      message: message.trim(),
+      details: message.trim(),
+      website: honeypot.trim() || undefined,
+    };
+
+    const validation = validateEnquiry(payload);
+    if (!validation.isValid) {
+      setFieldErrors(validation.errors);
+      if (validation.errors._bot) {
+        setErrorMessage(validation.errors._bot);
+      } else {
+        setErrorMessage('Please review the highlighted fields before submitting.');
+      }
       return;
     }
 
-    if (!validate()) {
-      return;
-    }
-
+    setFieldErrors({});
     setIsSubmitting(true);
 
     try {
@@ -123,14 +106,7 @@ export const SidebarEnquiryForm: React.FC<SidebarEnquiryFormProps> = ({
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          name: name.trim(),
-          email: email.trim(),
-          phone: phone.trim() || undefined,
-          services: selectedServices,
-          message: message.trim(),
-          website: honeypot.trim() || undefined,
-        }),
+        body: JSON.stringify(payload),
       });
 
       const data = await response.json();
@@ -144,6 +120,7 @@ export const SidebarEnquiryForm: React.FC<SidebarEnquiryFormProps> = ({
       setSubmissionResult({
         success: true,
         delivered: Boolean(data.delivered),
+        referenceId: data.referenceId,
         message: data.message || 'Your enquiry has been received.',
       });
       setIsSubmitting(false);
@@ -167,25 +144,28 @@ export const SidebarEnquiryForm: React.FC<SidebarEnquiryFormProps> = ({
   return (
     <div
       id="sidebar-enquiry-form"
-      className="w-full bg-white rounded-[36px] p-6 sm:p-8 xl:p-9 border border-[#202024]/10 shadow-xs"
+      className="w-full bg-white rounded-[32px] sm:rounded-[36px] p-6 sm:p-8 xl:p-9 border border-[#202024]/10 shadow-xs"
     >
       {submissionResult ? (
         <div className="py-4 flex flex-col items-start space-y-4">
           <div className="w-12 h-12 rounded-full bg-[#C8E80B] text-[#18181B] flex items-center justify-center">
             <CheckCircle2 className="w-6 h-6 text-[#18181B]" />
           </div>
-          <h3 className="text-2xl font-semibold text-[#18181B] tracking-tight">
-            Enquiry Received
-          </h3>
+
+          <div>
+            <h3 className="text-2xl font-semibold text-[#18181B] tracking-tight">
+              Enquiry Received
+            </h3>
+            {submissionResult.referenceId && (
+              <p className="text-xs font-mono font-semibold uppercase tracking-wider text-[#390044] mt-1">
+                Ref: {submissionResult.referenceId}
+              </p>
+            )}
+          </div>
+
           <p className="text-sm sm:text-base text-[#202024]/85 leading-relaxed font-normal">
             {submissionResult.message}
           </p>
-
-          {!submissionResult.delivered && (
-            <div className="p-3.5 rounded-2xl bg-[#F8F7F4] border border-[#202024]/10 text-xs text-[#202024]/75 leading-relaxed">
-              <strong>Pre-launch status:</strong> Live delivery provider credentials (Resend/SMTP) are pending in environment configuration. Your message is safely queued in development dispatch.
-            </div>
-          )}
 
           <button
             type="button"
@@ -207,61 +187,31 @@ export const SidebarEnquiryForm: React.FC<SidebarEnquiryFormProps> = ({
             </p>
           </div>
 
+          <FormError message={errorMessage} />
+
           {/* Service Category Context Selector */}
-          <div>
-            <label className="block text-xs font-bold tracking-wider uppercase text-[#202024]/70 mb-2">
-              Service Needed
-            </label>
-            <div
-              role="group"
-              aria-label="Select service category"
-              className="flex flex-wrap gap-2"
-            >
-              {(['cleaning', 'moving', 'storage'] as ServiceOption[]).map((service) => {
-                const isSelected = selectedServices.includes(service);
-                return (
-                  <button
-                    key={service}
-                    type="button"
-                    onClick={() => handleToggleService(service)}
-                    className={`px-3.5 py-1.5 rounded-full text-xs font-medium capitalize transition-all cursor-pointer ${
-                      isSelected
-                        ? 'bg-[#C8E80B] text-[#18181B] font-semibold shadow-2xs'
-                        : 'bg-[#F2F1ED] hover:bg-[#EAE8E2] text-[#202024]'
-                    }`}
-                    aria-pressed={isSelected}
-                  >
-                    {service}
-                  </button>
-                );
-              })}
-              <button
-                type="button"
-                onClick={handleSelectAllServices}
-                className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer ${
-                  selectedServices.length === 3
-                    ? 'bg-[#18181B] text-white font-semibold'
-                    : 'bg-[#F2F1ED] hover:bg-[#EAE8E2] text-[#202024]'
-                }`}
-                aria-pressed={selectedServices.length === 3}
-              >
-                All Services
-              </button>
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between">
+              <label className="block text-xs font-semibold text-[#18181B]/85 tracking-wide">
+                Services Required <span className="text-rose-600">*</span>
+              </label>
+              <span className="text-[11px] text-[#202024]/55">Select required</span>
             </div>
+
+            <ServiceMultiSelect
+              selectedServices={selectedServices}
+              onChange={handleServicesChange}
+              hasError={Boolean(fieldErrors.services)}
+              className="grid grid-cols-1 gap-2"
+            />
             {fieldErrors.services && (
-              <p className="text-xs text-rose-600 mt-1.5">{fieldErrors.services}</p>
+              <p role="alert" className="text-xs text-rose-600 font-medium">
+                {fieldErrors.services}
+              </p>
             )}
           </div>
 
-          {/* General Error Banner */}
-          {errorMessage && (
-            <div className="p-3 rounded-2xl bg-rose-50 border border-rose-200 text-xs text-rose-800 flex items-start gap-2">
-              <AlertCircle className="w-4 h-4 text-rose-600 flex-shrink-0 mt-0.5" />
-              <span>{errorMessage}</span>
-            </div>
-          )}
-
-          {/* Anti-spam honeypot field (hidden from real users) */}
+          {/* Anti-spam honeypot */}
           <div className="hidden" aria-hidden="true">
             <label htmlFor="sidebar-form-website">Website</label>
             <input
@@ -276,127 +226,104 @@ export const SidebarEnquiryForm: React.FC<SidebarEnquiryFormProps> = ({
           </div>
 
           {/* 1. Name Field */}
-          <div>
-            <label
-              htmlFor="sidebar-form-name"
-              className="block text-xs font-semibold text-[#18181B] mb-1.5"
-            >
-              Name <span className="text-rose-500">*</span>
-            </label>
-            <input
+          <FormField
+            id="sidebar-form-name"
+            label="Name"
+            required
+            error={fieldErrors.name}
+          >
+            <FormInput
               type="text"
               id="sidebar-form-name"
               name="name"
               required
               placeholder="Your full name"
               value={name}
+              hasError={Boolean(fieldErrors.name)}
               onChange={(e) => {
                 setName(e.target.value);
-                if (fieldErrors.name) setFieldErrors((p) => ({ ...p, name: undefined }));
+                if (fieldErrors.name) setFieldErrors((p) => ({ ...p, name: '' }));
               }}
-              className={`w-full px-4 py-3 rounded-2xl bg-[#F8F7F4] border text-sm text-[#18181B] placeholder-[#202024]/40 focus:outline-none focus:ring-2 focus:ring-[#18181B] transition-colors ${
-                fieldErrors.name ? 'border-rose-400' : 'border-[#202024]/12'
-              }`}
             />
-            {fieldErrors.name && (
-              <p className="text-xs text-rose-600 mt-1">{fieldErrors.name}</p>
-            )}
-          </div>
+          </FormField>
 
           {/* 2. Email Field */}
-          <div>
-            <label
-              htmlFor="sidebar-form-email"
-              className="block text-xs font-semibold text-[#18181B] mb-1.5"
-            >
-              Email address <span className="text-rose-500">*</span>
-            </label>
-            <input
+          <FormField
+            id="sidebar-form-email"
+            label="Email address"
+            required
+            error={fieldErrors.email}
+          >
+            <FormInput
               type="email"
               id="sidebar-form-email"
               name="email"
               required
               placeholder="name@example.com"
               value={email}
+              hasError={Boolean(fieldErrors.email)}
               onChange={(e) => {
                 setEmail(e.target.value);
-                if (fieldErrors.email) setFieldErrors((p) => ({ ...p, email: undefined }));
+                if (fieldErrors.email) setFieldErrors((p) => ({ ...p, email: '' }));
               }}
-              className={`w-full px-4 py-3 rounded-2xl bg-[#F8F7F4] border text-sm text-[#18181B] placeholder-[#202024]/40 focus:outline-none focus:ring-2 focus:ring-[#18181B] transition-colors ${
-                fieldErrors.email ? 'border-rose-400' : 'border-[#202024]/12'
-              }`}
             />
-            {fieldErrors.email && (
-              <p className="text-xs text-rose-600 mt-1">{fieldErrors.email}</p>
-            )}
-          </div>
+          </FormField>
 
           {/* 3. Phone Number Field (Optional) */}
-          <div>
-            <label
-              htmlFor="sidebar-form-phone"
-              className="block text-xs font-semibold text-[#18181B] mb-1.5"
-            >
-              Phone number <span className="text-xs text-[#202024]/50 font-normal">(optional)</span>
-            </label>
-            <input
+          <FormField
+            id="sidebar-form-phone"
+            label="Phone number"
+            optional
+            error={fieldErrors.phone}
+          >
+            <FormInput
               type="tel"
               id="sidebar-form-phone"
               name="phone"
-              placeholder="Your phone number"
+              placeholder="(613) 555-0199"
               value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              className="w-full px-4 py-3 rounded-2xl bg-[#F8F7F4] border border-[#202024]/12 text-sm text-[#18181B] placeholder-[#202024]/40 focus:outline-none focus:ring-2 focus:ring-[#18181B] transition-colors"
+              hasError={Boolean(fieldErrors.phone)}
+              onChange={(e) => {
+                setPhone(e.target.value);
+                if (fieldErrors.phone) setFieldErrors((p) => ({ ...p, phone: '' }));
+              }}
             />
-          </div>
+          </FormField>
 
           {/* 4. Message Field */}
-          <div>
-            <label
-              htmlFor="sidebar-form-message"
-              className="block text-xs font-semibold text-[#18181B] mb-1.5"
-            >
-              Message <span className="text-rose-500">*</span>
-            </label>
-            <textarea
+          <FormField
+            id="sidebar-form-message"
+            label="Message"
+            required
+            error={fieldErrors.details || fieldErrors.message}
+          >
+            <FormTextarea
               id="sidebar-form-message"
               name="message"
               required
               rows={3}
               placeholder="Tell us about the service, location and preferred date."
               value={message}
+              hasError={Boolean(fieldErrors.details || fieldErrors.message)}
               onChange={(e) => {
                 setMessage(e.target.value);
-                if (fieldErrors.message) setFieldErrors((p) => ({ ...p, message: undefined }));
+                if (fieldErrors.details || fieldErrors.message) {
+                  setFieldErrors((p) => ({ ...p, details: '', message: '' }));
+                }
               }}
-              className={`w-full px-4 py-3 rounded-2xl bg-[#F8F7F4] border text-sm text-[#18181B] placeholder-[#202024]/40 focus:outline-none focus:ring-2 focus:ring-[#18181B] transition-colors resize-none ${
-                fieldErrors.message ? 'border-rose-400' : 'border-[#202024]/12'
-              }`}
             />
-            {fieldErrors.message && (
-              <p className="text-xs text-rose-600 mt-1">{fieldErrors.message}</p>
-            )}
-          </div>
+          </FormField>
 
           {/* Submit Button */}
           <div className="pt-2">
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="inline-flex items-center justify-center gap-2.5 bg-[#18181B] hover:bg-[#390044] active:scale-[0.99] text-white px-7 py-3.5 rounded-full text-sm font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#18181B] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-xs w-full sm:w-auto"
+            <SubmitButton
+              isSubmitting={isSubmitting}
+              submittingText="Sending..."
+              variant="dark"
+              className="w-full sm:w-auto"
             >
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin text-white" />
-                  <span>Submitting...</span>
-                </>
-              ) : (
-                <>
-                  <span>{submitButtonText}</span>
-                  <Send className="w-3.5 h-3.5 text-white" />
-                </>
-              )}
-            </button>
+              {submitButtonText}
+            </SubmitButton>
           </div>
         </form>
       )}

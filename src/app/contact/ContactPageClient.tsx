@@ -1,12 +1,22 @@
 'use client';
 
 import React, { useState } from 'react';
-import { MapPin, Mail, Phone, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
+import { MapPin, Mail, Phone, CheckCircle2 } from 'lucide-react';
 import { SiteHeader } from '@/components/layout/SiteHeader';
 import { SiteFooter } from '@/components/layout/SiteFooter';
 import { PageBanner } from '@/components/layout/PageBanner';
 import { ContactLocationMap } from '@/components/contact/ContactLocationMap';
 import { QuoteInquiryModal } from '@/components/ui/QuoteInquiryModal';
+import {
+  FormField,
+  FormInput,
+  FormTextarea,
+  FormSelect,
+  SubmitButton,
+  FormError,
+} from '@/components/forms';
+import { EnquiryPayload } from '@/lib/types/enquiry';
+import { validateEnquiry } from '@/lib/validation/enquiry';
 import { siteConfig, ContactPageConfig } from '@/content/site';
 
 interface ContactPageClientProps {
@@ -28,49 +38,41 @@ export const ContactPageClient: React.FC<ContactPageClientProps> = ({
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [fieldErrors, setFieldErrors] = useState<{
-    name?: string;
-    email?: string;
-    message?: string;
-  }>({});
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [submissionResult, setSubmissionResult] = useState<{
     delivered: boolean;
+    referenceId?: string;
     message: string;
   } | null>(null);
-
-  const validate = (): boolean => {
-    const errors: typeof fieldErrors = {};
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-    if (!name.trim() || name.trim().length < 2) {
-      errors.name = 'Please provide your full name.';
-    }
-
-    if (!email.trim() || !emailRegex.test(email.trim())) {
-      errors.email = 'Please provide a valid email address.';
-    }
-
-    if (!message.trim() || message.trim().length < 5) {
-      errors.message = 'Please provide your message (at least 5 characters).';
-    }
-
-    setFieldErrors(errors);
-    return Object.keys(errors).length === 0;
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage(null);
 
-    if (honeypot.trim().length > 0) {
-      setErrorMessage('Invalid submission detected.');
+    const payload: EnquiryPayload = {
+      intent: 'general_contact',
+      source: 'web_contact_page',
+      name: name.trim(),
+      email: email.trim(),
+      phone: phone.trim() || undefined,
+      enquiryAbout: enquiryType,
+      message: message.trim(),
+      details: message.trim(),
+      website: honeypot.trim() || undefined,
+    };
+
+    const validation = validateEnquiry(payload);
+    if (!validation.isValid) {
+      setFieldErrors(validation.errors);
+      if (validation.errors._bot) {
+        setErrorMessage(validation.errors._bot);
+      } else {
+        setErrorMessage('Please review the highlighted fields before submitting.');
+      }
       return;
     }
 
-    if (!validate()) {
-      return;
-    }
-
+    setFieldErrors({});
     setIsSubmitting(true);
 
     try {
@@ -79,14 +81,7 @@ export const ContactPageClient: React.FC<ContactPageClientProps> = ({
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          name: name.trim(),
-          email: email.trim(),
-          phone: phone.trim() || undefined,
-          enquiryAbout: enquiryType,
-          message: message.trim(),
-          website: honeypot.trim() || undefined,
-        }),
+        body: JSON.stringify(payload),
       });
 
       const data = await response.json();
@@ -99,6 +94,7 @@ export const ContactPageClient: React.FC<ContactPageClientProps> = ({
 
       setSubmissionResult({
         delivered: Boolean(data.delivered),
+        referenceId: data.referenceId,
         message: data.message || 'Your message has been received.',
       });
       setIsSubmitting(false);
@@ -274,13 +270,7 @@ export const ContactPageClient: React.FC<ContactPageClientProps> = ({
                       {content.form.heading}
                     </h2>
 
-                    {/* General Error Banner */}
-                    {errorMessage && (
-                      <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-xs sm:text-sm text-rose-800 flex items-start gap-2.5">
-                        <AlertCircle className="w-4 h-4 text-rose-600 flex-shrink-0 mt-0.5" />
-                        <span>{errorMessage}</span>
-                      </div>
-                    )}
+                    <FormError message={errorMessage} />
 
                     {/* Anti-spam Honeypot */}
                     <div className="hidden" aria-hidden="true">
@@ -297,147 +287,120 @@ export const ContactPageClient: React.FC<ContactPageClientProps> = ({
                     </div>
 
                     {/* Full Name */}
-                    <div>
-                      <label
-                        htmlFor="contact-full-name"
-                        className="block text-xs font-medium text-[#18181B]/80 mb-1.5"
-                      >
-                        Full name *
-                      </label>
-                      <input
+                    <FormField
+                      id="contact-full-name"
+                      label="Full name"
+                      required
+                      error={fieldErrors.name}
+                    >
+                      <FormInput
                         type="text"
                         id="contact-full-name"
                         name="name"
                         required
                         placeholder="Your full name"
                         value={name}
+                        hasError={Boolean(fieldErrors.name)}
                         onChange={(e) => {
                           setName(e.target.value);
-                          if (fieldErrors.name) setFieldErrors((p) => ({ ...p, name: undefined }));
+                          if (fieldErrors.name) setFieldErrors((p) => ({ ...p, name: '' }));
                         }}
-                        className={`w-full h-[52px] sm:h-[54px] px-4 rounded-xl bg-white border text-sm text-[#18181B] placeholder-[#202024]/40 focus:outline-none focus:border-[#18181B] focus:ring-1 focus:ring-[#18181B] transition-colors ${
-                          fieldErrors.name ? 'border-rose-400' : 'border-[#202024]/15'
-                        }`}
                       />
-                      {fieldErrors.name && (
-                        <p className="text-xs text-rose-600 mt-1">{fieldErrors.name}</p>
-                      )}
-                    </div>
+                    </FormField>
 
                     {/* Email Address */}
-                    <div>
-                      <label
-                        htmlFor="contact-email"
-                        className="block text-xs font-medium text-[#18181B]/80 mb-1.5"
-                      >
-                        Email address *
-                      </label>
-                      <input
+                    <FormField
+                      id="contact-email"
+                      label="Email address"
+                      required
+                      error={fieldErrors.email}
+                    >
+                      <FormInput
                         type="email"
                         id="contact-email"
                         name="email"
                         required
                         placeholder="name@example.com"
                         value={email}
+                        hasError={Boolean(fieldErrors.email)}
                         onChange={(e) => {
                           setEmail(e.target.value);
-                          if (fieldErrors.email) setFieldErrors((p) => ({ ...p, email: undefined }));
+                          if (fieldErrors.email) setFieldErrors((p) => ({ ...p, email: '' }));
                         }}
-                        className={`w-full h-[52px] sm:h-[54px] px-4 rounded-xl bg-white border text-sm text-[#18181B] placeholder-[#202024]/40 focus:outline-none focus:border-[#18181B] focus:ring-1 focus:ring-[#18181B] transition-colors ${
-                          fieldErrors.email ? 'border-rose-400' : 'border-[#202024]/15'
-                        }`}
                       />
-                      {fieldErrors.email && (
-                        <p className="text-xs text-rose-600 mt-1">{fieldErrors.email}</p>
-                      )}
-                    </div>
+                    </FormField>
 
                     {/* Phone Number (Optional) */}
-                    <div>
-                      <label
-                        htmlFor="contact-phone"
-                        className="block text-xs font-medium text-[#18181B]/80 mb-1.5"
-                      >
-                        Phone number <span className="text-xs text-[#202024]/50 font-normal">(optional)</span>
-                      </label>
-                      <input
+                    <FormField
+                      id="contact-phone"
+                      label="Phone number"
+                      optional
+                      error={fieldErrors.phone}
+                    >
+                      <FormInput
                         type="tel"
                         id="contact-phone"
                         name="phone"
                         placeholder="Your phone number"
                         value={phone}
-                        onChange={(e) => setPhone(e.target.value)}
-                        className="w-full h-[52px] sm:h-[54px] px-4 rounded-xl bg-white border border-[#202024]/15 text-sm text-[#18181B] placeholder-[#202024]/40 focus:outline-none focus:border-[#18181B] focus:ring-1 focus:ring-[#18181B] transition-colors"
+                        hasError={Boolean(fieldErrors.phone)}
+                        onChange={(e) => {
+                          setPhone(e.target.value);
+                          if (fieldErrors.phone) setFieldErrors((p) => ({ ...p, phone: '' }));
+                        }}
                       />
-                    </div>
+                    </FormField>
 
                     {/* Enquiry Type (Accessible Native Select) */}
-                    <div>
-                      <label
-                        htmlFor="contact-enquiry-type"
-                        className="block text-xs font-medium text-[#18181B]/80 mb-1.5"
-                      >
-                        Enquiry type
-                      </label>
-                      <select
+                    <FormField id="contact-enquiry-type" label="Enquiry type">
+                      <FormSelect
                         id="contact-enquiry-type"
                         name="enquiryType"
                         value={enquiryType}
                         onChange={(e) => setEnquiryType(e.target.value as EnquiryType)}
-                        className="w-full h-[52px] sm:h-[54px] px-4 rounded-xl bg-white border border-[#202024]/15 text-sm text-[#18181B] focus:outline-none focus:border-[#18181B] focus:ring-1 focus:ring-[#18181B] transition-colors cursor-pointer"
-                      >
-                        <option value="General enquiry">General enquiry</option>
-                        <option value="Cleaning">Cleaning</option>
-                        <option value="Moving">Moving</option>
-                        <option value="Storage">Storage</option>
-                        <option value="Multiple services">Multiple services</option>
-                      </select>
-                    </div>
+                        options={[
+                          { value: 'General enquiry', label: 'General enquiry' },
+                          { value: 'Cleaning', label: 'Cleaning' },
+                          { value: 'Moving', label: 'Moving' },
+                          { value: 'Storage', label: 'Storage' },
+                          { value: 'Multiple services', label: 'Multiple services' },
+                        ]}
+                      />
+                    </FormField>
 
                     {/* Your Message */}
-                    <div>
-                      <label
-                        htmlFor="contact-message"
-                        className="block text-xs font-medium text-[#18181B]/80 mb-1.5"
-                      >
-                        Your message *
-                      </label>
-                      <textarea
+                    <FormField
+                      id="contact-message"
+                      label="Your message"
+                      required
+                      error={fieldErrors.details || fieldErrors.message}
+                    >
+                      <FormTextarea
                         id="contact-message"
                         name="message"
                         required
                         rows={4}
                         placeholder="Tell us about the job, where it's needed and your preferred date."
                         value={message}
+                        hasError={Boolean(fieldErrors.details || fieldErrors.message)}
                         onChange={(e) => {
                           setMessage(e.target.value);
-                          if (fieldErrors.message) setFieldErrors((p) => ({ ...p, message: undefined }));
+                          if (fieldErrors.details || fieldErrors.message) {
+                            setFieldErrors((p) => ({ ...p, details: '', message: '' }));
+                          }
                         }}
-                        className={`w-full p-4 rounded-xl bg-white border text-sm text-[#18181B] placeholder-[#202024]/40 focus:outline-none focus:border-[#18181B] focus:ring-1 focus:ring-[#18181B] transition-colors resize-none ${
-                          fieldErrors.message ? 'border-rose-400' : 'border-[#202024]/15'
-                        }`}
                       />
-                      {fieldErrors.message && (
-                        <p className="text-xs text-rose-600 mt-1">{fieldErrors.message}</p>
-                      )}
-                    </div>
+                    </FormField>
 
-                    {/* Submit Button: Compact Black Button */}
+                    {/* Submit Button */}
                     <div className="pt-2">
-                      <button
-                        type="submit"
-                        disabled={isSubmitting}
-                        className="inline-flex items-center justify-center bg-[#18181B] hover:bg-[#390044] text-white px-7 py-3.5 rounded-xl text-sm sm:text-base font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#18181B] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-xs"
+                      <SubmitButton
+                        isSubmitting={isSubmitting}
+                        submittingText="Sending..."
+                        variant="dark"
                       >
-                        {isSubmitting ? (
-                          <div className="flex items-center gap-2">
-                            <Loader2 className="w-4 h-4 animate-spin text-white" />
-                            <span>Sending...</span>
-                          </div>
-                        ) : (
-                          <span>{content.form.buttonText}</span>
-                        )}
-                      </button>
+                        {content.form.buttonText}
+                      </SubmitButton>
                     </div>
                   </form>
                 )}

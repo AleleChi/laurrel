@@ -1,21 +1,9 @@
 import { NextResponse } from 'next/server';
-import fs from 'fs';
-import path from 'path';
+import { EnquiryPayload, ServiceCategory } from '@/lib/types/enquiry';
+import { validateEnquiry } from '@/lib/validation/enquiry';
+import { createEnquiryRecord } from '@/lib/db/enquiries';
 
-export interface EnquiryPayload {
-  name: string;
-  email?: string;
-  phone?: string;
-  contact?: string;
-  services?: ('cleaning' | 'moving' | 'storage' | 'general')[];
-  enquiryAbout?: string;
-  message?: string;
-  details?: string;
-  preferredDate?: string;
-  website?: string; // Honeypot field for spam prevention
-}
-
-// In-memory rate limiting: Max 5 submissions per 60 seconds per IP
+// In-memory sliding window rate limiting: Max 5 submissions per 60 seconds per IP
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
 
 function isRateLimited(ip: string): boolean {
@@ -35,35 +23,9 @@ function isRateLimited(ip: string): boolean {
   return false;
 }
 
-// Durable file-based storage for enquiries
-function persistEnquiry(data: EnquiryPayload) {
-  try {
-    const dataDir = path.join(process.cwd(), 'data');
-    if (!fs.existsSync(dataDir)) {
-      fs.mkdirSync(dataDir, { recursive: true });
-    }
-    const filePath = path.join(dataDir, 'enquiries.json');
-    let existing: any[] = [];
-    if (fs.existsSync(filePath)) {
-      try {
-        existing = JSON.parse(fs.readFileSync(filePath, 'utf8'));
-      } catch {
-        existing = [];
-      }
-    }
-    existing.push({
-      ...data,
-      receivedAt: new Date().toISOString(),
-    });
-    fs.writeFileSync(filePath, JSON.stringify(existing, null, 2), 'utf8');
-  } catch (err) {
-    console.error('[Enquiry Storage] Error saving to data/enquiries.json:', err);
-  }
-}
-
 export async function POST(request: Request) {
   try {
-    // 1. IP & Rate Limiting
+    // 1. IP extraction & Rate Limiting
     const ip =
       request.headers.get('x-forwarded-for')?.split(',')[0].trim() ||
       request.headers.get('x-real-ip') ||
@@ -76,118 +38,93 @@ export async function POST(request: Request) {
       );
     }
 
-    const body = (await request.json()) as Partial<EnquiryPayload>;
+    const rawBody = (await request.json()) as Partial<EnquiryPayload>;
 
-    // 2. Honeypot check: If the hidden 'website' field was filled out, reject bot silently
-    if (body.website && body.website.trim().length > 0) {
-      return NextResponse.json(
-        { error: 'Invalid submission detected.' },
-        { status: 400 }
-      );
-    }
-
-    // 3. Name Validation (at least 2 chars, max 100 chars)
-    if (!body.name || typeof body.name !== 'string' || body.name.trim().length < 2) {
-      return NextResponse.json(
-        { error: 'Please provide your full name (at least 2 characters).' },
-        { status: 400 }
-      );
-    }
-    if (body.name.trim().length > 100) {
-      return NextResponse.json(
-        { error: 'Name must not exceed 100 characters.' },
-        { status: 400 }
-      );
-    }
-
-    // 4. Email / Contact Validation
-    const email = body.email?.trim() || '';
-    const phone = body.phone?.trim() || '';
-    const legacyContact = body.contact?.trim() || '';
-
-    // Primary email validation if email field is passed
-    if (email) {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(email)) {
-        return NextResponse.json(
-          { error: 'Please provide a valid email address (e.g. name@example.com).' },
-          { status: 400 }
-        );
+    // Handle legacy contact field fallback if email was not directly provided
+    if (!rawBody.email && rawBody.name && (rawBody as any).contact) {
+      const contactVal = ((rawBody as any).contact as string).trim();
+      if (contactVal.includes('@')) {
+        rawBody.email = contactVal;
       }
-    } else if (!legacyContact || legacyContact.length < 5) {
+    }
+
+    // Handle legacy enquiryAbout field mapping to services array if services was empty
+    if ((!rawBody.services || rawBody.services.length === 0) && rawBody.enquiryAbout) {
+      const about = rawBody.enquiryAbout.toLowerCase();
+      const mapped: ServiceCategory[] = [];
+      if (about.includes('clean')) mapped.push('cleaning');
+      if (about.includes('mov')) mapped.push('moving');
+      if (about.includes('stor')) mapped.push('storage');
+      if (about.includes('multiple')) mapped.push('cleaning', 'moving', 'storage');
+      if (mapped.length > 0) {
+        rawBody.services = mapped;
+      }
+    }
+
+    // 2. Validate payload using shared validation module
+    const validation = validateEnquiry(rawBody);
+    if (!validation.isValid) {
+      const firstErrorMessage = Object.values(validation.errors)[0] || 'Invalid submission.';
       return NextResponse.json(
-        { error: 'Please provide a valid email address or contact number in Ottawa.' },
+        { error: firstErrorMessage, errors: validation.errors },
         { status: 400 }
       );
     }
 
-    if (phone && phone.length > 30) {
-      return NextResponse.json(
-        { error: 'Phone number must not exceed 30 characters.' },
-        { status: 400 }
-      );
-    }
+    // 3. Durably persist structured record
+    const record = await createEnquiryRecord(rawBody as EnquiryPayload);
 
-    // 5. Service Category or Enquiry Topic Validation
-    const validServices = ['cleaning', 'moving', 'storage', 'general'] as const;
-    let services: ('cleaning' | 'moving' | 'storage' | 'general')[] = [];
-
-    if (Array.isArray(body.services)) {
-      services = body.services.filter((s): s is 'cleaning' | 'moving' | 'storage' | 'general' =>
-        validServices.includes(s as any)
-      );
-    }
-
-    if (services.length === 0 && body.enquiryAbout) {
-      const about = body.enquiryAbout.toLowerCase();
-      if (about.includes('clean')) services.push('cleaning');
-      if (about.includes('mov')) services.push('moving');
-      if (about.includes('stor')) services.push('storage');
-      if (about.includes('multiple')) services.push('cleaning', 'moving', 'storage');
-      if (services.length === 0) services.push('general');
-    }
-
-    if (services.length === 0) {
-      services.push('general');
-    }
-
-    // 6. Message / Details Validation
-    const message = (body.message || body.details || '').trim();
-    if (!message || message.length < 5) {
-      return NextResponse.json(
-        { error: 'Please tell us a few details about what needs doing (at least 5 characters).' },
-        { status: 400 }
-      );
-    }
-    if (message.length > 3000) {
-      return NextResponse.json(
-        { error: 'Message must not exceed 3,000 characters.' },
-        { status: 400 }
-      );
-    }
-
-    const preferredDate = (body.preferredDate || '').trim();
-
-    const cleanedData: EnquiryPayload = {
-      name: body.name.trim(),
-      email: email || undefined,
-      phone: phone || undefined,
-      contact: legacyContact || email || phone,
-      services,
-      message,
-      details: message,
-      preferredDate: preferredDate || undefined,
-    };
-
-    // 7. Durably persist the enquiry locally as backup
-    persistEnquiry(cleanedData);
-
-    // 8. Real email delivery via Resend API if configured
+    // 4. Email delivery via Resend API if configured
     const resendApiKey = process.env.RESEND_API_KEY;
     const recipientEmail = process.env.DISPATCH_EMAIL_TO || 'info@laurrelservices.ca';
+    let emailDelivered = false;
 
     if (resendApiKey) {
       try {
+        const servicesLabel = record.services.map((s) => s.toUpperCase()).join(', ');
+        const detailsHtml = `
+          <h2>New Laurrel Services Customer Enquiry</h2>
+          <p><strong>Reference ID:</strong> ${record.id}</p>
+          <p><strong>Intent:</strong> ${record.intent}</p>
+          <p><strong>Source:</strong> ${record.source}</p>
+          <hr />
+          <p><strong>Customer Name:</strong> ${record.customer.name}</p>
+          <p><strong>Email:</strong> ${record.customer.email}</p>
+          <p><strong>Phone:</strong> ${record.customer.phone || 'Not provided'}</p>
+          <p><strong>Services:</strong> ${servicesLabel}</p>
+          <p><strong>Location / Postal Code:</strong> ${record.serviceLocation || 'Not provided'}</p>
+          <p><strong>Preferred Timing:</strong> ${record.preferredTiming || 'Not provided'}</p>
+          <p><strong>Job Details:</strong></p>
+          <p style="white-space: pre-line; background: #f8f8f8; padding: 12px; border-radius: 8px;">${record.details}</p>
+          ${
+            record.serviceSpecificDetails?.cleaning
+              ? `<h3>Cleaning Specifics</h3>
+                 <p>Type: ${record.serviceSpecificDetails.cleaning.propertyType || 'N/A'}</p>
+                 <p>Size: ${record.serviceSpecificDetails.cleaning.propertySize || 'N/A'}</p>
+                 <p>Requirements: ${record.serviceSpecificDetails.cleaning.cleaningRequirements || 'N/A'}</p>`
+              : ''
+          }
+          ${
+            record.serviceSpecificDetails?.moving
+              ? `<h3>Moving Specifics</h3>
+                 <p>From: ${record.serviceSpecificDetails.moving.movingFrom || 'N/A'}</p>
+                 <p>To: ${record.serviceSpecificDetails.moving.movingTo || 'N/A'}</p>
+                 <p>Belongings: ${record.serviceSpecificDetails.moving.belongingsSize || 'N/A'}</p>
+                 <p>Access: ${record.serviceSpecificDetails.moving.accessConsiderations || 'N/A'}</p>`
+              : ''
+          }
+          ${
+            record.serviceSpecificDetails?.storage
+              ? `<h3>Storage Specifics</h3>
+                 <p>Duration: ${record.serviceSpecificDetails.storage.storageDuration || 'N/A'}</p>
+                 <p>Items: ${record.serviceSpecificDetails.storage.storageItemsType || 'N/A'}</p>
+                 <p>Access: ${record.serviceSpecificDetails.storage.accessRequirements || 'N/A'}</p>`
+              : ''
+          }
+          <hr />
+          <p style="color: #666; font-size: 11px;">Recorded at ${record.createdAt} by Laurrel Dispatch System.</p>
+        `;
+
         const res = await fetch('https://api.resend.com/emails', {
           method: 'POST',
           headers: {
@@ -197,47 +134,39 @@ export async function POST(request: Request) {
           body: JSON.stringify({
             from: 'Laurrel Enquiries <notifications@laurrelservices.ca>',
             to: recipientEmail,
-            subject: `[Laurrel Services Enquiry] ${cleanedData.services?.join(', ').toUpperCase()} - ${cleanedData.name}`,
-            html: `
-              <h2>New Laurrel Services Customer Enquiry</h2>
-              <p><strong>Name:</strong> ${cleanedData.name}</p>
-              <p><strong>Email:</strong> ${cleanedData.email || 'Not provided'}</p>
-              <p><strong>Phone:</strong> ${cleanedData.phone || 'Not provided'}</p>
-              <p><strong>Services:</strong> ${cleanedData.services?.join(', ') || 'General'}</p>
-              <p><strong>Message:</strong></p>
-              <p style="white-space: pre-line;">${cleanedData.message}</p>
-              <hr />
-              <p style="color: #666; font-size: 12px;">Received at ${new Date().toISOString()} from Ottawa Contact Page.</p>
-            `,
+            subject: `[Laurrel Enquiry - ${record.id}] ${servicesLabel} - ${record.customer.name}`,
+            html: detailsHtml,
           }),
         });
 
         if (res.ok) {
-          console.log('[Enquiry API] Enquiry dispatched via email provider.');
-          return NextResponse.json({
-            success: true,
-            delivered: true,
-            message: 'Your enquiry has been received and forwarded to our Ottawa team. We will review your details and contact you shortly.',
-          });
+          emailDelivered = true;
         }
       } catch (deliveryErr) {
-        console.error('[Enquiry API] Email dispatch error:', deliveryErr);
-        // Falls back to safe durable local queue
+        // Fallback to durable record
       }
     }
 
-    // 9. Honest status for development / local queue mode (no PII logged):
-    console.log('[Enquiry API] Enquiry validated & recorded in dispatch queue:', {
-      receivedAt: new Date().toISOString(),
-      serviceCategories: cleanedData.services,
-      hasPhone: Boolean(cleanedData.phone),
+    // 5. Audit log without exposing PII to public/standard consoles
+    console.log('[Enquiry API] Enquiry processed and durably saved:', {
+      referenceId: record.id,
+      intent: record.intent,
+      source: record.source,
+      services: record.services,
+      hasPhone: Boolean(record.customer.phone),
+      emailDelivered,
     });
+
+    const successMessage =
+      record.intent === 'quote_request'
+        ? `Your quote request has been received (Ref: ${record.id}). Our Ottawa team will review your requirements and follow up with you promptly.`
+        : `Your enquiry has been received (Ref: ${record.id}). We will review your details and respond with the next steps.`;
 
     return NextResponse.json({
       success: true,
-      delivered: false,
-      message:
-        'Your message has been received and safely recorded in our dispatch system. We will review your enquiry and respond with the next steps.',
+      delivered: emailDelivered,
+      referenceId: record.id,
+      message: successMessage,
     });
   } catch (error) {
     console.error('[Enquiry API Error]:', error);
