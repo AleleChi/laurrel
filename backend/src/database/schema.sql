@@ -134,10 +134,12 @@ CREATE TABLE IF NOT EXISTS admin_users (
     email VARCHAR(255) UNIQUE NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
     name VARCHAR(255) NOT NULL,
-    role VARCHAR(32) NOT NULL DEFAULT 'admin', -- 'owner', 'admin', 'dispatcher'
+    role VARCHAR(32) NOT NULL DEFAULT 'admin', -- 'owner', 'admin', 'content_editor', 'operations_staff', 'viewer'
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
     password_reset_token VARCHAR(128),
     password_reset_expires TIMESTAMPTZ,
+    failed_login_attempts INT NOT NULL DEFAULT 0,
+    locked_until TIMESTAMPTZ,
     last_login_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -145,3 +147,33 @@ CREATE TABLE IF NOT EXISTS admin_users (
 
 CREATE INDEX IF NOT EXISTS idx_admin_users_email ON admin_users(email);
 CREATE INDEX IF NOT EXISTS idx_admin_users_role ON admin_users(role);
+
+ALTER TABLE admin_users ADD COLUMN IF NOT EXISTS failed_login_attempts INT NOT NULL DEFAULT 0;
+ALTER TABLE admin_users ADD COLUMN IF NOT EXISTS locked_until TIMESTAMPTZ;
+
+-- 8. Administrator Sessions Table (Server-managed session revocation)
+CREATE TABLE IF NOT EXISTS admin_sessions (
+    id VARCHAR(64) PRIMARY KEY,
+    user_id VARCHAR(64) NOT NULL REFERENCES admin_users(id) ON DELETE CASCADE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    expires_at TIMESTAMPTZ NOT NULL,
+    revoked_at TIMESTAMPTZ,
+    ip_address VARCHAR(45),
+    user_agent TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_admin_sessions_user_id ON admin_sessions(user_id);
+CREATE INDEX IF NOT EXISTS idx_admin_sessions_expires_at ON admin_sessions(expires_at);
+
+-- 9. Administrator Auth Audit Events Table
+CREATE TABLE IF NOT EXISTS admin_auth_events (
+    id VARCHAR(64) PRIMARY KEY,
+    email VARCHAR(255) NOT NULL,
+    event_type VARCHAR(64) NOT NULL,
+    ip_address VARCHAR(45),
+    user_agent TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_admin_auth_events_email ON admin_auth_events(email);
+CREATE INDEX IF NOT EXISTS idx_admin_auth_events_created_at ON admin_auth_events(created_at DESC);

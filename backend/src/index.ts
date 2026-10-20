@@ -7,6 +7,7 @@ import { assistantRouter } from './routes/assistant';
 import { adminRouter } from './routes/admin';
 import { runMigrations } from './database/migrate';
 import { bootstrapOwnerAccount } from './database/adminRepo';
+import { syncHistoricalEnquiries } from './database/syncData';
 
 dotenv.config();
 
@@ -14,9 +15,10 @@ const app = express();
 const port = parseInt(process.env.PORT || '5000', 10);
 const host = '0.0.0.0';
 
-// CORS configuration: Allow configured frontend origin and local dev
+// CORS configuration: Allow configured frontend origin, Netlify domains, and local dev
 const allowedOrigins = [
   process.env.FRONTEND_ORIGIN || 'https://laurrelservices.ca',
+  'https://laurrel.netlify.app',
   'http://localhost:3000',
   'http://127.0.0.1:3000',
 ];
@@ -24,15 +26,27 @@ const allowedOrigins = [
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Allow requests with no origin (e.g. mobile apps, curl, server-to-server forwarders)
+      // Allow requests with no origin (e.g. curl, server-to-server forwarders from Next.js server actions)
       if (!origin) return callback(null, true);
-      if (allowedOrigins.some((allowed) => origin === allowed || origin.endsWith('.netlify.app'))) {
+      if (
+        allowedOrigins.some((allowed) => origin === allowed) ||
+        origin.endsWith('.netlify.app')
+      ) {
         return callback(null, true);
       }
-      return callback(null, true); // Permissive in initial stage, secure endpoints protected by tokens
+      return callback(new Error(`CORS policy: origin ${origin} is not allowed.`));
     },
     methods: ['GET', 'POST', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'x-admin-token'],
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'x-admin-token',
+      'x-admin-session-id',
+      'x-admin-user-id',
+      'x-admin-user-email',
+      'x-admin-user-name',
+      'x-admin-user-role',
+    ],
   })
 );
 
@@ -54,12 +68,13 @@ app.get('/', (_req, res) => {
   });
 });
 
-// Run database migrations and bootstrap owner on startup if DATABASE_URL is configured
+// Run database migrations, historical sync, and bootstrap owner on startup if DATABASE_URL is configured
 if (process.env.DATABASE_URL) {
   runMigrations()
     .then(async (res) => {
       console.log('[Startup Migration]:', res.message);
       await bootstrapOwnerAccount();
+      await syncHistoricalEnquiries();
     })
     .catch((err) => {
       console.warn('[Startup Migration Warning]:', err.message);

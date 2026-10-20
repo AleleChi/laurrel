@@ -9,32 +9,35 @@ export async function POST(req: NextRequest) {
     }
 
     const trimmedEmail = String(email).trim().toLowerCase();
-
-    // Forward to Render backend if available
-    const backendUrl = process.env.BACKEND_API_URL || process.env.API_BASE_URL;
+    const backendUrl = process.env.BACKEND_API_URL || process.env.API_BASE_URL || 'http://localhost:5000';
     const backendSecret = process.env.ADMIN_API_SECRET;
 
-    if (backendUrl) {
-      try {
-        const target = `${backendUrl.replace(/\/$/, '')}/api/admin/auth/recover`;
-        await fetch(target, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            ...(backendSecret ? { 'x-admin-token': backendSecret } : {}),
-          },
-          body: JSON.stringify({ email: trimmedEmail }),
+    try {
+      const target = `${backendUrl.replace(/\/$/, '')}/api/admin/auth/recover`;
+      const res = await fetch(target, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(backendSecret ? { 'x-admin-token': backendSecret } : {}),
+        },
+        body: JSON.stringify({ email: trimmedEmail }),
+      });
+
+      if (res.ok) {
+        return NextResponse.json({
+          success: true,
+          message:
+            'If an authorized administrator account exists for this address, password recovery instructions have been prepared.',
         });
-      } catch (err) {
-        console.warn('[Admin Recovery Forward Failed]:', err);
       }
+    } catch (err) {
+      console.warn('[Admin Recovery Forward Failed]:', err);
     }
 
-    // Always respond with neutral confirmation to prevent email enumeration
     return NextResponse.json({
       success: true,
       message:
-        'If an authorized administrator account exists for this address, password recovery instructions have been prepared and sent.',
+        'If an authorized administrator account exists for this address, password recovery instructions have been prepared.',
     });
   } catch (err: any) {
     return NextResponse.json({ error: 'Failed to process recovery request.' }, { status: 500 });
