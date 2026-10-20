@@ -22,7 +22,8 @@ export const metadata: Metadata = {
     type: 'website',
   },
   icons: {
-    icon: '/assets/brand/laurrel-logo-source.png',
+    icon: '/assets/brand/laurrel-symbol.png',
+    apple: '/assets/brand/laurrel-symbol.png',
   },
 };
 
@@ -33,7 +34,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en-CA" className={manrope.variable}>
-      <body className="font-sans antialiased bg-[#F8F7F4] text-[#202024] selection:bg-[#390044] selection:text-white">
+      <body className="font-sans antialiased bg-[#F8F7F4] text-[#202024] selection:bg-[#49056B] selection:text-white">
         {children}
         <LaurrelAssistantLauncher />
       </body>

@@ -144,7 +144,7 @@ export const AccessibleDialog: React.FC<AccessibleDialogProps> = ({
         <div className="flex items-start justify-between px-6 pt-6 pb-4 sm:px-8 sm:pt-7 sm:pb-5 border-b border-black/[0.06] bg-white flex-shrink-0">
           <div>
             {eyebrow && (
-              <span className="text-[11px] font-bold uppercase tracking-wider text-[#390044] block mb-1">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-[#49056B] block mb-1">
                 {eyebrow}
               </span>
             )}
@@ -167,7 +167,7 @@ export const AccessibleDialog: React.FC<AccessibleDialogProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="p-2 -mr-2 rounded-xl text-[#202024]/60 hover:text-[#18181B] hover:bg-black/5 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#390044] cursor-pointer"
+            className="p-2 -mr-2 rounded-xl text-[#202024]/60 hover:text-[#18181B] hover:bg-black/5 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#49056B] cursor-pointer"
             aria-label="Close dialog"
           >
             <X className="w-5 h-5" aria-hidden="true" />

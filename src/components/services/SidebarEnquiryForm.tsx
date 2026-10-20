@@ -148,7 +148,7 @@ export const SidebarEnquiryForm: React.FC<SidebarEnquiryFormProps> = ({
     >
       {submissionResult ? (
         <div className="py-4 flex flex-col items-start space-y-4">
-          <div className="w-12 h-12 rounded-full bg-[#C8E80B] text-[#18181B] flex items-center justify-center">
+          <div className="w-12 h-12 rounded-full bg-[#FE6000] text-[#18181B] flex items-center justify-center">
             <CheckCircle2 className="w-6 h-6 text-[#18181B]" />
           </div>
 
@@ -157,7 +157,7 @@ export const SidebarEnquiryForm: React.FC<SidebarEnquiryFormProps> = ({
               Enquiry Received
             </h3>
             {submissionResult.referenceId && (
-              <p className="text-xs font-mono font-semibold uppercase tracking-wider text-[#390044] mt-1">
+              <p className="text-xs font-mono font-semibold uppercase tracking-wider text-[#49056B] mt-1">
                 Ref: {submissionResult.referenceId}
               </p>
             )}
@@ -170,7 +170,7 @@ export const SidebarEnquiryForm: React.FC<SidebarEnquiryFormProps> = ({
           <button
             type="button"
             onClick={handleReset}
-            className="mt-2 text-xs font-bold uppercase tracking-wider text-[#390044] hover:underline cursor-pointer"
+            className="mt-2 text-xs font-bold uppercase tracking-wider text-[#49056B] hover:underline cursor-pointer"
           >
             Submit Another Enquiry
           </button>

@@ -79,7 +79,7 @@ export const SiteFooter: React.FC<SiteFooterProps> = ({ onOpenQuote }) => {
           <div className="flex flex-wrap items-center gap-6 sm:gap-8">
             {/* Tile 1: Regional Focus */}
             <div className="flex items-center gap-3.5">
-              <div className="w-12 h-12 rounded-2xl bg-[#C8E80B] text-[#202024] flex items-center justify-center flex-shrink-0 shadow-sm">
+              <div className="w-12 h-12 rounded-2xl bg-[#FE6000] text-[#202024] flex items-center justify-center flex-shrink-0 shadow-sm">
                 <svg
                   className="w-5 h-5 stroke-current stroke-[2] fill-none"
                   viewBox="0 0 24 24"
@@ -103,7 +103,7 @@ export const SiteFooter: React.FC<SiteFooterProps> = ({ onOpenQuote }) => {
 
             {/* Tile 2: Coordinated Solution */}
             <div className="flex items-center gap-3.5">
-              <div className="w-12 h-12 rounded-2xl bg-[#C8E80B] text-[#202024] flex items-center justify-center flex-shrink-0 shadow-sm">
+              <div className="w-12 h-12 rounded-2xl bg-[#FE6000] text-[#202024] flex items-center justify-center flex-shrink-0 shadow-sm">
                 <svg
                   className="w-5 h-5 stroke-current stroke-[2] fill-none"
                   viewBox="0 0 24 24"
@@ -126,7 +126,7 @@ export const SiteFooter: React.FC<SiteFooterProps> = ({ onOpenQuote }) => {
 
             {/* Tile 3: Direct Enquiries */}
             <div className="flex items-center gap-3.5">
-              <div className="w-12 h-12 rounded-2xl bg-[#C8E80B] text-[#202024] flex items-center justify-center flex-shrink-0 shadow-sm">
+              <div className="w-12 h-12 rounded-2xl bg-[#FE6000] text-[#202024] flex items-center justify-center flex-shrink-0 shadow-sm">
                 <svg
                   className="w-5 h-5 stroke-current stroke-[2] fill-none"
                   viewBox="0 0 24 24"
@@ -145,7 +145,7 @@ export const SiteFooter: React.FC<SiteFooterProps> = ({ onOpenQuote }) => {
                 <button
                   type="button"
                   onClick={onOpenQuote}
-                  className="text-sm sm:text-base font-semibold text-white hover:text-[#C8E80B] transition-colors text-left"
+                  className="text-sm sm:text-base font-semibold text-white hover:text-[#FE6000] transition-colors text-left"
                 >
                   {siteSettings?.footer?.estimatesLabel || 'Online Request'}
                 </button>
@@ -182,7 +182,7 @@ export const SiteFooter: React.FC<SiteFooterProps> = ({ onOpenQuote }) => {
               <li>
                 <Link
                   href="/"
-                  className="hover:text-[#C8E80B] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C8E80B] rounded"
+                  className="hover:text-[#FE6000] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FE6000] rounded"
                 >
                   Home
                 </Link>
@@ -190,7 +190,7 @@ export const SiteFooter: React.FC<SiteFooterProps> = ({ onOpenQuote }) => {
               <li>
                 <Link
                   href="/#cleaning"
-                  className="hover:text-[#C8E80B] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C8E80B] rounded"
+                  className="hover:text-[#FE6000] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FE6000] rounded"
                 >
                   Cleaning Services
                 </Link>
@@ -198,7 +198,7 @@ export const SiteFooter: React.FC<SiteFooterProps> = ({ onOpenQuote }) => {
               <li>
                 <Link
                   href="/#moving"
-                  className="hover:text-[#C8E80B] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C8E80B] rounded"
+                  className="hover:text-[#FE6000] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FE6000] rounded"
                 >
                   Moving Services
                 </Link>
@@ -206,7 +206,7 @@ export const SiteFooter: React.FC<SiteFooterProps> = ({ onOpenQuote }) => {
               <li>
                 <Link
                   href="/#storage"
-                  className="hover:text-[#C8E80B] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C8E80B] rounded"
+                  className="hover:text-[#FE6000] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FE6000] rounded"
                 >
                   Storage Solutions
                 </Link>
@@ -214,7 +214,7 @@ export const SiteFooter: React.FC<SiteFooterProps> = ({ onOpenQuote }) => {
               <li>
                 <Link
                   href="/about"
-                  className="hover:text-[#C8E80B] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C8E80B] rounded"
+                  className="hover:text-[#FE6000] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FE6000] rounded"
                 >
                   About Laurrel
                 </Link>
@@ -250,7 +250,7 @@ export const SiteFooter: React.FC<SiteFooterProps> = ({ onOpenQuote }) => {
               <button
                 type="button"
                 onClick={onOpenQuote}
-                className="w-full sm:w-auto inline-flex items-center justify-center px-6 py-3.5 bg-[#C8E80B] text-[#202024] font-bold text-sm rounded-full transition-all duration-200 hover:bg-[#b5d309] shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                className="w-full sm:w-auto inline-flex items-center justify-center px-6 py-3.5 bg-[#FE6000] text-[#202024] font-bold text-sm rounded-full transition-all duration-200 hover:bg-[#E05500] shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
               >
                 Request a Quote
               </button>

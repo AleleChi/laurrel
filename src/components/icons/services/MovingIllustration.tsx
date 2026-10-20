@@ -182,7 +182,7 @@ export const MovingIllustration: React.FC<IllustrationProps> = ({
         variants={wheelVariants}
         style={{ originX: '28px', originY: '80px' }}
       >
-        <circle cx="28" cy="80" r="7.5" stroke="#18181B" strokeWidth="2" fill="#C8E80B" />
+        <circle cx="28" cy="80" r="7.5" stroke="#18181B" strokeWidth="2" fill="#FE6000" />
         <circle cx="28" cy="80" r="3.5" stroke="#18181B" strokeWidth="1.8" fill="#18181B" />
         <line x1="28" y1="73.5" x2="28" y2="86.5" stroke="#18181B" strokeWidth="1.4" />
         <line x1="21.5" y1="80" x2="34.5" y2="80" stroke="#18181B" strokeWidth="1.4" />
@@ -193,7 +193,7 @@ export const MovingIllustration: React.FC<IllustrationProps> = ({
         variants={wheelVariants}
         style={{ originX: '76px', originY: '80px' }}
       >
-        <circle cx="76" cy="80" r="7.5" stroke="#18181B" strokeWidth="2" fill="#C8E80B" />
+        <circle cx="76" cy="80" r="7.5" stroke="#18181B" strokeWidth="2" fill="#FE6000" />
         <circle cx="76" cy="80" r="3.5" stroke="#18181B" strokeWidth="1.8" fill="#18181B" />
         <line x1="76" y1="73.5" x2="76" y2="86.5" stroke="#18181B" strokeWidth="1.4" />
         <line x1="69.5" y1="80" x2="82.5" y2="80" stroke="#18181B" strokeWidth="1.4" />

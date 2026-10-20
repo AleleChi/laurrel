@@ -22,8 +22,8 @@ export const SubmitButton: React.FC<SubmitButtonProps> = ({
   ...props
 }) => {
   const variantStyles = {
-    dark: 'bg-[#18181B] hover:bg-[#390044] text-white focus-visible:ring-[#18181B]',
-    primary: 'bg-[#390044] hover:bg-[#4E025D] text-white focus-visible:ring-[#390044]',
+    dark: 'bg-[#18181B] hover:bg-[#49056B] text-white focus-visible:ring-[#18181B]',
+    primary: 'bg-[#49056B] hover:bg-[#5B0785] text-white focus-visible:ring-[#49056B]',
   };
 
   return (

@@ -126,7 +126,7 @@ export const AboutCompanySection: React.FC<AboutCompanySectionProps> = ({
             {/* Eyebrow Label */}
             <motion.span
               variants={itemVariants}
-              className="text-[14px] sm:text-[16px] font-bold tracking-tight uppercase text-[#390044] mb-4 sm:mb-5 block"
+              className="text-[14px] sm:text-[16px] font-bold tracking-tight uppercase text-[#49056B] mb-4 sm:mb-5 block"
             >
               {eyebrow}
             </motion.span>
@@ -155,7 +155,7 @@ export const AboutCompanySection: React.FC<AboutCompanySectionProps> = ({
             >
               {emphasisPoints.map((item, index) => (
                 <div key={item.id || index} className="flex items-start gap-3.5">
-                  <div className="w-10 h-10 rounded-full bg-[#390044]/10 text-[#390044] flex items-center justify-center shrink-0 mt-0.5">
+                  <div className="w-10 h-10 rounded-full bg-[#49056B]/10 text-[#49056B] flex items-center justify-center shrink-0 mt-0.5">
                     {index === 0 ? (
                       /* Icon 1: Verified Service Booking (Rosette / Shield Check) */
                       <svg
@@ -187,7 +187,7 @@ export const AboutCompanySection: React.FC<AboutCompanySectionProps> = ({
             <motion.div variants={itemVariants} className="pt-1">
               <Link
                 href={cta.href}
-                className="group inline-flex items-center justify-between h-[58px] sm:h-[62px] pl-7 pr-2.5 bg-[#C8E80B] hover:bg-[#b5d309] rounded-full transition-all duration-200 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#390044]"
+                className="group inline-flex items-center justify-between h-[58px] sm:h-[62px] pl-7 pr-2.5 bg-[#FE6000] hover:bg-[#E05500] rounded-full transition-all duration-200 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#49056B]"
               >
                 <span className="text-[16px] sm:text-[17px] font-bold text-[#202024] tracking-tight pr-2">
                   {cta.label}

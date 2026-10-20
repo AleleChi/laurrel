@@ -144,7 +144,7 @@ export const StorageIllustration: React.FC<IllustrationProps> = ({
         <line x1="78" y1="70" x2="86" y2="70" stroke="#18181B" strokeWidth="1.4" />
 
         {/* Storage Unit Identification Plaque */}
-        <rect x="42" y="24" width="16" height="6" rx="1" stroke="#18181B" strokeWidth="1.4" fill="#C8E80B" />
+        <rect x="42" y="24" width="16" height="6" rx="1" stroke="#18181B" strokeWidth="1.4" fill="#FE6000" />
         <line x1="46" y1="27" x2="54" y2="27" stroke="#18181B" strokeWidth="1.2" strokeLinecap="round" />
       </motion.g>
 
@@ -201,7 +201,7 @@ export const StorageIllustration: React.FC<IllustrationProps> = ({
           height="8"
           stroke="#18181B"
           strokeWidth="1.8"
-          fill="#C8E80B"
+          fill="#FE6000"
         />
 
         {/* Corrugated Slats */}
@@ -240,7 +240,7 @@ export const StorageIllustration: React.FC<IllustrationProps> = ({
             rx="1.5"
             stroke="#18181B"
             strokeWidth="1.5"
-            fill="#C8E80B"
+            fill="#FE6000"
           />
           {/* Keyhole */}
           <circle cx="50" cy="57.5" r="1" fill="#18181B" />

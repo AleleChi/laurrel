@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { ArrowRight, ChevronRight } from 'lucide-react';
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'outline' | 'ghost';
+  variant?: 'primary' | 'secondary' | 'accent' | 'outline' | 'ghost';
   size?: 'sm' | 'md' | 'lg';
   href?: string;
   icon?: boolean | React.ReactNode;
@@ -30,9 +30,11 @@ export const Button: React.FC<ButtonProps> = ({
 
   const variantStyles = {
     primary:
-      'bg-[#390044] text-white shadow-button-purple hover:bg-[#4E025D] active:scale-[0.98] focus-visible:ring-[#390044] border border-black/10',
+      'bg-[#49056B] text-white shadow-button-purple hover:bg-[#5B0785] active:scale-[0.98] focus-visible:ring-[#49056B] border border-black/10',
     secondary:
-      'bg-white text-[#390044] border border-[#390044]/30 hover:border-[#390044] hover:bg-[#390044]/5 active:scale-[0.98] focus-visible:ring-[#390044]',
+      'bg-white text-[#49056B] border border-[#49056B]/30 hover:border-[#49056B] hover:bg-[#49056B]/5 active:scale-[0.98] focus-visible:ring-[#49056B]',
+    accent:
+      'bg-[#FE6000] text-[#18181B] font-bold hover:bg-[#E05500] active:scale-[0.98] focus-visible:ring-[#FE6000] shadow-sm',
     outline:
       'bg-transparent text-[#202024] border border-black/15 hover:border-black/30 hover:bg-black/[0.03] active:scale-[0.98] focus-visible:ring-[#202024]',
     ghost:

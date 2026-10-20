@@ -151,7 +151,7 @@ export const AboutWhatWeDoSection: React.FC<AboutWhatWeDoSectionProps> = ({
         >
           {/* Column 1: Uppercase Section Label + Dominant Editorial Headline (~58% width) */}
           <motion.div variants={headerItemVariants} className="lg:col-span-7">
-            <span className="text-[14px] sm:text-[15px] font-bold tracking-tight uppercase text-[#390044] mb-3 sm:mb-4 block">
+            <span className="text-[14px] sm:text-[15px] font-bold tracking-tight uppercase text-[#49056B] mb-3 sm:mb-4 block">
               {eyebrow}
             </span>
             <h2 className="text-3xl sm:text-5xl lg:text-[56px] xl:text-[62px] font-medium leading-[1.08] tracking-[-0.035em] text-[#202024]">
@@ -187,7 +187,7 @@ export const AboutWhatWeDoSection: React.FC<AboutWhatWeDoSectionProps> = ({
                   {col.href ? (
                     <Link
                       href={col.href}
-                      className="inline-block text-[13px] sm:text-[14px] font-bold tracking-wider uppercase text-[#202024] hover:text-[#390044] transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#390044] rounded"
+                      className="inline-block text-[13px] sm:text-[14px] font-bold tracking-wider uppercase text-[#202024] hover:text-[#49056B] transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#49056B] rounded"
                     >
                       {col.category}
                     </Link>

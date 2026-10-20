@@ -31,7 +31,7 @@ export const HomeFaqSection: React.FC<HomeFaqSectionProps> = ({
           
           {/* Left Column: Heading & More Link (~35%) */}
           <div className="lg:col-span-5 flex flex-col items-start">
-            <span className="text-xs font-bold tracking-widest uppercase text-[#390044] mb-3">
+            <span className="text-xs font-bold tracking-widest uppercase text-[#49056B] mb-3">
               {content.eyebrow}
             </span>
             <h2
@@ -46,10 +46,10 @@ export const HomeFaqSection: React.FC<HomeFaqSectionProps> = ({
 
             <Link
               href={content.moreLink.href}
-              className="inline-flex items-center gap-2.5 text-base font-semibold text-[#390044] hover:text-[#18181B] underline-offset-4 hover:underline transition-colors"
+              className="inline-flex items-center gap-2.5 text-base font-semibold text-[#49056B] hover:text-[#18181B] underline-offset-4 hover:underline transition-colors"
             >
               <span>{content.moreLink.label}</span>
-              <ArrowRight className="w-4 h-4 text-[#390044]" />
+              <ArrowRight className="w-4 h-4 text-[#49056B]" />
             </Link>
           </div>
 

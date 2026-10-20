@@ -78,7 +78,7 @@ export const AboutSection: React.FC<AboutSectionProps> = ({ initialData }) => {
         <div className="max-w-4xl mb-12 sm:mb-14 lg:mb-16">
           {/* Plain uppercase text label — strictly no badges, pills, or circular dots */}
           <p
-            className={`text-xs sm:text-[13px] lg:text-[14px] font-bold tracking-[0.14em] uppercase text-[#390044] mb-4 sm:mb-5 ${anim(
+            className={`text-xs sm:text-[13px] lg:text-[14px] font-bold tracking-[0.14em] uppercase text-[#49056B] mb-4 sm:mb-5 ${anim(
               'delay-100'
             )}`}
           >
@@ -87,7 +87,7 @@ export const AboutSection: React.FC<AboutSectionProps> = ({ initialData }) => {
 
           <h2
             id="home-about-heading"
-            className={`text-3xl sm:text-4xl md:text-5xl lg:text-[3.5rem] xl:text-[4rem] font-extrabold tracking-tight text-[#390044] leading-[1.1] ${anim(
+            className={`text-3xl sm:text-4xl md:text-5xl lg:text-[3.5rem] xl:text-[4rem] font-extrabold tracking-tight text-[#49056B] leading-[1.1] ${anim(
               'delay-200'
             )}`}
           >
@@ -117,7 +117,7 @@ export const AboutSection: React.FC<AboutSectionProps> = ({ initialData }) => {
               )}`}
             >
               <div
-                className="text-[140px] xl:text-[170px] 2xl:text-[190px] font-extrabold text-[#390044] leading-none tracking-tight select-none"
+                className="text-[140px] xl:text-[170px] 2xl:text-[190px] font-extrabold text-[#49056B] leading-none tracking-tight select-none"
                 aria-label="03 Core Services"
               >
                 {about.stat.number}
@@ -149,7 +149,7 @@ export const AboutSection: React.FC<AboutSectionProps> = ({ initialData }) => {
           {/* RIGHT COLUMN: Service descriptions + About CTA */}
           <div className="lg:col-span-4 flex flex-col order-3">
             <h3
-              className={`text-2xl sm:text-3xl font-extrabold text-[#390044] tracking-tight leading-snug mb-6 sm:mb-8 ${anim(
+              className={`text-2xl sm:text-3xl font-extrabold text-[#49056B] tracking-tight leading-snug mb-6 sm:mb-8 ${anim(
                 'delay-250'
               )}`}
             >
@@ -193,7 +193,7 @@ export const AboutSection: React.FC<AboutSectionProps> = ({ initialData }) => {
                 'delay-550'
               )}`}
             >
-              <span className="text-6xl sm:text-7xl font-extrabold text-[#390044] leading-none tracking-tight">
+              <span className="text-6xl sm:text-7xl font-extrabold text-[#49056B] leading-none tracking-tight">
                 {about.stat.number}
               </span>
               <span className="text-xs sm:text-sm font-bold tracking-[0.14em] uppercase text-[#202024]/75">

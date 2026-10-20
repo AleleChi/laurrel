@@ -297,8 +297,8 @@ export default function AdminDashboardPage() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#F8F7F4]">
         <div className="flex flex-col items-center gap-3">
-          <RefreshCw className="w-6 h-6 text-[#390044] animate-spin" />
-          <p className="text-xs font-bold text-[#390044] tracking-wider uppercase">
+          <RefreshCw className="w-6 h-6 text-[#49056B] animate-spin" />
+          <p className="text-xs font-bold text-[#49056B] tracking-wider uppercase">
             Verifying Administrator Session...
           </p>
         </div>
@@ -311,11 +311,11 @@ export default function AdminDashboardPage() {
       <div className="min-h-screen flex items-center justify-center bg-[#F8F7F4] px-4 py-12">
         <div className="w-full max-w-md bg-white rounded-3xl p-8 border border-black/[0.08] shadow-2xl">
           <div className="flex items-center gap-3 mb-6">
-            <div className="w-12 h-12 rounded-2xl bg-[#390044] text-[#C8E80B] flex items-center justify-center font-bold">
+            <div className="w-12 h-12 rounded-2xl bg-[#49056B] text-[#FE6000] flex items-center justify-center font-bold">
               <Shield className="w-6 h-6" />
             </div>
             <div>
-              <h1 className="text-xl font-extrabold text-[#390044] tracking-tight">LAURREL OPERATIONS</h1>
+              <h1 className="text-xl font-extrabold text-[#49056B] tracking-tight">LAURREL OPERATIONS</h1>
               <p className="text-xs text-[#575757]">Business Administration Portal</p>
             </div>
           </div>
@@ -332,7 +332,7 @@ export default function AdminDashboardPage() {
                     value={emailInput}
                     onChange={(e) => setEmailInput(e.target.value)}
                     placeholder="e.g. owner@laurrelservices.ca"
-                    className="w-full px-4 py-3 bg-[#F8F7F4] border border-black/15 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#390044]"
+                    className="w-full px-4 py-3 bg-[#F8F7F4] border border-black/15 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#49056B]"
                     autoFocus
                     required
                   />
@@ -350,7 +350,7 @@ export default function AdminDashboardPage() {
                     value={passwordInput}
                     onChange={(e) => setPasswordInput(e.target.value)}
                     placeholder="Enter account password"
-                    className="w-full px-4 py-3 bg-[#F8F7F4] border border-black/15 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#390044]"
+                    className="w-full px-4 py-3 bg-[#F8F7F4] border border-black/15 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#49056B]"
                     required
                   />
                   <Lock className="w-4 h-4 text-[#888] absolute right-3.5 top-3.5" />
@@ -367,7 +367,7 @@ export default function AdminDashboardPage() {
               <button
                 type="submit"
                 disabled={isLoggingIn}
-                className="w-full py-3.5 bg-[#390044] hover:bg-[#4a0058] text-[#C8E80B] font-bold text-sm rounded-xl transition-all shadow-md active:scale-[0.99] disabled:opacity-50"
+                className="w-full py-3.5 bg-[#49056B] hover:bg-[#34034D] text-[#FE6000] font-bold text-sm rounded-xl transition-all shadow-md active:scale-[0.99] disabled:opacity-50"
               >
                 {isLoggingIn ? 'Verifying Session...' : 'Sign In to Operations Portal'}
               </button>
@@ -376,7 +376,7 @@ export default function AdminDashboardPage() {
                 <button
                   type="button"
                   onClick={() => setShowRecovery(true)}
-                  className="text-xs font-semibold text-[#575757] hover:text-[#390044]"
+                  className="text-xs font-semibold text-[#575757] hover:text-[#49056B]"
                 >
                   Forgot password?
                 </button>
@@ -386,7 +386,7 @@ export default function AdminDashboardPage() {
           ) : (
             <form onSubmit={handleRecoverySubmit} className="space-y-4">
               <div className="mb-2">
-                <h2 className="text-sm font-bold text-[#390044]">Account Recovery</h2>
+                <h2 className="text-sm font-bold text-[#49056B]">Account Recovery</h2>
                 <p className="text-xs text-[#575757] mt-0.5">
                   Enter your registered administrator email to receive secure recovery steps.
                 </p>
@@ -402,7 +402,7 @@ export default function AdminDashboardPage() {
                     value={recoveryEmail}
                     onChange={(e) => setRecoveryEmail(e.target.value)}
                     placeholder="owner@laurrelservices.ca"
-                    className="w-full px-4 py-3 bg-[#F8F7F4] border border-black/15 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#390044]"
+                    className="w-full px-4 py-3 bg-[#F8F7F4] border border-black/15 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#49056B]"
                     autoFocus
                     required
                   />
@@ -419,7 +419,7 @@ export default function AdminDashboardPage() {
               <button
                 type="submit"
                 disabled={isRecovering}
-                className="w-full py-3.5 bg-[#390044] hover:bg-[#4a0058] text-[#C8E80B] font-bold text-sm rounded-xl transition-all shadow-md active:scale-[0.99] disabled:opacity-50"
+                className="w-full py-3.5 bg-[#49056B] hover:bg-[#34034D] text-[#FE6000] font-bold text-sm rounded-xl transition-all shadow-md active:scale-[0.99] disabled:opacity-50"
               >
                 {isRecovering ? 'Submitting Request...' : 'Send Recovery Instructions'}
               </button>
@@ -431,7 +431,7 @@ export default function AdminDashboardPage() {
                     setShowRecovery(false);
                     setRecoveryMessage('');
                   }}
-                  className="text-xs font-semibold text-[#575757] hover:text-[#390044]"
+                  className="text-xs font-semibold text-[#575757] hover:text-[#49056B]"
                 >
                   ← Back to Sign In
                 </button>
@@ -440,7 +440,7 @@ export default function AdminDashboardPage() {
           )}
 
           <div className="mt-6 pt-4 border-t border-black/[0.06] text-center">
-            <Link href="/" className="text-xs text-[#575757] hover:text-[#390044]">
+            <Link href="/" className="text-xs text-[#575757] hover:text-[#49056B]">
               ← Return to Laurrel Services website
             </Link>
           </div>
@@ -452,23 +452,23 @@ export default function AdminDashboardPage() {
   return (
     <div className="min-h-screen bg-[#F8F7F4] flex flex-col">
       {/* Top Navbar */}
-      <header className="bg-[#390044] text-white px-6 py-4 flex items-center justify-between border-b border-black/10">
+      <header className="bg-[#49056B] text-white px-6 py-4 flex items-center justify-between border-b border-black/10">
         <div className="flex items-center gap-4">
-          <div className="w-9 h-9 rounded-xl bg-[#C8E80B] text-[#390044] flex items-center justify-center font-bold">
+          <div className="w-9 h-9 rounded-xl bg-[#FE6000] text-[#49056B] flex items-center justify-center font-bold">
             <Shield className="w-5 h-5" />
           </div>
           <div>
             <h1 className="text-base font-extrabold tracking-tight">LAURREL OPERATIONS ADMIN</h1>
-            <p className="text-[11px] text-[#C8E80B]/80">Ottawa Dispatch & Customer Management</p>
+            <p className="text-[11px] text-[#FE6000]/80">Ottawa Dispatch & Customer Management</p>
           </div>
         </div>
 
         <div className="flex items-center gap-3">
           {currentUser && (
             <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/10 text-xs text-white">
-              <UserCheck className="w-3.5 h-3.5 text-[#C8E80B]" />
+              <UserCheck className="w-3.5 h-3.5 text-[#FE6000]" />
               <span>{currentUser.name}</span>
-              <span className="uppercase text-[10px] font-bold bg-[#C8E80B] text-[#390044] px-1.5 py-0.5 rounded">
+              <span className="uppercase text-[10px] font-bold bg-[#FE6000] text-[#49056B] px-1.5 py-0.5 rounded">
                 {currentUser.role}
               </span>
             </div>
@@ -497,11 +497,11 @@ export default function AdminDashboardPage() {
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3.5">
           <div className="bg-white p-4 rounded-2xl border border-black/[0.08] shadow-sm">
             <p className="text-[11px] font-bold uppercase tracking-wider text-[#777]">Total Leads</p>
-            <p className="text-2xl font-extrabold text-[#390044] mt-1">{stats?.totalEnquiries ?? '-'}</p>
+            <p className="text-2xl font-extrabold text-[#49056B] mt-1">{stats?.totalEnquiries ?? '-'}</p>
           </div>
           <div className="bg-white p-4 rounded-2xl border border-black/[0.08] shadow-sm">
             <p className="text-[11px] font-bold uppercase tracking-wider text-[#777]">New Submissions</p>
-            <p className="text-2xl font-extrabold text-[#5B8200] mt-1">{stats?.newEnquiries ?? '-'}</p>
+            <p className="text-2xl font-extrabold text-[#FE6000] mt-1">{stats?.newEnquiries ?? '-'}</p>
           </div>
           <div className="bg-white p-4 rounded-2xl border border-black/[0.08] shadow-sm">
             <p className="text-[11px] font-bold uppercase tracking-wider text-[#777]">Under Review</p>
@@ -513,7 +513,7 @@ export default function AdminDashboardPage() {
           </div>
           <div className="bg-white p-4 rounded-2xl border border-black/[0.08] shadow-sm">
             <p className="text-[11px] font-bold uppercase tracking-wider text-[#777]">Email Dispatches</p>
-            <p className="text-2xl font-extrabold text-[#390044] mt-1">
+            <p className="text-2xl font-extrabold text-[#49056B] mt-1">
               {stats ? stats.totalEnquiries - stats.failedDeliveries : '-'}
             </p>
           </div>
@@ -529,7 +529,7 @@ export default function AdminDashboardPage() {
             onClick={() => setActiveTab('enquiries')}
             className={`pb-3 text-sm font-bold flex items-center gap-2 border-b-2 transition-all ${
               activeTab === 'enquiries'
-                ? 'border-[#390044] text-[#390044]'
+                ? 'border-[#49056B] text-[#49056B]'
                 : 'border-transparent text-[#777] hover:text-[#202024]'
             }`}
           >
@@ -543,7 +543,7 @@ export default function AdminDashboardPage() {
             onClick={() => setActiveTab('handoffs')}
             className={`pb-3 text-sm font-bold flex items-center gap-2 border-b-2 transition-all ${
               activeTab === 'handoffs'
-                ? 'border-[#390044] text-[#390044]'
+                ? 'border-[#49056B] text-[#49056B]'
                 : 'border-transparent text-[#777] hover:text-[#202024]'
             }`}
           >
@@ -568,7 +568,7 @@ export default function AdminDashboardPage() {
                     placeholder="Search by name, email, ref, or location..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-9 pr-4 py-2 bg-[#F8F7F4] border border-black/10 rounded-xl text-xs focus:outline-none focus:ring-1 focus:ring-[#390044]"
+                    className="w-full pl-9 pr-4 py-2 bg-[#F8F7F4] border border-black/10 rounded-xl text-xs focus:outline-none focus:ring-1 focus:ring-[#49056B]"
                   />
                   <Search className="w-3.5 h-3.5 text-[#888] absolute left-3 top-2.5" />
                 </div>
@@ -617,13 +617,13 @@ export default function AdminDashboardPage() {
                           setUpdatingStatus(enq.status);
                         }}
                         className={`w-full text-left p-3.5 rounded-xl transition-all my-1 ${
-                          isSelected ? 'bg-[#390044] text-white' : 'hover:bg-[#F8F7F4] text-[#202024]'
+                          isSelected ? 'bg-[#49056B] text-white' : 'hover:bg-[#F8F7F4] text-[#202024]'
                         }`}
                       >
                         <div className="flex items-center justify-between">
                           <span
                             className={`text-[11px] font-mono font-bold ${
-                              isSelected ? 'text-[#C8E80B]' : 'text-[#555]'
+                              isSelected ? 'text-[#FE6000]' : 'text-[#555]'
                             }`}
                           >
                             {enq.id}
@@ -631,7 +631,7 @@ export default function AdminDashboardPage() {
                           <span
                             className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-full ${
                               enq.status === 'new'
-                                ? 'bg-[#C8E80B] text-[#202024]'
+                                ? 'bg-[#FE6000] text-[#202024]'
                                 : enq.status === 'scheduled'
                                 ? 'bg-blue-100 text-blue-800'
                                 : 'bg-neutral-200 text-neutral-700'
@@ -661,8 +661,8 @@ export default function AdminDashboardPage() {
                   {/* Header */}
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-black/[0.08] gap-2">
                     <div>
-                      <span className="text-xs font-mono font-bold text-[#5B8200]">{selectedEnquiry.id}</span>
-                      <h2 className="text-xl font-extrabold text-[#390044]">{selectedEnquiry.customer.name}</h2>
+                      <span className="text-xs font-mono font-bold text-[#FE6000]">{selectedEnquiry.id}</span>
+                      <h2 className="text-xl font-extrabold text-[#49056B]">{selectedEnquiry.customer.name}</h2>
                       <p className="text-xs text-[#777]">Received: {new Date(selectedEnquiry.createdAt).toLocaleString()}</p>
                     </div>
                     <div className="flex items-center gap-2">
@@ -673,7 +673,7 @@ export default function AdminDashboardPage() {
                           setUpdatingStatus(e.target.value);
                           handleUpdateStatus(selectedEnquiry.id, e.target.value);
                         }}
-                        className="px-3 py-1.5 bg-[#F8F7F4] border border-black/15 rounded-lg text-xs font-bold text-[#390044]"
+                        className="px-3 py-1.5 bg-[#F8F7F4] border border-black/15 rounded-lg text-xs font-bold text-[#49056B]"
                       >
                         <option value="new">New</option>
                         <option value="reviewed">Reviewed</option>
@@ -717,7 +717,7 @@ export default function AdminDashboardPage() {
                       {selectedEnquiry.services.map((svc) => (
                         <span
                           key={svc}
-                          className="px-3 py-1 bg-[#390044] text-[#C8E80B] rounded-full text-xs font-bold uppercase"
+                          className="px-3 py-1 bg-[#49056B] text-[#FE6000] rounded-full text-xs font-bold uppercase"
                         >
                           {svc}
                         </span>
@@ -754,13 +754,13 @@ export default function AdminDashboardPage() {
                         placeholder="Add an internal follow-up note..."
                         value={newNote}
                         onChange={(e) => setNewNote(e.target.value)}
-                        className="flex-1 px-3.5 py-2 bg-[#F8F7F4] border border-black/15 rounded-xl text-xs focus:outline-none focus:ring-1 focus:ring-[#390044]"
+                        className="flex-1 px-3.5 py-2 bg-[#F8F7F4] border border-black/15 rounded-xl text-xs focus:outline-none focus:ring-1 focus:ring-[#49056B]"
                       />
                       <button
                         type="button"
                         onClick={() => handleUpdateStatus(selectedEnquiry.id, selectedEnquiry.status)}
                         disabled={!newNote.trim()}
-                        className="px-4 py-2 bg-[#390044] text-[#C8E80B] rounded-xl text-xs font-bold disabled:opacity-40"
+                        className="px-4 py-2 bg-[#49056B] text-[#FE6000] rounded-xl text-xs font-bold disabled:opacity-40"
                       >
                         Save Note
                       </button>
@@ -780,7 +780,7 @@ export default function AdminDashboardPage() {
           /* AI Assistant Handoffs Tab */
           <div className="bg-white rounded-3xl border border-black/[0.08] shadow-sm p-6 sm:p-8">
             <div className="mb-6">
-              <h2 className="text-lg font-bold text-[#390044]">AI Assistant Escalations & Human Handoffs</h2>
+              <h2 className="text-lg font-bold text-[#49056B]">AI Assistant Escalations & Human Handoffs</h2>
               <p className="text-xs text-[#575757] mt-1">
                 Conversations where visitors requested human coordinator follow-up through the website assistant.
               </p>

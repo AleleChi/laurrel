@@ -103,7 +103,7 @@ export const ServiceSidebarNav: React.FC = () => {
                   aria-current={isActive ? 'true' : undefined}
                   className={`group w-full h-[60px] px-6 rounded-full flex items-center justify-between transition-all duration-200 cursor-pointer ${
                     isActive
-                      ? 'bg-[#C8E80B] text-[#18181B] font-semibold shadow-sm'
+                      ? 'bg-[#49056B] text-white font-semibold shadow-sm'
                       : 'bg-white text-[#18181B] hover:bg-white/90 font-medium shadow-xs'
                   }`}
                 >
@@ -143,7 +143,7 @@ export const ServiceSidebarNav: React.FC = () => {
                 onClick={(e) => handleClick(e, item.id)}
                 className={`px-5 py-3 rounded-full text-sm font-medium transition-all whitespace-nowrap cursor-pointer ${
                   isActive
-                    ? 'bg-[#C8E80B] text-[#18181B] font-semibold shadow-xs'
+                    ? 'bg-[#49056B] text-white font-semibold shadow-xs'
                     : 'bg-white text-[#18181B] border border-[#202024]/10 hover:bg-[#F2F1ED]'
                 }`}
               >

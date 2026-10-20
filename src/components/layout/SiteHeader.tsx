@@ -90,7 +90,7 @@ export const SiteHeader: React.FC<SiteHeaderProps> = ({ onOpenQuote }) => {
             {/* Brand Logo */}
             <Link
               href="/"
-              className="flex items-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#390044] rounded-lg p-0.5"
+              className="flex items-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#49056B] rounded-lg p-0.5"
               aria-label="Laurrel Services Home"
             >
               <Logo />
@@ -119,8 +119,8 @@ export const SiteHeader: React.FC<SiteHeaderProps> = ({ onOpenQuote }) => {
                       <div className="flex items-center gap-1">
                         <Link
                           href={link.href}
-                          className={`transition-colors duration-200 hover:text-[#390044] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#390044] rounded ${
-                            isActive ? 'text-[#390044] font-semibold' : 'text-[#202024]/85'
+                          className={`transition-colors duration-200 hover:text-[#49056B] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#49056B] rounded ${
+                            isActive ? 'text-[#49056B] font-semibold' : 'text-[#202024]/85'
                           }`}
                           aria-current={isActive ? 'page' : undefined}
                           onClick={() => setServicesDropdownOpen(false)}
@@ -133,18 +133,18 @@ export const SiteHeader: React.FC<SiteHeaderProps> = ({ onOpenQuote }) => {
                           aria-expanded={servicesDropdownOpen}
                           aria-haspopup="true"
                           aria-label="Toggle Services dropdown"
-                          className="p-1 rounded hover:bg-black/5 text-[#202024]/75 hover:text-[#390044] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#390044]"
+                          className="p-1 rounded hover:bg-black/5 text-[#202024]/75 hover:text-[#49056B] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#49056B]"
                         >
                           <ChevronDown
                             className={`w-3.5 h-3.5 transition-transform duration-200 ${
-                              servicesDropdownOpen ? 'rotate-180 text-[#390044]' : ''
+                              servicesDropdownOpen ? 'rotate-180 text-[#49056B]' : ''
                             }`}
                           />
                         </button>
                       </div>
 
                       {isActive && (
-                        <span className="absolute bottom-0 left-0 w-full h-[2px] bg-[#390044] rounded-full" />
+                        <span className="absolute bottom-0 left-0 w-full h-[2px] bg-[#49056B] rounded-full" />
                       )}
 
                       {/* Dropdown Menu */}
@@ -160,7 +160,7 @@ export const SiteHeader: React.FC<SiteHeaderProps> = ({ onOpenQuote }) => {
                               href={subItem.href}
                               role="menuitem"
                               onClick={() => setServicesDropdownOpen(false)}
-                              className="block px-3.5 py-2 text-sm text-[#202024]/90 hover:text-[#390044] hover:bg-[#F8F7F4] rounded-xl transition-colors font-medium"
+                              className="block px-3.5 py-2 text-sm text-[#202024]/90 hover:text-[#49056B] hover:bg-[#F8F7F4] rounded-xl transition-colors font-medium"
                             >
                               {subItem.label}
                             </Link>
@@ -175,14 +175,14 @@ export const SiteHeader: React.FC<SiteHeaderProps> = ({ onOpenQuote }) => {
                   <li key={link.label} className="relative py-1">
                     <Link
                       href={link.href}
-                      className={`transition-colors duration-200 hover:text-[#390044] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#390044] rounded ${
-                        isActive ? 'text-[#390044] font-semibold' : 'text-[#202024]/85'
+                      className={`transition-colors duration-200 hover:text-[#49056B] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#49056B] rounded ${
+                        isActive ? 'text-[#49056B] font-semibold' : 'text-[#202024]/85'
                       }`}
                       aria-current={isActive ? 'page' : undefined}
                     >
                       {link.label}
                       {isActive && (
-                        <span className="absolute bottom-0 left-0 w-full h-[2px] bg-[#390044] rounded-full" />
+                        <span className="absolute bottom-0 left-0 w-full h-[2px] bg-[#49056B] rounded-full" />
                       )}
                     </Link>
                   </li>
@@ -208,12 +208,12 @@ export const SiteHeader: React.FC<SiteHeaderProps> = ({ onOpenQuote }) => {
               <button
                 type="button"
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="lg:hidden p-2 rounded-xl text-[#202024] hover:bg-black/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#390044] transition-colors"
+                className="lg:hidden p-2 rounded-xl text-[#202024] hover:bg-black/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#49056B] transition-colors"
                 aria-expanded={mobileMenuOpen}
                 aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
               >
                 {mobileMenuOpen ? (
-                  <X className="w-6 h-6 text-[#390044]" />
+                  <X className="w-6 h-6 text-[#49056B]" />
                 ) : (
                   <Menu className="w-6 h-6 text-[#202024]" />
                 )}
@@ -245,7 +245,7 @@ export const SiteHeader: React.FC<SiteHeaderProps> = ({ onOpenQuote }) => {
                         <Link
                           href={link.href}
                           onClick={() => setMobileMenuOpen(false)}
-                          className="py-2 px-3 rounded-lg hover:bg-[#390044]/5 hover:text-[#390044] transition-colors"
+                          className="py-2 px-3 rounded-lg hover:bg-[#49056B]/5 hover:text-[#49056B] transition-colors"
                         >
                           {link.label}
                         </Link>
@@ -253,12 +253,12 @@ export const SiteHeader: React.FC<SiteHeaderProps> = ({ onOpenQuote }) => {
                           type="button"
                           onClick={() => setMobileServicesOpen((prev) => !prev)}
                           aria-expanded={mobileServicesOpen}
-                          className="p-2 text-[#202024]/70 hover:text-[#390044]"
+                          className="p-2 text-[#202024]/70 hover:text-[#49056B]"
                           aria-label="Toggle services links"
                         >
                           <ChevronDown
                             className={`w-4 h-4 transition-transform ${
-                              mobileServicesOpen ? 'rotate-180 text-[#390044]' : ''
+                              mobileServicesOpen ? 'rotate-180 text-[#49056B]' : ''
                             }`}
                           />
                         </button>
@@ -274,7 +274,7 @@ export const SiteHeader: React.FC<SiteHeaderProps> = ({ onOpenQuote }) => {
                                 setMobileMenuOpen(false);
                                 setMobileServicesOpen(false);
                               }}
-                              className="block py-2 px-3 text-sm text-[#202024]/80 hover:text-[#390044] hover:bg-[#F8F7F4] rounded-lg transition-colors font-medium"
+                              className="block py-2 px-3 text-sm text-[#202024]/80 hover:text-[#49056B] hover:bg-[#F8F7F4] rounded-lg transition-colors font-medium"
                             >
                               {sub.label}
                             </Link>
@@ -290,7 +290,7 @@ export const SiteHeader: React.FC<SiteHeaderProps> = ({ onOpenQuote }) => {
                     <Link
                       href={link.href}
                       onClick={() => setMobileMenuOpen(false)}
-                      className="block py-2 px-3 rounded-lg hover:bg-[#390044]/5 hover:text-[#390044] transition-colors"
+                      className="block py-2 px-3 rounded-lg hover:bg-[#49056B]/5 hover:text-[#49056B] transition-colors"
                     >
                       {link.label}
                     </Link>

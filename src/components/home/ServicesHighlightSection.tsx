@@ -91,7 +91,7 @@ export const ServicesHighlightSection: React.FC<ServicesHighlightSectionProps> =
     <section
       id="services"
       aria-label="Laurrel Services Overview"
-      className="w-full bg-[#C8E80B] text-[#202024] py-20 sm:py-24 lg:py-28 xl:py-[108px] px-6 sm:px-8 lg:px-12 xl:px-16"
+      className="w-full bg-[#49056B] text-white py-20 sm:py-24 lg:py-28 xl:py-[108px] px-6 sm:px-8 lg:px-12 xl:px-16"
     >
       <div className="max-w-[1440px] 2xl:max-w-[1560px] mx-auto">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 xl:gap-24 items-start">
@@ -108,7 +108,7 @@ export const ServicesHighlightSection: React.FC<ServicesHighlightSectionProps> =
             {/* 1. Small Eyebrow */}
             <motion.div
               variants={itemVariants}
-              className="text-xs sm:text-sm font-bold tracking-[0.14em] uppercase text-[#18181B] mb-5 sm:mb-6"
+              className="text-xs sm:text-sm font-bold tracking-[0.14em] uppercase text-[#FE6000] mb-5 sm:mb-6"
             >
               {activeContent.eyebrow}
             </motion.div>
@@ -116,24 +116,24 @@ export const ServicesHighlightSection: React.FC<ServicesHighlightSectionProps> =
             {/* 2. Large Editorial Headline */}
             <motion.h2
               variants={itemVariants}
-              className="text-[36px] sm:text-[46px] md:text-[52px] lg:text-[56px] xl:text-[62px] 2xl:text-[68px] font-medium tracking-[-0.035em] leading-[1.08] text-[#18181B] mb-8 sm:mb-10 lg:mb-14 max-w-[540px]"
+              className="text-[36px] sm:text-[46px] md:text-[52px] lg:text-[56px] xl:text-[62px] 2xl:text-[68px] font-medium tracking-[-0.035em] leading-[1.08] text-white mb-8 sm:mb-10 lg:mb-14 max-w-[540px]"
             >
               {activeContent.headline}
             </motion.h2>
 
-            {/* 3. Black CTA Button with White Arrow Holder */}
+            {/* 3. Accent CTA Button with Arrow Holder */}
             <motion.div variants={itemVariants}>
               <Link
                 href={activeContent.cta.href}
-                className="group relative inline-flex items-center justify-between gap-5 bg-[#18181B] hover:bg-black text-white pl-7 pr-3 py-2.5 rounded-[50px] transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#18181B] shadow-sm hover:shadow-md cursor-pointer"
+                className="group relative inline-flex items-center justify-between gap-5 bg-[#FE6000] hover:bg-[#E05500] text-[#18181B] pl-7 pr-3 py-2.5 rounded-[50px] transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#FE6000] shadow-sm hover:shadow-md cursor-pointer"
                 aria-label={`${activeContent.cta.label} — Navigate to dedicated Services page`}
               >
-                <span className="text-[17px] sm:text-[18px] font-medium tracking-tight text-white pr-2 select-none">
+                <span className="text-[17px] sm:text-[18px] font-bold tracking-tight text-[#18181B] pr-2 select-none">
                   {activeContent.cta.label}
                 </span>
 
                 {/* White Arrow Holder */}
-                <span className="w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-white flex items-center justify-center flex-shrink-0 transition-transform duration-250 ease-out group-hover:scale-105">
+                <span className="w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-white flex items-center justify-center flex-shrink-0 transition-transform duration-250 ease-out group-hover:scale-105 shadow-xs">
                   <svg
                     width="18"
                     height="18"
@@ -168,9 +168,9 @@ export const ServicesHighlightSection: React.FC<ServicesHighlightSectionProps> =
                 viewport={{ once: true, amount: 0.15 }}
                 className="group flex flex-col sm:flex-row items-start gap-6 sm:gap-8 lg:gap-10"
               >
-                {/* Left Illustration Box */}
+                {/* Left Illustration Box inside clean white rounded card */}
                 <div
-                  className="w-24 h-24 sm:w-24 sm:h-24 lg:w-[104px] lg:h-[104px] flex-shrink-0 flex items-start justify-center pt-0.5"
+                  className="w-24 h-24 sm:w-24 sm:h-24 lg:w-[104px] lg:h-[104px] flex-shrink-0 flex items-center justify-center p-2 rounded-2xl bg-white shadow-sm"
                   aria-hidden="true"
                 >
                   {getIllustration(service.id)}
@@ -178,10 +178,10 @@ export const ServicesHighlightSection: React.FC<ServicesHighlightSectionProps> =
 
                 {/* Right Text Column */}
                 <div className="flex-1 max-w-[620px]">
-                  <h3 className="text-2xl sm:text-[26px] lg:text-[28px] font-semibold text-[#18181B] tracking-[-0.02em] leading-snug mb-2 sm:mb-3">
+                  <h3 className="text-2xl sm:text-[26px] lg:text-[28px] font-semibold text-white tracking-[-0.02em] leading-snug mb-2 sm:mb-3">
                     {service.title}
                   </h3>
-                  <p className="text-base sm:text-[17px] lg:text-[18px] font-normal text-[#202024]/90 leading-[1.62]">
+                  <p className="text-base sm:text-[17px] lg:text-[18px] font-normal text-white/85 leading-[1.62]">
                     {service.description}
                   </p>
                 </div>

@@ -61,7 +61,7 @@ export const AboutMarqueeSection: React.FC<AboutMarqueeSectionProps> = ({
               {/* Lime geometric flower/sparkle separator icon (64px) */}
               <span className="mx-8 sm:mx-12 lg:mx-16 shrink-0 flex items-center justify-center">
                 <svg
-                  className="w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 text-[#C8E80B] fill-current"
+                  className="w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 text-[#FE6000] fill-current"
                   viewBox="0 0 24 24"
                   aria-hidden="true"
                 >
@@ -87,7 +87,7 @@ export const AboutMarqueeSection: React.FC<AboutMarqueeSectionProps> = ({
               </span>
               <span className="mx-8 sm:mx-12 lg:mx-16 shrink-0 flex items-center justify-center">
                 <svg
-                  className="w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 text-[#C8E80B] fill-current"
+                  className="w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 text-[#FE6000] fill-current"
                   viewBox="0 0 24 24"
                   aria-hidden="true"
                 >

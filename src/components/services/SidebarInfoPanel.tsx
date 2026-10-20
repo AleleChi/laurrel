@@ -33,12 +33,12 @@ export const SidebarInfoPanel: React.FC<SidebarInfoPanelProps> = ({
   return (
     <div
       id="sidebar-info-panel"
-      className="w-full bg-[#C8E80B] rounded-[36px] p-7 sm:p-8 xl:p-9 border border-[#202024]/10 shadow-xs flex flex-col justify-between items-start"
+      className="w-full bg-[#49056B] text-white rounded-[36px] p-7 sm:p-8 xl:p-9 border border-white/10 shadow-xs flex flex-col justify-between items-start"
     >
       <div>
         {/* Purposeful accent icon */}
-        <div className="w-10 h-10 rounded-2xl bg-[#18181B] text-[#C8E80B] flex items-center justify-center mb-6">
-          <Sparkles className="w-5 h-5 text-[#C8E80B]" />
+        <div className="w-10 h-10 rounded-2xl bg-[#FE6000] text-[#18181B] flex items-center justify-center mb-6">
+          <Sparkles className="w-5 h-5 text-[#18181B]" />
         </div>
 
         {/* Heading */}
@@ -56,10 +56,10 @@ export const SidebarInfoPanel: React.FC<SidebarInfoPanelProps> = ({
       <button
         type="button"
         onClick={handleClick}
-        className="inline-flex items-center gap-2.5 bg-[#18181B] hover:bg-[#390044] text-white px-6 py-3.5 rounded-full text-sm font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#18181B] shadow-xs cursor-pointer"
+        className="inline-flex items-center gap-2.5 bg-[#FE6000] hover:bg-[#E05500] text-[#18181B] px-6 py-3.5 rounded-full text-sm font-bold transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#FE6000] shadow-xs cursor-pointer"
       >
         <span>{ctaText}</span>
-        <ArrowRight className="w-4 h-4 text-white" />
+        <ArrowRight className="w-4 h-4 text-[#18181B]" />
       </button>
     </div>
   );

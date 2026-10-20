@@ -93,7 +93,7 @@ export const AboutWhySection: React.FC<AboutWhySectionProps> = ({
   return (
     <section
       aria-label="Why Laurrel Services"
-      className="w-full bg-[#C8E80B] text-[#202024] pt-16 sm:pt-20 lg:pt-[88px] pb-0 overflow-hidden relative"
+      className="w-full bg-[#49056B] text-white pt-16 sm:pt-20 lg:pt-[88px] pb-0 overflow-hidden relative"
     >
       <div className="max-w-[1380px] mx-auto px-6 sm:px-8 lg:px-12">
         {/* Centred Eyebrow & Headline */}
@@ -104,10 +104,10 @@ export const AboutWhySection: React.FC<AboutWhySectionProps> = ({
           variants={headerVariants}
           className="text-center max-w-4xl mx-auto mb-10 sm:mb-12 lg:mb-14"
         >
-          <span className="text-[13px] sm:text-[14px] lg:text-[15px] font-bold tracking-tight text-[#202024]/75 uppercase mb-3 block">
+          <span className="text-[13px] sm:text-[14px] lg:text-[15px] font-bold tracking-tight text-[#FE6000] uppercase mb-3 block">
             {eyebrow}
           </span>
-          <h2 className="text-3xl sm:text-5xl lg:text-[54px] xl:text-[58px] font-medium leading-[1.08] tracking-[-0.035em] text-[#202024]">
+          <h2 className="text-3xl sm:text-5xl lg:text-[54px] xl:text-[58px] font-medium leading-[1.08] tracking-[-0.035em] text-white">
             {headline}
           </h2>
         </motion.div>
@@ -129,11 +129,11 @@ export const AboutWhySection: React.FC<AboutWhySectionProps> = ({
                 className="flex flex-col items-start"
               >
                 {/* Black Circular Icon Tile with Lime Linework */}
-                <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-[#18181B] flex items-center justify-center mb-4 sm:mb-5 flex-shrink-0 shadow-sm">
+                <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-white/10 border border-white/20 flex items-center justify-center mb-4 sm:mb-5 flex-shrink-0 shadow-sm">
                   {index === 0 && (
                     /* 01: One enquiry for related jobs (Connected central hub) */
                     <svg
-                      className="w-6 h-6 sm:w-7 sm:h-7 stroke-[#C8E80B] stroke-[1.8] fill-none"
+                      className="w-6 h-6 sm:w-7 sm:h-7 stroke-[#FE6000] stroke-[1.8] fill-none"
                       viewBox="0 0 24 24"
                       strokeLinecap="round"
                       strokeLinejoin="round"
@@ -153,7 +153,7 @@ export const AboutWhySection: React.FC<AboutWhySectionProps> = ({
                   {index === 1 && (
                     /* 02: Details before decisions (Checklist / inspection clipboard) */
                     <svg
-                      className="w-6 h-6 sm:w-7 sm:h-7 stroke-[#C8E80B] stroke-[1.8] fill-none"
+                      className="w-6 h-6 sm:w-7 sm:h-7 stroke-[#FE6000] stroke-[1.8] fill-none"
                       viewBox="0 0 24 24"
                       strokeLinecap="round"
                       strokeLinejoin="round"
@@ -168,7 +168,7 @@ export const AboutWhySection: React.FC<AboutWhySectionProps> = ({
                   {index === 2 && (
                     /* 03: One service is fine too (Focused standalone service tile) */
                     <svg
-                      className="w-6 h-6 sm:w-7 sm:h-7 stroke-[#C8E80B] stroke-[1.8] fill-none"
+                      className="w-6 h-6 sm:w-7 sm:h-7 stroke-[#FE6000] stroke-[1.8] fill-none"
                       viewBox="0 0 24 24"
                       strokeLinecap="round"
                       strokeLinejoin="round"
@@ -181,7 +181,7 @@ export const AboutWhySection: React.FC<AboutWhySectionProps> = ({
                   {index === 3 && (
                     /* 04: Plan around your dates (Calendar date planning) */
                     <svg
-                      className="w-6 h-6 sm:w-7 sm:h-7 stroke-[#C8E80B] stroke-[1.8] fill-none"
+                      className="w-6 h-6 sm:w-7 sm:h-7 stroke-[#FE6000] stroke-[1.8] fill-none"
                       viewBox="0 0 24 24"
                       strokeLinecap="round"
                       strokeLinejoin="round"
@@ -196,10 +196,10 @@ export const AboutWhySection: React.FC<AboutWhySectionProps> = ({
                   )}
                 </div>
 
-                <h3 className="text-xl sm:text-2xl font-bold text-[#202024] mb-2 sm:mb-2.5 leading-snug tracking-[-0.02em]">
+                <h3 className="text-xl sm:text-2xl font-bold text-white mb-2 sm:mb-2.5 leading-snug tracking-[-0.02em]">
                   {item.title}
                 </h3>
-                <p className="text-[15px] sm:text-base text-[#202024]/85 leading-relaxed">
+                <p className="text-[15px] sm:text-base text-white/85 leading-relaxed">
                   {item.description}
                 </p>
               </motion.div>

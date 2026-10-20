@@ -38,16 +38,16 @@ export const Hero: React.FC<HeroProps> = ({ onOpenQuote, initialData }) => {
           <div className="lg:col-span-6 xl:col-span-6 flex flex-col justify-center">
             {/* Eyebrow Pill */}
             <div className="inline-flex items-center gap-2.5 mb-4 sm:mb-5">
-              <span className="w-6 sm:w-8 h-[3px] bg-[#C8E80B] rounded-full inline-block" />
+              <span className="w-6 sm:w-8 h-[3px] bg-[#FE6000] rounded-full inline-block" />
               <span className="text-xs sm:text-[13px] font-bold tracking-[0.16em] uppercase text-[#202024]/85">
                 {hero.eyebrow}
               </span>
             </div>
 
             {/* Deliberate 3-Line H1 Headline */}
-            <h1 className="text-[2.5rem] sm:text-[3.25rem] lg:text-[3.8rem] xl:text-[4.3rem] font-extrabold tracking-tight leading-[1.08] text-[#390044]">
+            <h1 className="text-[2.5rem] sm:text-[3.25rem] lg:text-[3.8rem] xl:text-[4.3rem] font-extrabold tracking-tight leading-[1.08] text-[#49056B]">
               <span className="block">{hero.headline.line1}</span>
-              <span className="block text-[#5B8200]">{hero.headline.line2}</span>
+              <span className="block text-[#FE6000]">{hero.headline.line2}</span>
               <span className="block">{hero.headline.line3}</span>
             </h1>
 
@@ -80,7 +80,7 @@ export const Hero: React.FC<HeroProps> = ({ onOpenQuote, initialData }) => {
             {/* Supporting Compact Planning Card */}
             <div className="mt-8 sm:mt-10 bg-white rounded-2xl p-4 sm:p-5 border border-black/[0.08] shadow-card-soft max-w-lg">
               <div className="flex items-start sm:items-center gap-3.5 sm:gap-4">
-                <div className="flex-shrink-0 w-11 h-11 rounded-xl bg-[#C8E80B]/25 border border-[#C8E80B]/40 flex items-center justify-center text-[#557A00] mt-0.5 sm:mt-0">
+                <div className="flex-shrink-0 w-11 h-11 rounded-xl bg-[#FE6000]/15 border border-[#FE6000]/30 flex items-center justify-center text-[#FE6000] mt-0.5 sm:mt-0">
                   <MessageSquare className="w-5 h-5" />
                 </div>
                 <div className="flex-1 min-w-0 pr-1">
@@ -94,7 +94,7 @@ export const Hero: React.FC<HeroProps> = ({ onOpenQuote, initialData }) => {
                 <button
                   type="button"
                   onClick={onOpenQuote}
-                  className="flex-shrink-0 inline-flex items-center gap-1 text-xs font-bold text-[#390044] hover:text-[#5B8200] transition-colors py-1 pl-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#390044] rounded whitespace-nowrap self-center"
+                  className="flex-shrink-0 inline-flex items-center gap-1 text-xs font-bold text-[#49056B] hover:text-[#FE6000] transition-colors py-1 pl-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#49056B] rounded whitespace-nowrap self-center"
                 >
                   <span>{hero.supportCard.actionText}</span>
                   <ChevronRight className="w-3.5 h-3.5" />

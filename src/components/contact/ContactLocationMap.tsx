@@ -65,7 +65,7 @@ export const ContactLocationMap: React.FC<ContactLocationMapProps> = ({
       {/* Restrained Section Header without decorative cards or floating badges */}
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-6">
         <div>
-          <span className="text-xs font-bold tracking-widest uppercase text-[#390044] mb-2 block">
+          <span className="text-xs font-bold tracking-widest uppercase text-[#49056B] mb-2 block">
             SERVICE REGION
           </span>
           <h2
@@ -85,12 +85,12 @@ export const ContactLocationMap: React.FC<ContactLocationMapProps> = ({
             href={externalLinkUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 text-xs sm:text-sm font-semibold text-[#18181B] bg-white border border-[#202024]/15 hover:border-[#18181B] hover:text-[#390044] px-4 sm:px-5 py-2.5 rounded-xl transition-all duration-200 shadow-2xs group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#390044]"
+            className="inline-flex items-center gap-2 text-xs sm:text-sm font-semibold text-[#18181B] bg-white border border-[#202024]/15 hover:border-[#18181B] hover:text-[#49056B] px-4 sm:px-5 py-2.5 rounded-xl transition-all duration-200 shadow-2xs group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#49056B]"
           >
             {isModeA ? (
-              <Navigation className="w-3.5 h-3.5 text-[#390044] group-hover:translate-x-0.5 transition-transform" />
+              <Navigation className="w-3.5 h-3.5 text-[#49056B] group-hover:translate-x-0.5 transition-transform" />
             ) : (
-              <ExternalLink className="w-3.5 h-3.5 text-[#390044] group-hover:translate-x-0.5 transition-transform" />
+              <ExternalLink className="w-3.5 h-3.5 text-[#49056B] group-hover:translate-x-0.5 transition-transform" />
             )}
             <span>{externalLinkLabel}</span>
           </a>

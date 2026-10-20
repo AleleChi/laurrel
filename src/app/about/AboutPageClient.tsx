@@ -54,7 +54,7 @@ export const AboutPageClient: React.FC<AboutPageClientProps> = ({ content }) => 
           columns={content.whatWeDo.columns || content.whatWeDo.services}
         />
 
-        {/* Section 04: Why Laurrel Services (Edge-to-Edge Lime #C8E80B + 2x2 Black Circular Tiles with Lime Linework + Standing Cutout Subject) */}
+        {/* Section 04: Why Laurrel Services (Edge-to-Edge Brand Purple #49056B + Circular Tiles with Orange Linework + Standing Cutout Subject) */}
         <AboutWhySection
           eyebrow={content.whyLaurrel.eyebrow}
           headline={content.whyLaurrel.headline}

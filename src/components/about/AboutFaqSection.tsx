@@ -116,7 +116,7 @@ export const AboutFaqSection: React.FC<AboutFaqSectionProps> = ({
             {/* Section Eyebrow Label */}
             <motion.span
               variants={headerItemVariants}
-              className="text-[14px] sm:text-[16px] font-bold tracking-tight uppercase text-[#390044] mb-3 sm:mb-4 block"
+              className="text-[14px] sm:text-[16px] font-bold tracking-tight uppercase text-[#49056B] mb-3 sm:mb-4 block"
             >
               {eyebrow}
             </motion.span>
@@ -155,13 +155,13 @@ export const AboutFaqSection: React.FC<AboutFaqSectionProps> = ({
                       aria-expanded={isOpen}
                       aria-controls={panelId}
                       onClick={() => toggleItem(idx)}
-                      className="w-full flex items-center justify-between text-left group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#390044] rounded"
+                      className="w-full flex items-center justify-between text-left group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#49056B] rounded"
                     >
-                      <span className="text-lg sm:text-xl font-medium text-[#202024] group-hover:text-[#390044] transition-colors duration-200 pr-6">
+                      <span className="text-lg sm:text-xl font-medium text-[#202024] group-hover:text-[#49056B] transition-colors duration-200 pr-6">
                         {item.question}
                       </span>
                       <span
-                        className="text-2xl font-light text-[#202024]/60 group-hover:text-[#390044] shrink-0 w-6 text-center select-none inline-block transition-transform duration-300"
+                        className="text-2xl font-light text-[#202024]/60 group-hover:text-[#49056B] shrink-0 w-6 text-center select-none inline-block transition-transform duration-300"
                         style={{
                           transform: isOpen ? 'rotate(45deg)' : 'rotate(0deg)',
                         }}

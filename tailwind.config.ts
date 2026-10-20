@@ -11,17 +11,32 @@ const config: Config = {
       colors: {
         brand: {
           purple: {
-            DEFAULT: '#390044',
-            dark: '#27002E',
-            light: '#4E025D',
-            surface: '#F5EEF7',
+            DEFAULT: '#49056B',
+            dark: '#34034D',
+            light: '#5B0785',
+            surface: '#F7F0FA',
           },
+          orange: {
+            DEFAULT: '#FE6000',
+            hover: '#E05500',
+            light: '#FF731A',
+            surface: '#FFF3EB',
+            text: '#18181B', // High-contrast accessible text for orange surfaces
+          },
+          accent: {
+            DEFAULT: '#FE6000',
+            hover: '#E05500',
+            light: '#FF731A',
+            surface: '#FFF3EB',
+            text: '#18181B',
+          },
+          // Backward compatibility token mapping during transition
           lime: {
-            DEFAULT: '#C8E80B',
-            light: '#EAF794',
-            dark: '#A6C200',
-            text: '#557A00', // high-contrast accessible text variant
-            tint: '#F5FAD9',
+            DEFAULT: '#FE6000',
+            light: '#FF731A',
+            dark: '#E05500',
+            text: '#18181B',
+            tint: '#FFF3EB',
           },
           warm: {
             DEFAULT: '#F8F7F4',
@@ -45,9 +60,10 @@ const config: Config = {
       },
       boxShadow: {
         'nav': '0 4px 20px -2px rgba(32, 32, 36, 0.05)',
-        'nav-scrolled': '0 10px 30px -4px rgba(57, 0, 68, 0.08)',
+        'nav-scrolled': '0 10px 30px -4px rgba(73, 5, 107, 0.08)',
         'card-soft': '0 12px 32px -4px rgba(32, 32, 36, 0.06)',
-        'button-purple': '0 4px 14px 0 rgba(57, 0, 68, 0.25)',
+        'button-purple': '0 4px 14px 0 rgba(73, 5, 107, 0.25)',
+        'button-orange': '0 4px 14px 0 rgba(254, 96, 0, 0.25)',
       },
       animation: {
         'ticker': 'ticker 32s linear infinite',

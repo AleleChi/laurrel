@@ -27,7 +27,7 @@ export default function LaurrelAssistantLauncher() {
             aria-haspopup="dialog"
             aria-expanded={false}
             aria-label="Open Laurrel Assistant"
-            className="group inline-flex items-center justify-center w-auto gap-2.5 px-5 py-3 rounded-full shadow-lg border border-[#390044]/20 bg-[#390044] text-white hover:bg-[#390044]/90 transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-[#390044]/30"
+            className="group inline-flex items-center justify-center w-auto gap-2.5 px-5 py-3 rounded-full shadow-lg border border-[#49056B]/20 bg-[#49056B] text-white hover:bg-[#49056B]/90 transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-[#49056B]/30"
           >
             <MessageSquare className="w-5 h-5 text-white shrink-0" aria-hidden="true" />
             <span className="text-sm font-semibold tracking-normal text-white whitespace-nowrap leading-none">

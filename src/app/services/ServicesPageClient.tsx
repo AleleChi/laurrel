@@ -90,7 +90,7 @@ export const ServicesPageClient: React.FC<ServicesPageClientProps> = ({
                 
                 {/* Introduction Block */}
                 <div className="flex flex-col items-start pt-1">
-                  <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-[54px] font-medium text-[#18181B] tracking-[-0.03em] leading-[1.1] mb-6 sm:mb-8">
+                  <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-[54px] font-medium text-white tracking-[-0.03em] leading-[1.1] mb-6 sm:mb-8">
                     {content.articleIntro.h2}
                   </h2>
                   <div className="space-y-4 text-lg sm:text-[19px] text-[#202024]/85 leading-relaxed font-normal">
@@ -108,7 +108,7 @@ export const ServicesPageClient: React.FC<ServicesPageClientProps> = ({
                     className="scroll-mt-28 lg:scroll-mt-32 flex flex-col items-start"
                   >
                     {/* Eyebrow Label */}
-                    <span className="text-xs font-bold tracking-widest uppercase text-[#390044] mb-3">
+                    <span className="text-xs font-bold tracking-widest uppercase text-[#49056B] mb-3">
                       {service.badge}
                     </span>
 
@@ -164,10 +164,10 @@ export const ServicesPageClient: React.FC<ServicesPageClientProps> = ({
                       {/* Contextual CTA Button focusing the enquiry form */}
                       <button
                         onClick={() => handleEnquireService(service.id as any)}
-                        className="inline-flex items-center gap-3 bg-[#18181B] hover:bg-[#390044] text-white px-7 py-3.5 rounded-full font-medium text-base transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#18181B] shadow-sm cursor-pointer"
+                        className="inline-flex items-center gap-3 bg-[#18181B] hover:bg-[#49056B] text-white px-7 py-3.5 rounded-full font-medium text-base transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#18181B] shadow-sm cursor-pointer"
                       >
                         <span>{service.ctaLabel}</span>
-                        <ArrowRight className="w-4 h-4 text-white" />
+                        <ArrowRight className="w-4 h-4 text-[#18181B]" />
                       </button>
                     </div>
 
@@ -204,7 +204,7 @@ export const ServicesPageClient: React.FC<ServicesPageClientProps> = ({
                 id="how-it-works"
                 className="order-2 lg:order-none lg:col-span-8 lg:row-start-1 scroll-mt-28 lg:scroll-mt-32 flex flex-col items-start"
               >
-                <span className="text-xs font-bold tracking-widest uppercase text-[#390044] mb-3">
+                <span className="text-xs font-bold tracking-widest uppercase text-[#49056B] mb-3">
                   {content.gettingStarted.eyebrow}
                 </span>
                 <h2 className="text-2xl sm:text-3xl lg:text-[40px] font-semibold text-[#18181B] tracking-[-0.025em] leading-[1.15] mb-4">
@@ -228,26 +228,26 @@ export const ServicesPageClient: React.FC<ServicesPageClientProps> = ({
                         onFocus={() => setActiveStepIndex(idx)}
                         className={`group cursor-default rounded-[28px] sm:rounded-[32px] p-6 sm:p-8 border transition-all duration-300 ease-out flex flex-col sm:flex-row items-start sm:items-center gap-6 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#18181B] ${
                           isActive
-                            ? 'bg-[#C8E80B] border-[#C8E80B] shadow-sm text-[#18181B]'
+                            ? 'bg-[#49056B] border-[#49056B] shadow-sm text-white'
                             : 'bg-white border-[#202024]/10 text-[#202024] hover:border-[#202024]/20'
                         }`}
                       >
                         <div
                           className={`w-14 h-14 rounded-2xl font-mono text-xl font-bold flex items-center justify-center flex-shrink-0 transition-colors duration-300 ${
                             isActive
-                              ? 'bg-[#18181B] text-white'
+                              ? 'bg-[#FE6000] text-[#18181B]'
                               : 'bg-[#F2F1ED] text-[#18181B] group-hover:bg-[#18181B] group-hover:text-white'
                           }`}
                         >
                           {step.number}
                         </div>
                         <div className="flex-1">
-                          <h3 className="text-lg sm:text-xl font-semibold text-[#18181B] tracking-tight mb-1.5">
+                          <h3 className={`text-lg sm:text-xl font-semibold tracking-tight mb-1.5 ${isActive ? 'text-white' : 'text-[#18181B]'}`}>
                             {step.title}
                           </h3>
                           <p
                             className={`text-base leading-relaxed font-normal transition-colors duration-300 ${
-                              isActive ? 'text-[#18181B]/90' : 'text-[#202024]/80'
+                              isActive ? 'text-white/85' : 'text-[#202024]/80'
                             }`}
                           >
                             {step.description}
@@ -276,7 +276,7 @@ export const ServicesPageClient: React.FC<ServicesPageClientProps> = ({
                 id="faq"
                 className="order-4 lg:order-none lg:col-span-8 lg:row-start-2 scroll-mt-28 lg:scroll-mt-32 flex flex-col items-start pt-2"
               >
-                <span className="text-xs font-bold tracking-widest uppercase text-[#390044] mb-3">
+                <span className="text-xs font-bold tracking-widest uppercase text-[#49056B] mb-3">
                   {content.faq.eyebrow}
                 </span>
                 <h2 className="text-2xl sm:text-3xl lg:text-[40px] font-semibold text-[#18181B] tracking-[-0.025em] leading-[1.15] mb-8">
@@ -348,24 +348,24 @@ export const ServicesPageClient: React.FC<ServicesPageClientProps> = ({
         {/* ========================================================= */}
         <section
           aria-label="Ready to Get Started"
-          className="bg-[#C8E80B] text-[#18181B] py-20 lg:py-24 px-6 sm:px-8 lg:px-12 xl:px-16 border-t border-[#202024]/10"
+          className="bg-[#49056B] text-white py-20 lg:py-24 px-6 sm:px-8 lg:px-12 xl:px-16 border-t border-black/10"
         >
           <div className="max-w-[1400px] xl:max-w-[1440px] 2xl:max-w-[1560px] mx-auto text-center flex flex-col items-center">
-            <span className="text-xs sm:text-sm font-bold tracking-[0.16em] uppercase text-[#18181B]/80 mb-4">
+            <span className="text-xs sm:text-sm font-bold tracking-[0.16em] uppercase text-[#FE6000] mb-4">
               {content.finalCta.eyebrow}
             </span>
             <h2 className="text-3xl sm:text-4xl lg:text-[54px] font-semibold tracking-[-0.03em] leading-tight max-w-2xl mb-5">
               {content.finalCta.headline}
             </h2>
-            <p className="text-base sm:text-lg text-[#18181B]/85 max-w-xl leading-relaxed mb-9">
+            <p className="text-base sm:text-lg text-white/85 max-w-xl leading-relaxed mb-9">
               {content.finalCta.body}
             </p>
             <button
               onClick={() => handleOpenQuote('general')}
-              className="inline-flex items-center gap-3 bg-[#18181B] hover:bg-[#390044] text-white px-8 py-4 rounded-full font-medium text-base transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#18181B] shadow-sm cursor-pointer"
+              className="inline-flex items-center gap-3 bg-[#FE6000] hover:bg-[#E05500] text-[#18181B] px-8 py-4 rounded-full font-bold text-base transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#FE6000] shadow-sm cursor-pointer"
             >
               <span>{content.finalCta.ctaLabel}</span>
-              <ArrowRight className="w-4 h-4 text-white" />
+              <ArrowRight className="w-4 h-4 text-[#18181B]" />
             </button>
           </div>
         </section>

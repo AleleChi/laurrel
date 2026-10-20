@@ -355,9 +355,9 @@ export const HeroVideoRotator: React.FC<HeroVideoRotatorProps> = ({
                   aria-selected={isActive}
                   aria-label={`Switch to ${vid.service} video`}
                   onClick={() => selectService(idx)}
-                  className={`h-1.5 rounded-full transition-all duration-300 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--brand-lime)] ${
+                  className={`h-1.5 rounded-full transition-all duration-300 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#FE6000] ${
                     isActive
-                      ? 'w-5 bg-[var(--brand-lime)]'
+                      ? 'w-5 bg-[#FE6000]'
                       : 'w-1.5 bg-white/40 hover:bg-white/70'
                   }`}
                 />
@@ -373,7 +373,7 @@ export const HeroVideoRotator: React.FC<HeroVideoRotatorProps> = ({
           type="button"
           onClick={togglePlayPause}
           aria-label={isPlaying ? 'Pause video showcase' : 'Play video showcase'}
-          className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-[#202024]/75 hover:bg-[#202024]/95 backdrop-blur-md text-white border border-white/15 flex items-center justify-center transition-all duration-200 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-lime)] focus-visible:ring-offset-2 focus-visible:ring-offset-[#202024] shadow-lg"
+          className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-[#202024]/75 hover:bg-[#202024]/95 backdrop-blur-md text-white border border-white/15 flex items-center justify-center transition-all duration-200 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FE6000] focus-visible:ring-offset-2 focus-visible:ring-offset-[#202024] shadow-lg"
         >
           {isPlaying ? (
             <Pause className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" />

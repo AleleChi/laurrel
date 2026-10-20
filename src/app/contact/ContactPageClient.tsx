@@ -142,7 +142,7 @@ export const ContactPageClient: React.FC<ContactPageClientProps> = ({
               
               {/* Left Column: Editorial Introduction & Straightforward Typographic Contact Details (~55% width) */}
               <div className="lg:col-span-7 flex flex-col items-start pr-0 lg:pr-6">
-                <span className="text-xs font-bold tracking-widest uppercase text-[#390044] mb-3 block">
+                <span className="text-xs font-bold tracking-widest uppercase text-[#49056B] mb-3 block">
                   {content.eyebrow}
                 </span>
 
@@ -160,7 +160,7 @@ export const ContactPageClient: React.FC<ContactPageClientProps> = ({
                   {content.businessEmail && content.businessEmail.trim().length > 0 && (
                     <div className="flex items-start gap-4">
                       <div className="w-10 h-10 rounded-xl bg-white border border-[#202024]/10 flex items-center justify-center flex-shrink-0">
-                        <Mail className="w-4 h-4 text-[#390044]" />
+                        <Mail className="w-4 h-4 text-[#49056B]" />
                       </div>
                       <div>
                         <span className="block text-xs font-semibold uppercase tracking-wider text-[#202024]/60 mb-0.5">
@@ -168,7 +168,7 @@ export const ContactPageClient: React.FC<ContactPageClientProps> = ({
                         </span>
                         <a
                           href={`mailto:${content.businessEmail}`}
-                          className="text-base font-semibold text-[#18181B] hover:text-[#390044] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#390044] rounded"
+                          className="text-base font-semibold text-[#18181B] hover:text-[#49056B] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#49056B] rounded"
                         >
                           {content.businessEmail}
                         </a>
@@ -180,7 +180,7 @@ export const ContactPageClient: React.FC<ContactPageClientProps> = ({
                   {content.businessPhone && content.businessPhone.trim().length > 0 && (
                     <div className="flex items-start gap-4">
                       <div className="w-10 h-10 rounded-xl bg-white border border-[#202024]/10 flex items-center justify-center flex-shrink-0">
-                        <Phone className="w-4 h-4 text-[#390044]" />
+                        <Phone className="w-4 h-4 text-[#49056B]" />
                       </div>
                       <div>
                         <span className="block text-xs font-semibold uppercase tracking-wider text-[#202024]/60 mb-0.5">
@@ -188,7 +188,7 @@ export const ContactPageClient: React.FC<ContactPageClientProps> = ({
                         </span>
                         <a
                           href={`tel:${content.businessPhone}`}
-                          className="text-base font-semibold text-[#18181B] hover:text-[#390044] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#390044] rounded"
+                          className="text-base font-semibold text-[#18181B] hover:text-[#49056B] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#49056B] rounded"
                         >
                           {content.businessPhone}
                         </a>
@@ -200,7 +200,7 @@ export const ContactPageClient: React.FC<ContactPageClientProps> = ({
                   {content.hasPublicOffice && content.officeAddress && content.officeAddress.trim().length > 0 && (
                     <div className="flex items-start gap-4">
                       <div className="w-10 h-10 rounded-xl bg-white border border-[#202024]/10 flex items-center justify-center flex-shrink-0">
-                        <MapPin className="w-4 h-4 text-[#390044]" />
+                        <MapPin className="w-4 h-4 text-[#49056B]" />
                       </div>
                       <div>
                         <span className="block text-xs font-semibold uppercase tracking-wider text-[#202024]/60 mb-0.5">
@@ -215,7 +215,7 @@ export const ContactPageClient: React.FC<ContactPageClientProps> = ({
 
                   {/* Operational Notes: Form as Primary Contact Method */}
                   <div className="flex items-start gap-3.5 pt-2">
-                    <div className="w-2 h-2 rounded-full bg-[#390044] mt-2 flex-shrink-0" />
+                    <div className="w-2 h-2 rounded-full bg-[#49056B] mt-2 flex-shrink-0" />
                     <div>
                       <span className="block text-xs font-semibold uppercase tracking-wider text-[#202024]/60 mb-0.5">
                         Direct Enquiries
@@ -228,7 +228,7 @@ export const ContactPageClient: React.FC<ContactPageClientProps> = ({
 
                   {/* Verified Geographic Region */}
                   <div className="flex items-start gap-3.5">
-                    <div className="w-2 h-2 rounded-full bg-[#390044] mt-2 flex-shrink-0" />
+                    <div className="w-2 h-2 rounded-full bg-[#49056B] mt-2 flex-shrink-0" />
                     <div>
                       <span className="block text-xs font-semibold uppercase tracking-wider text-[#202024]/60 mb-0.5">
                         Service Region
@@ -245,7 +245,7 @@ export const ContactPageClient: React.FC<ContactPageClientProps> = ({
               <div id="contact-form-container" className="lg:col-span-5 w-full pt-1">
                 {submissionResult ? (
                   <div id="contact-form-success" className="py-8 px-6 sm:px-8 bg-white rounded-[24px] border border-[#202024]/10 shadow-xs flex flex-col items-start space-y-4">
-                    <div className="w-12 h-12 rounded-full bg-[#C8E80B] text-[#18181B] flex items-center justify-center">
+                    <div className="w-12 h-12 rounded-full bg-[#FE6000] text-[#18181B] flex items-center justify-center">
                       <CheckCircle2 className="w-6 h-6 text-[#18181B]" />
                     </div>
                     <h2 className="text-2xl font-semibold text-[#18181B] tracking-tight">
@@ -258,7 +258,7 @@ export const ContactPageClient: React.FC<ContactPageClientProps> = ({
                     <button
                       type="button"
                       onClick={handleReset}
-                      className="mt-2 text-xs font-bold uppercase tracking-wider text-[#390044] hover:underline cursor-pointer"
+                      className="mt-2 text-xs font-bold uppercase tracking-wider text-[#49056B] hover:underline cursor-pointer"
                     >
                       Send Another Message
                     </button>

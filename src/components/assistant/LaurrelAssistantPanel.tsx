@@ -94,7 +94,7 @@ function renderInlineFormatting(text: string): React.ReactNode[] {
           <Link
             key={index}
             href={href}
-            className="text-[#390044] font-semibold underline decoration-[#390044]/30 underline-offset-2 hover:decoration-[#390044] transition-colors break-words"
+            className="text-[#49056B] font-semibold underline decoration-[#49056B]/30 underline-offset-2 hover:decoration-[#49056B] transition-colors break-words"
           >
             {label}
           </Link>
@@ -378,7 +378,7 @@ export default function LaurrelAssistantPanel({ isOpen, onClose }: LaurrelAssist
       className="fixed inset-0 sm:inset-auto sm:bottom-5 sm:right-5 z-50 w-full sm:w-[400px] sm:max-w-[calc(100vw-32px)] h-[100dvh] sm:h-[min(580px,calc(100dvh-100px))] flex flex-col bg-[#FAF9F6] border-0 sm:border sm:border-[#202024]/12 rounded-none sm:rounded-[16px] shadow-[0_12px_40px_rgba(32,32,36,0.16)] overflow-hidden text-[#202024] animate-in fade-in duration-200"
     >
       {/* Header */}
-      <header className="bg-[#390044] text-white px-5 py-3.5 flex items-center justify-between shrink-0 border-b border-white/10 select-none">
+      <header className="bg-[#49056B] text-white px-5 py-3.5 flex items-center justify-between shrink-0 border-b border-white/10 select-none">
         <div className="flex flex-col text-left min-w-0 flex-1 mr-3">
           <h2 className="text-[15px] font-bold tracking-tight text-white leading-tight truncate">
             Laurrel Assistant
@@ -412,13 +412,13 @@ export default function LaurrelAssistantPanel({ isOpen, onClose }: LaurrelAssist
 
       {/* Reset Confirmation Prompt */}
       {showResetConfirm && (
-        <div className="bg-[#390044]/10 border-b border-[#390044]/15 px-4 py-2 flex items-center justify-between text-xs text-[#202024] shrink-0">
+        <div className="bg-[#49056B]/10 border-b border-[#49056B]/15 px-4 py-2 flex items-center justify-between text-xs text-[#202024] shrink-0">
           <span>Clear current conversation?</span>
           <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={executeReset}
-              className="px-2.5 py-1 bg-[#390044] text-white font-medium rounded-md hover:bg-[#390044]/90"
+              className="px-2.5 py-1 bg-[#49056B] text-white font-medium rounded-md hover:bg-[#49056B]/90"
             >
               Clear
             </button>
@@ -450,7 +450,7 @@ export default function LaurrelAssistantPanel({ isOpen, onClose }: LaurrelAssist
               <div
                 className={`px-3.5 py-3 leading-[1.55] break-words [overflow-wrap:anywhere] ${
                   isUser
-                    ? 'max-w-[85%] bg-[#390044] text-white rounded-2xl rounded-br-sm shadow-sm text-[14.5px]'
+                    ? 'max-w-[85%] bg-[#49056B] text-white rounded-2xl rounded-br-sm shadow-sm text-[14.5px]'
                     : 'max-w-[85%] bg-white text-[#202024] rounded-2xl rounded-bl-sm border border-[#202024]/8 shadow-[0_1px_2px_rgba(32,32,36,0.04)] text-[14px]'
                 }`}
               >
@@ -463,7 +463,7 @@ export default function LaurrelAssistantPanel({ isOpen, onClose }: LaurrelAssist
                 {/* Inline Confirmation Summary Card */}
                 {msg.showConfirmation && currentDraft && !msg.isConfirmed && (
                   <div className="mt-3 pt-2.5 border-t border-[#202024]/10 text-xs text-[#202024]">
-                    <div className="font-semibold text-[#390044] mb-2 text-xs uppercase tracking-wider">
+                    <div className="font-semibold text-[#49056B] mb-2 text-xs uppercase tracking-wider">
                       Enquiry Summary
                     </div>
                     <div className="space-y-1.5 mb-2.5 bg-[#FAF9F6] p-2.5 rounded-lg border border-[#202024]/10">
@@ -494,7 +494,7 @@ export default function LaurrelAssistantPanel({ isOpen, onClose }: LaurrelAssist
                       {currentDraft.email && (
                         <div>
                           <span className="text-[#202024]/60 font-medium">Contact: </span>
-                          <span className="font-semibold text-[#390044]">{currentDraft.email}</span>
+                          <span className="font-semibold text-[#49056B]">{currentDraft.email}</span>
                         </div>
                       )}
                     </div>
@@ -511,7 +511,7 @@ export default function LaurrelAssistantPanel({ isOpen, onClose }: LaurrelAssist
                         type="button"
                         onClick={handleConfirmEnquirySubmission}
                         disabled={isSubmittingEnquiry}
-                        className="flex-1 inline-flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-lg bg-[#390044] text-white font-semibold text-xs hover:bg-[#390044]/90 transition-colors disabled:opacity-50"
+                        className="flex-1 inline-flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-lg bg-[#49056B] text-white font-semibold text-xs hover:bg-[#49056B]/90 transition-colors disabled:opacity-50"
                       >
                         {isSubmittingEnquiry ? (
                           <>
@@ -532,12 +532,12 @@ export default function LaurrelAssistantPanel({ isOpen, onClose }: LaurrelAssist
                 {/* Inline Human Handoff Card */}
                 {msg.isHandoff && (
                   <div className="mt-3 pt-2.5 border-t border-[#202024]/10 text-xs text-[#202024]">
-                    <div className="font-semibold text-[#390044] mb-1.5 text-xs">
+                    <div className="font-semibold text-[#49056B] mb-1.5 text-xs">
                       Request a follow-up from our team
                     </div>
                     {handoffSubmitted ? (
                       <div className="space-y-1 py-1.5 bg-[#FAF9F6] p-2.5 rounded-lg border border-[#202024]/10">
-                        <div className="flex items-center gap-1.5 text-[#390044] font-semibold text-xs">
+                        <div className="flex items-center gap-1.5 text-[#49056B] font-semibold text-xs">
                           <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
                           <span>Request Recorded ({handoffReference})</span>
                         </div>
@@ -552,7 +552,7 @@ export default function LaurrelAssistantPanel({ isOpen, onClose }: LaurrelAssist
                           placeholder="Your Name (optional)"
                           value={handoffName}
                           onChange={(e) => setHandoffName(e.target.value)}
-                          className="w-full px-3 py-1.5 text-xs rounded-md bg-[#FAF9F6] border border-[#202024]/15 focus:outline-none focus:ring-1 focus:ring-[#390044]"
+                          className="w-full px-3 py-1.5 text-xs rounded-md bg-[#FAF9F6] border border-[#202024]/15 focus:outline-none focus:ring-1 focus:ring-[#49056B]"
                         />
                         <input
                           type="email"
@@ -560,19 +560,19 @@ export default function LaurrelAssistantPanel({ isOpen, onClose }: LaurrelAssist
                           placeholder="Your Email Address *"
                           value={handoffEmail}
                           onChange={(e) => setHandoffEmail(e.target.value)}
-                          className="w-full px-3 py-1.5 text-xs rounded-md bg-[#FAF9F6] border border-[#202024]/15 focus:outline-none focus:ring-1 focus:ring-[#390044]"
+                          className="w-full px-3 py-1.5 text-xs rounded-md bg-[#FAF9F6] border border-[#202024]/15 focus:outline-none focus:ring-1 focus:ring-[#49056B]"
                         />
                         <textarea
                           placeholder="Note or question for our team"
                           rows={2}
                           value={handoffNote}
                           onChange={(e) => setHandoffNote(e.target.value)}
-                          className="w-full px-3 py-1.5 text-xs rounded-md bg-[#FAF9F6] border border-[#202024]/15 focus:outline-none focus:ring-1 focus:ring-[#390044] resize-none"
+                          className="w-full px-3 py-1.5 text-xs rounded-md bg-[#FAF9F6] border border-[#202024]/15 focus:outline-none focus:ring-1 focus:ring-[#49056B] resize-none"
                         />
                         <button
                           type="submit"
                           disabled={isLoading || !handoffEmail}
-                          className="w-full py-1.5 bg-[#390044] text-white text-xs font-semibold rounded-md hover:bg-[#390044]/90 disabled:opacity-50 transition-colors"
+                          className="w-full py-1.5 bg-[#49056B] text-white text-xs font-semibold rounded-md hover:bg-[#49056B]/90 disabled:opacity-50 transition-colors"
                         >
                           Send Request to Team
                         </button>
@@ -590,7 +590,7 @@ export default function LaurrelAssistantPanel({ isOpen, onClose }: LaurrelAssist
                       key={chipIdx}
                       type="button"
                       onClick={() => handleActionClick(chip)}
-                      className="px-3 py-1.5 bg-white hover:bg-[#390044]/5 text-[#390044] font-medium text-[12.5px] rounded-full border border-[#202024]/15 shadow-sm transition-all text-left"
+                      className="px-3 py-1.5 bg-white hover:bg-[#49056B]/5 text-[#49056B] font-medium text-[12.5px] rounded-full border border-[#202024]/15 shadow-sm transition-all text-left"
                     >
                       {chip.label}
                     </button>
@@ -603,7 +603,7 @@ export default function LaurrelAssistantPanel({ isOpen, onClose }: LaurrelAssist
 
         {isLoading && (
           <div className="flex items-center gap-2 text-xs text-[#202024]/70 px-2 py-1">
-            <Loader2 className="w-3.5 h-3.5 animate-spin text-[#390044]" />
+            <Loader2 className="w-3.5 h-3.5 animate-spin text-[#49056B]" />
             <span className="italic">Preparing a response…</span>
           </div>
         )}
@@ -616,7 +616,7 @@ export default function LaurrelAssistantPanel({ isOpen, onClose }: LaurrelAssist
             e.preventDefault();
             handleSendMessage();
           }}
-          className="flex items-end gap-2 bg-[#FAF9F6] border border-[#202024]/15 rounded-[12px] p-1.5 focus-within:ring-2 focus-within:ring-[#390044]/20 focus-within:border-[#390044] transition-all"
+          className="flex items-end gap-2 bg-[#FAF9F6] border border-[#202024]/15 rounded-[12px] p-1.5 focus-within:ring-2 focus-within:ring-[#49056B]/20 focus-within:border-[#49056B] transition-all"
         >
           <textarea
             ref={textareaRef}
@@ -635,7 +635,7 @@ export default function LaurrelAssistantPanel({ isOpen, onClose }: LaurrelAssist
             type="submit"
             disabled={!inputText.trim() || isLoading}
             aria-label="Send message"
-            className="w-8 h-8 rounded-full bg-[#390044] text-white flex items-center justify-center hover:bg-[#390044]/90 disabled:opacity-30 disabled:cursor-not-allowed transition-all shrink-0 mb-0.5"
+            className="w-8 h-8 rounded-full bg-[#49056B] text-white flex items-center justify-center hover:bg-[#49056B]/90 disabled:opacity-30 disabled:cursor-not-allowed transition-all shrink-0 mb-0.5"
           >
             <ArrowUp className="w-4 h-4 text-white stroke-[2.5]" />
           </button>

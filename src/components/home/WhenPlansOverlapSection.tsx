@@ -97,13 +97,13 @@ export const WhenPlansOverlapSection: React.FC<WhenPlansOverlapSectionProps> = (
     <section
       id="when-plans-overlap"
       aria-labelledby="when-plans-overlap-heading"
-      className="w-full py-20 lg:py-28 px-6 sm:px-8 lg:px-12 xl:px-16 bg-[#F8F7F4] border-t border-[#202024]/8"
+      className="w-full py-20 lg:py-28 px-6 sm:px-8 lg:px-12 xl:px-16 bg-[#F8F7F4] border-t border-white/10"
     >
       <div className="max-w-[1400px] xl:max-w-[1440px] 2xl:max-w-[1560px] mx-auto">
         {/* Section Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 sm:mb-16 gap-8">
           <div className="max-w-3xl">
-            <span className="text-xs font-bold tracking-widest uppercase text-[#390044] mb-3 block">
+            <span className="text-xs font-bold tracking-widest uppercase text-[#49056B] mb-3 block">
               {activeContent.eyebrow}
             </span>
             <h2
@@ -161,7 +161,7 @@ export const WhenPlansOverlapSection: React.FC<WhenPlansOverlapSectionProps> = (
 
           {/* Right Column: Lime Content Panel (~40% desktop width) */}
           <div
-            className={`lg:col-span-5 bg-[#C8E80B] text-[#18181B] rounded-[24px] sm:rounded-[26px] p-8 sm:p-10 lg:p-11 border border-[#202024]/8 shadow-sm flex flex-col justify-between transition-opacity duration-500 ease-out ${
+            className={`lg:col-span-5 bg-[#49056B] text-white rounded-[24px] sm:rounded-[26px] p-8 sm:p-10 lg:p-11 border border-[#202024]/8 shadow-sm flex flex-col justify-between transition-opacity duration-500 ease-out ${
               isTransitioning ? 'opacity-40' : 'opacity-100'
             }`}
           >
@@ -169,10 +169,10 @@ export const WhenPlansOverlapSection: React.FC<WhenPlansOverlapSectionProps> = (
             <div>
               {/* Header inside Lime card: linear vector illustration + State Indicator */}
               <div className="flex items-center justify-between mb-6">
-                <div className="w-11 h-11 rounded-2xl bg-[#18181B] text-[#C8E80B] flex items-center justify-center shadow-xs">
-                  <Layers className="w-5 h-5 text-[#C8E80B]" />
+                <div className="w-11 h-11 rounded-2xl bg-[#FE6000] text-[#18181B] flex items-center justify-center shadow-xs">
+                  <Layers className="w-5 h-5 text-[#18181B]" />
                 </div>
-                <div className="flex items-center gap-1.5 text-xs font-bold tracking-wider text-[#18181B]/80 uppercase">
+                <div className="flex items-center gap-1.5 text-xs font-bold tracking-wider text-white/80 uppercase">
                   <span>0{currentIndex + 1}</span>
                   <span>/</span>
                   <span>0{situations.length}</span>
@@ -180,29 +180,29 @@ export const WhenPlansOverlapSection: React.FC<WhenPlansOverlapSectionProps> = (
               </div>
 
               {/* Title */}
-              <h3 className="text-2xl sm:text-3xl lg:text-[34px] font-bold text-[#18181B] tracking-tight leading-[1.18] mb-4">
+              <h3 className="text-2xl sm:text-3xl lg:text-[34px] font-bold text-white tracking-tight leading-[1.18] mb-4">
                 {current.title}
               </h3>
 
               {/* Description */}
-              <p className="text-sm sm:text-base lg:text-[17px] text-[#18181B]/85 leading-relaxed font-normal mb-6">
+              <p className="text-sm sm:text-base lg:text-[17px] text-white/85 leading-relaxed font-normal mb-6">
                 {current.description}
               </p>
 
               {/* Related Services */}
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-black/10 text-xs font-semibold text-[#18181B] mb-8">
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/15 text-xs font-semibold text-white mb-8">
                 <span>Related: {current.relatedServicesText}</span>
               </div>
             </div>
 
             {/* Bottom Actions & Situation Switching */}
-            <div className="pt-6 border-t border-[#18181B]/15">
+            <div className="pt-6 border-t border-white/15">
               <div className="flex flex-wrap items-center gap-3 mb-6">
                 {/* View Details CTA with inner white arrow circle */}
                 <button
                   type="button"
                   onClick={handleOpenDetailModal}
-                  className="group inline-flex items-center gap-3 bg-[#18181B] hover:bg-[#390044] text-white pl-6 pr-2.5 py-2.5 rounded-full font-medium text-sm sm:text-base transition-colors duration-200 cursor-pointer shadow-xs focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#18181B]"
+                  className="group inline-flex items-center gap-3 bg-[#FE6000] hover:bg-[#E05500] text-[#18181B] pl-6 pr-2.5 py-2.5 rounded-full font-bold text-sm sm:text-base transition-colors duration-200 cursor-pointer shadow-xs focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#FE6000]"
                 >
                   <span>View Details</span>
                   <div className="w-8 h-8 rounded-full bg-white text-[#18181B] flex items-center justify-center transition-transform group-hover:translate-x-0.5">
@@ -214,7 +214,7 @@ export const WhenPlansOverlapSection: React.FC<WhenPlansOverlapSectionProps> = (
                 <button
                   type="button"
                   onClick={() => onOpenQuote && onOpenQuote(current.preselectedServices)}
-                  className="inline-flex items-center justify-center bg-white/85 hover:bg-white text-[#18181B] px-5 py-3 rounded-full font-medium text-sm sm:text-base transition-colors duration-200 cursor-pointer shadow-2xs focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#18181B]"
+                  className="inline-flex items-center justify-center bg-white/20 hover:bg-white/30 text-white px-5 py-3 rounded-full font-medium text-sm sm:text-base transition-colors duration-200 cursor-pointer shadow-2xs focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-white"
                 >
                   <span>Request a Quote</span>
                 </button>
@@ -229,7 +229,7 @@ export const WhenPlansOverlapSection: React.FC<WhenPlansOverlapSectionProps> = (
                       onClick={() => handleSelectIndex(idx)}
                       aria-label={`Switch to ${sit.title}`}
                       className={`h-2.5 rounded-full transition-all duration-300 cursor-pointer ${
-                        idx === currentIndex ? 'w-8 bg-[#18181B]' : 'w-2.5 bg-[#18181B]/30 hover:bg-[#18181B]/50'
+                        idx === currentIndex ? 'w-8 bg-[#FE6000]' : 'w-2.5 bg-white/40 hover:bg-white/70'
                       }`}
                     />
                   ))}
@@ -276,7 +276,7 @@ export const WhenPlansOverlapSection: React.FC<WhenPlansOverlapSectionProps> = (
             {/* Modal Header */}
             <div className="flex items-start justify-between gap-4 mb-5">
               <div>
-                <span className="text-xs font-bold tracking-widest uppercase text-[#390044] mb-1.5 block">
+                <span className="text-xs font-bold tracking-widest uppercase text-[#49056B] mb-1.5 block">
                   SITUATION DETAILS
                 </span>
                 <h3
@@ -309,7 +309,7 @@ export const WhenPlansOverlapSection: React.FC<WhenPlansOverlapSectionProps> = (
               <ul className="space-y-2.5">
                 {current.details.considerations.map((item, idx) => (
                   <li key={idx} className="flex items-start gap-2.5 text-sm text-[#202024]/85 leading-normal">
-                    <CheckCircle2 className="w-4 h-4 text-[#390044] flex-shrink-0 mt-0.5" />
+                    <CheckCircle2 className="w-4 h-4 text-[#49056B] flex-shrink-0 mt-0.5" />
                     <span>{item}</span>
                   </li>
                 ))}
@@ -319,7 +319,7 @@ export const WhenPlansOverlapSection: React.FC<WhenPlansOverlapSectionProps> = (
             {/* Preselected Services */}
             <div className="flex items-center justify-between mb-8 pb-4 border-b border-[#202024]/10">
               <span className="text-xs font-medium text-[#202024]/70">Coordinated services:</span>
-              <span className="text-xs font-bold text-[#390044] bg-[#390044]/10 px-3 py-1 rounded-full">
+              <span className="text-xs font-bold text-[#49056B] bg-[#49056B]/10 px-3 py-1 rounded-full">
                 {current.relatedServicesText}
               </span>
             </div>
@@ -336,7 +336,7 @@ export const WhenPlansOverlapSection: React.FC<WhenPlansOverlapSectionProps> = (
               <button
                 type="button"
                 onClick={handleQuoteFromDetail}
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-[#18181B] hover:bg-[#390044] text-white px-7 py-3.5 rounded-full text-sm font-medium transition-colors cursor-pointer shadow-sm"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-[#18181B] hover:bg-[#49056B] text-white px-7 py-3.5 rounded-full text-sm font-medium transition-colors cursor-pointer shadow-sm"
               >
                 <span>Request a Quote for this Situation</span>
                 <ArrowRight className="w-4 h-4 text-white" />

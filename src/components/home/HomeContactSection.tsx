@@ -23,7 +23,7 @@ export const HomeContactSection: React.FC<HomeContactSectionProps> = ({
           
           {/* Left Column: Eyebrow + Strong Editorial Heading (7 cols) */}
           <div className="lg:col-span-7 flex flex-col items-start">
-            <span className="text-xs font-bold tracking-widest uppercase text-[#390044] mb-3">
+            <span className="text-xs font-bold tracking-widest uppercase text-[#49056B] mb-3">
               {content.eyebrow}
             </span>
             <h2
@@ -42,7 +42,7 @@ export const HomeContactSection: React.FC<HomeContactSectionProps> = ({
 
             <Link
               href={content.primaryCta.href}
-              className="inline-flex items-center justify-center gap-3 bg-[#18181B] hover:bg-[#390044] text-white px-8 py-4 rounded-full font-medium text-base transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#18181B] shadow-sm cursor-pointer"
+              className="inline-flex items-center justify-center gap-3 bg-[#18181B] hover:bg-[#49056B] text-white px-8 py-4 rounded-full font-medium text-base transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#18181B] shadow-sm cursor-pointer"
             >
               <span>{content.primaryCta.label}</span>
               <ArrowRight className="w-4 h-4 text-white" />

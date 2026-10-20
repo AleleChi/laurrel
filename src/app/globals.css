@@ -3,12 +3,15 @@
 @tailwind utilities;
 
 :root {
-  --brand-purple: #390044;
-  --brand-purple-dark: #27002E;
-  --brand-purple-light: #4E025D;
-  --brand-lime: #C8E80B;
-  --brand-lime-hover: #D8F228;
-  --brand-lime-text: #557A00;
+  --brand-purple: #49056B;
+  --brand-purple-dark: #34034D;
+  --brand-purple-light: #5B0785;
+  --brand-purple-surface: #F7F0FA;
+  --brand-orange: #FE6000;
+  --brand-orange-hover: #E05500;
+  --brand-orange-light: #FF731A;
+  --brand-orange-surface: #FFF3EB;
+  --brand-orange-text: #18181B;
   --warm-white: #F8F7F4;
   --warm-white-surface: #FFFFFF;
   --dark-ink: #202024;
@@ -33,7 +36,7 @@
   }
 
   ::selection {
-    background-color: #390044;
+    background-color: #49056B;
     color: #F8F7F4;
   }
 }

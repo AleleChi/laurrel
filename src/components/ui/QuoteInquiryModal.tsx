@@ -231,7 +231,7 @@ export const QuoteInquiryModal: React.FC<QuoteInquiryModalProps> = ({
     >
       {submissionResult ? (
         <div className="py-6 sm:py-8 flex flex-col items-start space-y-4 text-left">
-          <div className="w-12 h-12 rounded-full bg-[#C8E80B] text-[#18181B] flex items-center justify-center flex-shrink-0">
+          <div className="w-12 h-12 rounded-full bg-[#FE6000] text-[#18181B] flex items-center justify-center flex-shrink-0">
             <CheckCircle2 className="w-6 h-6 text-[#18181B]" />
           </div>
 
@@ -240,7 +240,7 @@ export const QuoteInquiryModal: React.FC<QuoteInquiryModalProps> = ({
               Quote Request Received
             </h3>
             {submissionResult.referenceId && (
-              <p className="text-xs font-mono font-semibold uppercase tracking-wider text-[#390044] mt-1">
+              <p className="text-xs font-mono font-semibold uppercase tracking-wider text-[#49056B] mt-1">
                 Reference: {submissionResult.referenceId}
               </p>
             )}
@@ -261,7 +261,7 @@ export const QuoteInquiryModal: React.FC<QuoteInquiryModalProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="inline-flex items-center justify-center h-11 px-6 rounded-xl bg-[#18181B] hover:bg-[#390044] text-white text-sm font-medium transition-colors cursor-pointer"
+              className="inline-flex items-center justify-center h-11 px-6 rounded-xl bg-[#18181B] hover:bg-[#49056B] text-white text-sm font-medium transition-colors cursor-pointer"
             >
               Close
             </button>
@@ -416,7 +416,7 @@ export const QuoteInquiryModal: React.FC<QuoteInquiryModalProps> = ({
           {(hasCleaning || hasMoving || hasStorage) && (
             <div className="pt-2 pb-1 space-y-4">
               <div className="border-t border-[#202024]/10 pt-4">
-                <span className="block text-xs font-bold uppercase tracking-wider text-[#390044] mb-3">
+                <span className="block text-xs font-bold uppercase tracking-wider text-[#49056B] mb-3">
                   Service Specifics
                 </span>
               </div>
