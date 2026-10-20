@@ -194,13 +194,12 @@ export function MediaDetailDrawer({
                 src={asset.publicUrl}
                 alt={asset.altText || asset.originalFilename}
                 className="w-full max-h-[280px] object-contain"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = '/assets/brand/laurrel-symbol.png';
+                  (e.target as HTMLImageElement).className = 'w-16 h-16 object-contain opacity-40';
+                }}
               />
             )}
-            <div className="absolute top-2 right-2 flex items-center gap-1.5">
-              <span className="text-[10px] font-semibold tracking-wider uppercase px-2 py-0.5 bg-black/70 text-white rounded-md backdrop-blur-xs">
-                {asset.assetType}
-              </span>
-            </div>
           </div>
 
           {/* Core File Metadata Table */}
@@ -208,7 +207,7 @@ export function MediaDetailDrawer({
             <div className="flex items-center justify-between">
               <span className="text-zinc-400 font-medium">Public URL</span>
               <div className="flex items-center gap-2">
-                <span className="text-zinc-600 truncate max-w-[200px] font-mono text-[11px]">{asset.publicUrl}</span>
+                <span className="text-zinc-600 truncate max-w-[200px] text-[11px]">{asset.publicUrl}</span>
                 <button
                   onClick={handleCopyUrl}
                   className="p-1 hover:bg-black/5 rounded text-zinc-600 transition-colors cursor-pointer"
@@ -233,7 +232,7 @@ export function MediaDetailDrawer({
 
             <div className="flex items-center justify-between">
               <span className="text-zinc-400 font-medium">MIME Format</span>
-              <span className="text-zinc-700 font-mono text-[11px]">{asset.mimeType}</span>
+              <span className="text-zinc-700 text-[11px]">{asset.mimeType}</span>
             </div>
 
             <div className="flex items-center justify-between">

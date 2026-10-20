@@ -1,5 +1,6 @@
 import React from 'react';
 import { CmsField, CmsInput, CmsTextarea } from './CmsFormControls';
+import { CmsMediaField } from './CmsMediaField';
 
 export interface PageSeoData {
   title?: string;
@@ -73,17 +74,16 @@ export function PageSeoEditor({ seo, onChange, disabled }: PageSeoEditorProps) {
             />
           </CmsField>
 
-          <CmsField
-            label="Open Graph Image"
-            description="Social sharing preview asset path."
-          >
-            <CmsInput
-              disabled={disabled}
+          <div className="pt-1">
+            <CmsMediaField
+              label="Open Graph Image"
+              description="Social sharing preview photograph."
               value={seo.ogImage || ''}
-              onChange={(e) => handleChange('ogImage', e.target.value)}
-              placeholder="/assets/hero/laurrel-room.png"
+              allowedType="image"
+              disabled={disabled}
+              onChange={(patch) => handleChange('ogImage', patch.src)}
             />
-          </CmsField>
+          </div>
         </div>
 
         <div className="pt-2 flex items-center gap-3">

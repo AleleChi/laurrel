@@ -26,6 +26,40 @@ interface AdminUser {
   role: 'owner' | 'admin' | 'content_editor' | 'operations_staff' | 'viewer';
 }
 
+// Helper for route-specific hierarchical breadcrumbs
+function getBreadcrumbs(pathname: string): { label: string; href?: string }[] {
+  const crumbs: { label: string; href?: string }[] = [
+    { label: 'Administration', href: '/admin' },
+  ];
+
+  if (pathname === '/admin') {
+    crumbs.push({ label: 'Overview' });
+  } else if (pathname === '/admin/enquiries') {
+    crumbs.push({ label: 'Customer Enquiries' });
+  } else if (pathname === '/admin/media') {
+    crumbs.push({ label: 'Media Library' });
+  } else if (pathname.startsWith('/admin/website')) {
+    crumbs.push({ label: 'Website Content', href: '/admin/website' });
+    if (pathname === '/admin/website/home') {
+      crumbs.push({ label: 'Homepage' });
+    } else if (pathname === '/admin/website/about') {
+      crumbs.push({ label: 'About Us' });
+    } else if (pathname === '/admin/website/services') {
+      crumbs.push({ label: 'Services' });
+    } else if (pathname === '/admin/website/contact') {
+      crumbs.push({ label: 'Contact' });
+    } else {
+      const pageId = pathname.replace('/admin/website/', '').split('/')[0];
+      if (pageId && pageId !== 'website') {
+        const titleCase = pageId.charAt(0).toUpperCase() + pageId.slice(1);
+        crumbs.push({ label: titleCase });
+      }
+    }
+  }
+
+  return crumbs;
+}
+
 export default function AdminLayout({
   children,
 }: {
@@ -344,13 +378,25 @@ export default function AdminLayout({
             >
               <Menu className="w-5 h-5" />
             </button>
-            <div className="flex items-center gap-2 text-xs font-medium text-zinc-500">
-              <span>Laurrel Operations</span>
-              <ChevronRight className="w-3.5 h-3.5 text-zinc-300" />
-              <span className="text-zinc-900 font-semibold">
-                {pathname === '/admin' ? 'Overview' : pathname === '/admin/enquiries' ? 'Enquiries & Dispatch' : 'Portal'}
-              </span>
-            </div>
+            <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs text-zinc-500">
+              {getBreadcrumbs(pathname).map((crumb, idx, arr) => {
+                const isLast = idx === arr.length - 1;
+                return (
+                  <React.Fragment key={crumb.label}>
+                    {idx > 0 && <ChevronRight className="w-3.5 h-3.5 text-zinc-300 shrink-0" />}
+                    {crumb.href && !isLast ? (
+                      <Link href={crumb.href} className="hover:text-zinc-900 transition-colors">
+                        {crumb.label}
+                      </Link>
+                    ) : (
+                      <span className={isLast ? 'text-zinc-900 font-semibold' : ''}>
+                        {crumb.label}
+                      </span>
+                    )}
+                  </React.Fragment>
+                );
+              })}
+            </nav>
           </div>
 
           <div className="flex items-center gap-4">

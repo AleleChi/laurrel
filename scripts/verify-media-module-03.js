@@ -146,6 +146,20 @@ async function runMediaVerification() {
     await page.waitForFunction(() => document.body.innerText.includes('qa-test-upload.png'), { timeout: 10000 });
     console.log('✅ New test image uploaded and registered in Neon database.');
 
+    // Verify browser actually renders the newly uploaded image without broken icon
+    await page.waitForFunction(() => {
+      const imgs = Array.from(document.querySelectorAll('img'));
+      const uploadImg = imgs.find((img) => img.src.includes('qa-test-upload'));
+      return uploadImg && uploadImg.complete && uploadImg.naturalWidth > 0;
+    }, { timeout: 10000 });
+
+    const naturalWidth = await page.evaluate(() => {
+      const imgs = Array.from(document.querySelectorAll('img'));
+      const uploadImg = imgs.find((img) => img.src.includes('qa-test-upload'));
+      return uploadImg ? uploadImg.naturalWidth : 0;
+    });
+    console.log(`✅ Uploaded image successfully rendered in browser: naturalWidth = ${naturalWidth}px (no broken thumbnail).`);
+
     // Step 5: Edit Alt Text in Drawer
     console.log('\nStep 5: Updating alt text of uploaded asset...');
     const altInput = await page.$('input[placeholder="Accessible description"]');
@@ -357,18 +371,61 @@ async function runMediaVerification() {
     const fakeJson = await fakeRes.json();
     console.log(`✅ Upload Validation Confirmed: "${fakeJson.error}"`);
 
+    // Step 17: Archive QA Assets & Capture Refined UI Screenshots
+    console.log('\nStep 17: Archiving QA test assets and capturing refined interface screenshots...');
+    await pool.query("UPDATE media_assets SET is_archived = TRUE WHERE original_filename LIKE '%qa-test%'");
+    console.log('✅ QA test assets archived in Neon database.');
+
+    // Re-render Media Library with refined card design (no black badges)
+    await page.goto('http://localhost:3000/admin/media', { waitUntil: 'networkidle0' });
+    await page.waitForSelector('.media-card-item');
+
+    // Desktop
+    await page.setViewport({ width: 1440, height: 900 });
+    await page.screenshot({ path: path.join(SCREENSHOTS_DIR, 'media-library-desktop-1440.png') });
+    fs.copyFileSync(path.join(SCREENSHOTS_DIR, 'media-library-desktop-1440.png'), path.join(ARTIFACTS_DIR, 'media-library-desktop-1440.png'));
+    console.log('📸 Captured refined: media-library-desktop-1440.png');
+
+    // Tablet
+    await page.setViewport({ width: 768, height: 1024 });
+    await page.screenshot({ path: path.join(SCREENSHOTS_DIR, 'media-library-tablet-768.png') });
+    fs.copyFileSync(path.join(SCREENSHOTS_DIR, 'media-library-tablet-768.png'), path.join(ARTIFACTS_DIR, 'media-library-tablet-768.png'));
+    console.log('📸 Captured refined: media-library-tablet-768.png');
+
+    // Mobile
+    await page.setViewport({ width: 390, height: 844 });
+    await page.screenshot({ path: path.join(SCREENSHOTS_DIR, 'media-library-mobile-390.png') });
+    fs.copyFileSync(path.join(SCREENSHOTS_DIR, 'media-library-mobile-390.png'), path.join(ARTIFACTS_DIR, 'media-library-mobile-390.png'));
+    console.log('📸 Captured refined: media-library-mobile-390.png');
+
+    // Refined CMS Editor View
+    await page.setViewport({ width: 1440, height: 900 });
+    await page.goto('http://localhost:3000/admin/website/home', { waitUntil: 'networkidle0' });
+    await page.waitForSelector('input');
+    await page.screenshot({ path: path.join(SCREENSHOTS_DIR, 'cms-editor-refined-1440.png') });
+    fs.copyFileSync(path.join(SCREENSHOTS_DIR, 'cms-editor-refined-1440.png'), path.join(ARTIFACTS_DIR, 'cms-editor-refined-1440.png'));
+    console.log('📸 Captured refined: cms-editor-refined-1440.png');
+
     console.log('\n===========================================================');
     console.log('✅ ALL MODULE 03 MEDIA MANAGEMENT TESTS PASSED SUCCESSFULLY');
     console.log('===========================================================');
   } finally {
-    // Clean up temporary fixture
-    if (fs.existsSync(testImagePath)) fs.unlinkSync(testImagePath);
+    // Close browser first so Windows file locks are released
     await browser.close();
+    try {
+      if (fs.existsSync(testImagePath)) fs.unlinkSync(testImagePath);
+    } catch (e) {
+      // Ignored
+    }
     await pool.end();
   }
 }
 
-runMediaVerification().catch((err) => {
-  console.error('\n❌ VERIFICATION TEST FAILED:', err);
-  process.exit(1);
-});
+runMediaVerification()
+  .then(() => {
+    process.exit(0);
+  })
+  .catch((err) => {
+    console.error('\n❌ VERIFICATION TEST FAILED:', err);
+    process.exit(1);
+  });

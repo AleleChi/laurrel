@@ -304,62 +304,67 @@ export default function MediaLibraryPage() {
       ) : viewMode === 'grid' ? (
         /* GRID VIEW */
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-          {assets.map((asset) => (
-            <div
-              key={asset.id}
-              onClick={() => handleAssetClick(asset)}
-              className="media-card-item group rounded-xl border border-black/[0.06] bg-white overflow-hidden hover:border-black/20 hover:shadow-sm transition-all cursor-pointer flex flex-col"
-            >
-              {/* Media Thumbnail Container */}
-              <div className="aspect-[4/3] bg-zinc-900 relative overflow-hidden flex items-center justify-center">
-                {asset.assetType === 'video' ? (
-                  <div className="relative w-full h-full flex items-center justify-center">
-                    {asset.thumbnailUrl ? (
-                      <img src={asset.thumbnailUrl} alt={asset.altText} className="w-full h-full object-cover" />
-                    ) : (
-                      <Film className="w-8 h-8 text-zinc-500" />
-                    )}
-                    <div className="absolute inset-0 bg-black/30 flex items-center justify-center group-hover:bg-black/20 transition-colors">
-                      <Film className="w-6 h-6 text-white/90 drop-shadow-md" />
+          {assets.map((asset) => {
+            const hasDimensions = asset.width && asset.height;
+            const metaLabel = hasDimensions
+              ? `${asset.width}×${asset.height}`
+              : asset.mimeType?.split('/')[1]?.toUpperCase() || 'FILE';
+
+            return (
+              <div
+                key={asset.id}
+                onClick={() => handleAssetClick(asset)}
+                className="media-card-item group rounded-[10px] border border-black/[0.08] bg-white overflow-hidden hover:border-black/25 transition-all cursor-pointer flex flex-col"
+              >
+                {/* Media Thumbnail Container */}
+                <div className="aspect-[4/3] bg-zinc-100 relative overflow-hidden flex items-center justify-center border-b border-black/[0.04]">
+                  {asset.assetType === 'video' ? (
+                    <div className="relative w-full h-full flex items-center justify-center bg-zinc-950">
+                      {asset.thumbnailUrl ? (
+                        <img
+                          src={asset.thumbnailUrl}
+                          alt={asset.altText || asset.originalFilename}
+                          className="w-full h-full object-cover"
+                          loading="lazy"
+                        />
+                      ) : null}
+                      <div className="absolute inset-0 bg-black/25 flex items-center justify-center group-hover:bg-black/15 transition-colors">
+                        <div className="w-8 h-8 rounded-full bg-black/60 flex items-center justify-center text-white/95">
+                          <Film className="w-4 h-4 ml-0.5" />
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                ) : (
-                  <img
-                    src={asset.thumbnailUrl || asset.publicUrl}
-                    alt={asset.altText || asset.originalFilename}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                  />
-                )}
-
-                {/* Badge for format / folder */}
-                <div className="absolute top-2 right-2">
-                  <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 bg-black/70 text-white rounded backdrop-blur-xs">
-                    {asset.assetType}
-                  </span>
+                  ) : (
+                    <img
+                      src={asset.thumbnailUrl || asset.publicUrl}
+                      alt={asset.altText || asset.originalFilename}
+                      className="w-full h-full object-cover transition-opacity duration-200"
+                      loading="lazy"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = '/assets/brand/laurrel-symbol.png';
+                        (e.target as HTMLImageElement).className = 'w-10 h-10 object-contain opacity-40';
+                      }}
+                    />
+                  )}
                 </div>
-              </div>
 
-              {/* Card Footer */}
-              <div className="p-3 flex-1 flex flex-col justify-between">
-                <div>
+                {/* Concise Metadata Below Thumbnail */}
+                <div className="p-2.5 flex-1 flex flex-col justify-between">
                   <h4
-                    className="text-xs font-semibold text-zinc-900 truncate group-hover:text-[#49056B] transition-colors"
+                    className="text-xs font-medium text-zinc-900 truncate"
                     title={asset.originalFilename}
                   >
                     {asset.originalFilename}
                   </h4>
-                  <p className="text-[11px] text-zinc-400 truncate mt-0.5" title={asset.altText}>
-                    {asset.altText || 'No descriptive alt text'}
-                  </p>
-                </div>
-
-                <div className="flex items-center justify-between pt-2 mt-2 border-t border-black/[0.04] text-[10px] text-zinc-400">
-                  <span className="capitalize">{asset.folder}</span>
-                  <span>{formatFileSize(asset.fileSize)}</span>
+                  <div className="flex items-center gap-1.5 mt-1 text-[11px] text-zinc-400">
+                    <span>{metaLabel}</span>
+                    <span>·</span>
+                    <span>{formatFileSize(asset.fileSize)}</span>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       ) : (
         /* LIST VIEW */

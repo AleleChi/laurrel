@@ -364,21 +364,22 @@ export default function PageContentEditor() {
             <ArrowLeft className="w-4 h-4" />
           </Link>
           <div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2.5">
               <h1 className="text-xl font-bold tracking-tight text-zinc-900">{page.name}</h1>
               {isDirty ? (
-                <span className="text-[10px] font-semibold text-[#FE6000] bg-orange-50 px-2 py-0.5 rounded-md border border-orange-200">
-                  Unsaved Changes
+                <span className="text-[11px] font-medium text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200/60">
+                  Unsaved changes
                 </span>
               ) : (
-                <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
-                  Synced
+                <span className="text-[11px] font-normal text-zinc-400">
+                  Published revision live
                 </span>
               )}
             </div>
-            <p className="text-xs text-zinc-400 mt-0.5">
-              Live route: <span className="font-mono text-zinc-600">{page.slug}</span> · Last published{' '}
-              {page.publishedAt ? new Date(page.publishedAt).toLocaleDateString() : 'Never'}
+            <p className="text-xs text-zinc-400 mt-1">
+              Route: <span className="text-zinc-600 font-medium">{page.slug}</span>
+              <span className="mx-2 text-zinc-300">·</span>
+              Last published {page.publishedAt ? new Date(page.publishedAt).toLocaleDateString('en-CA', { year: 'numeric', month: 'short', day: 'numeric' }) : 'Never'}
             </p>
           </div>
         </div>
@@ -390,7 +391,7 @@ export default function PageContentEditor() {
             id="open-history-btn"
             type="button"
             onClick={handleOpenHistory}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[10px] bg-white border border-black/10 hover:bg-zinc-50 text-xs font-semibold text-zinc-700 transition-colors shadow-2xs cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[8px] bg-white border border-black/10 hover:bg-zinc-50 text-xs font-semibold text-zinc-700 transition-colors shadow-2xs cursor-pointer"
           >
             <History className="w-3.5 h-3.5 text-zinc-400" />
             <span>History</span>
@@ -401,7 +402,7 @@ export default function PageContentEditor() {
             id="preview-draft-link"
             href={`/admin/website/preview/${page.id}`}
             target="_blank"
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[10px] bg-white border border-black/10 hover:bg-zinc-50 text-xs font-semibold text-zinc-700 transition-colors shadow-2xs"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[8px] bg-white border border-black/10 hover:bg-zinc-50 text-xs font-semibold text-zinc-700 transition-colors shadow-2xs"
           >
             <Eye className="w-3.5 h-3.5 text-zinc-400" />
             <span>Preview</span>
@@ -413,10 +414,14 @@ export default function PageContentEditor() {
             type="button"
             disabled={isSavingDraft || !canEdit || !isDirty}
             onClick={handleSaveDraft}
-            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-[10px] bg-zinc-100 hover:bg-zinc-200 text-xs font-semibold text-zinc-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
+            className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-[8px] text-xs font-semibold transition-all cursor-pointer ${
+              isDirty
+                ? 'bg-zinc-900 hover:bg-black text-white shadow-xs'
+                : 'bg-zinc-100 text-zinc-400 border border-black/5 cursor-not-allowed opacity-60'
+            }`}
           >
-            <Save className="w-3.5 h-3.5 text-zinc-500" />
-            <span>{isSavingDraft ? 'Saving Draft...' : 'Save Draft'}</span>
+            <Save className="w-3.5 h-3.5" />
+            <span>{isSavingDraft ? 'Saving Draft...' : !isDirty ? 'Draft Saved' : 'Save Draft'}</span>
           </button>
 
           {/* Publish Changes */}
@@ -425,14 +430,14 @@ export default function PageContentEditor() {
             type="button"
             disabled={isPublishing || !canPublish}
             onClick={() => setPublishModalOpen(true)}
-            className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-[10px] bg-[#49056B] hover:bg-[#5B0785] text-white text-xs font-semibold disabled:opacity-40 disabled:cursor-not-allowed transition-colors shadow-2xs cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-[8px] bg-[#49056B] hover:bg-[#5B0785] text-white text-xs font-semibold disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-xs cursor-pointer"
             title={
               !canPublish
                 ? 'Publishing requires owner or administrator permissions'
                 : 'Publish changes to the live website'
             }
           >
-            <Send className="w-3.5 h-3.5 text-orange-400" />
+            <Send className="w-3.5 h-3.5 text-[#FE6000]" />
             <span>Publish Live</span>
           </button>
         </div>
@@ -494,7 +499,6 @@ export default function PageContentEditor() {
                   }`}
                 >
                   <span>{item.label}</span>
-                  {isActive && <span className="w-1.5 h-1.5 rounded-full bg-[#FE6000]" />}
                 </button>
               );
             })}

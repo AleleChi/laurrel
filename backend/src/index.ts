@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import path from 'path';
 import { healthRouter } from './routes/health';
 import { enquireRouter } from './routes/enquire';
 import { assistantRouter } from './routes/assistant';
@@ -55,6 +56,9 @@ app.use(
 );
 
 app.use(express.json({ limit: '10mb' }));
+
+// Mount static uploads for local storage provider
+app.use('/uploads', express.static(path.resolve(__dirname, '../../public/uploads')));
 
 // Mount routes
 app.use(healthRouter);
