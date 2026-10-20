@@ -3,18 +3,13 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
-  Inbox,
-  Clock,
-  CheckCircle2,
-  AlertTriangle,
   ArrowRight,
   RefreshCw,
-  Sparkles,
+  AlertCircle,
+  CheckCircle2,
+  Clock,
   PhoneCall,
-  Calendar,
-  Layers,
-  ShieldCheck,
-  ExternalLink,
+  Inbox,
 } from 'lucide-react';
 
 interface Stats {
@@ -85,236 +80,239 @@ export default function AdminOverviewPage() {
     loadOverviewData();
   }, []);
 
-  const statusBadge = (status: string) => {
+  // Refined, subtle status presentation: minimal dot + quiet typography (no loud multi-colored badges)
+  const renderStatus = (status: string) => {
     switch (status) {
       case 'new':
         return (
-          <span className="px-2 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider bg-orange-100 text-[#FE6000] border border-[#FE6000]/20">
-            New Lead
+          <span className="inline-flex items-center gap-1.5 text-xs font-medium text-zinc-900">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#FE6000]" />
+            <span>New Lead</span>
           </span>
         );
       case 'reviewed':
         return (
-          <span className="px-2 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider bg-blue-100 text-blue-700 border border-blue-200">
-            Reviewed
+          <span className="inline-flex items-center gap-1.5 text-xs font-medium text-zinc-700">
+            <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+            <span>Reviewed</span>
           </span>
         );
       case 'quoted':
         return (
-          <span className="px-2 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider bg-purple-100 text-[#49056B] border border-[#49056B]/20">
-            Quoted
+          <span className="inline-flex items-center gap-1.5 text-xs font-medium text-zinc-700">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#49056B]" />
+            <span>Quoted</span>
           </span>
         );
       case 'scheduled':
         return (
-          <span className="px-2 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-200">
-            Scheduled
+          <span className="inline-flex items-center gap-1.5 text-xs font-medium text-zinc-700">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
+            <span>Scheduled</span>
+          </span>
+        );
+      case 'closed':
+        return (
+          <span className="inline-flex items-center gap-1.5 text-xs font-medium text-zinc-400">
+            <span className="w-1.5 h-1.5 rounded-full bg-zinc-300" />
+            <span>Closed</span>
           </span>
         );
       default:
-        return (
-          <span className="px-2 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider bg-gray-100 text-gray-700">
-            {status}
-          </span>
-        );
+        return <span className="text-xs text-zinc-500 capitalize">{status}</span>;
     }
   };
 
   return (
-    <div className="space-y-8">
-      {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div className="space-y-6">
+      {/* Editorial Page Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-2">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-[#49056B] tracking-tight">
+          <h1 className="text-2xl font-bold tracking-tight text-zinc-900">
             Business Operations Overview
           </h1>
-          <p className="text-xs sm:text-sm text-[#575757] mt-1">
+          <p className="text-sm text-zinc-500 mt-1">
             Real-time status of inbound service requests, customer enquiries, and AI handoffs.
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2.5">
           <button
             onClick={loadOverviewData}
             disabled={refreshing}
-            className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white border border-black/10 text-xs font-bold text-[#202024] hover:bg-[#F8F7F4] transition-colors shadow-xs disabled:opacity-60"
+            className="inline-flex items-center gap-2 px-3 py-2 rounded-[10px] bg-white border border-black/10 text-xs font-medium text-zinc-700 hover:bg-black/[0.02] hover:text-zinc-900 transition-colors shadow-2xs disabled:opacity-60"
           >
-            <RefreshCw className={`w-3.5 h-3.5 text-[#49056B] ${refreshing ? 'animate-spin' : ''}`} />
-            <span>{refreshing ? 'Refreshing...' : 'Refresh Data'}</span>
+            <RefreshCw className={`w-3.5 h-3.5 text-zinc-400 ${refreshing ? 'animate-spin' : ''}`} />
+            <span>{refreshing ? 'Refreshing' : 'Refresh'}</span>
           </button>
 
           <Link
             href="/admin/enquiries"
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#49056B] text-white text-xs font-bold hover:bg-[#49056B]/90 transition-all shadow-xs"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-[10px] bg-[#49056B] text-white text-xs font-semibold hover:bg-[#5B0785] transition-all shadow-2xs"
           >
-            <span>Manage All Enquiries</span>
-            <ArrowRight className="w-3.5 h-3.5 text-[#FE6000]" />
+            <span>All Enquiries</span>
+            <ArrowRight className="w-3.5 h-3.5 text-orange-400" />
           </Link>
         </div>
       </div>
 
       {error && (
-        <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-xs text-amber-900 flex items-center justify-between">
+        <div className="p-4 rounded-xl bg-amber-50/70 border border-amber-200/80 text-xs text-amber-900 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
+            <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
             <span>{error}</span>
           </div>
           <button
             onClick={loadOverviewData}
-            className="font-bold underline hover:text-amber-800"
+            className="font-semibold underline hover:text-amber-800"
           >
             Retry
           </button>
         </div>
       )}
 
-      {/* KPI Metric Cards */}
+      {/* Simplified, Calm KPI Metric Row - No loud decorative circles */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Metric 1 */}
-        <div className="bg-white rounded-2xl p-5 border border-black/[0.08] shadow-xs flex flex-col justify-between">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-bold uppercase tracking-wider text-[#888]">
-              Total Enquiries
-            </span>
-            <div className="w-8 h-8 rounded-xl bg-[#49056B]/[0.08] text-[#49056B] flex items-center justify-center">
-              <Inbox className="w-4 h-4" />
-            </div>
+        {/* Metric 1: Total Recorded */}
+        <div className="bg-white rounded-xl p-5 border border-black/[0.06] shadow-xs flex flex-col justify-between">
+          <div className="text-xs font-medium text-zinc-500 tracking-wide uppercase">
+            Total Inbound
           </div>
-          <div>
-            <div className="text-3xl font-extrabold text-[#202024]">
+          <div className="my-2.5">
+            <div className="text-3xl font-semibold text-zinc-900 tracking-tight">
               {loading ? '—' : stats?.totalEnquiries ?? 0}
             </div>
-            <p className="text-[11px] text-[#888] mt-1">Recorded in Neon database</p>
+            <p className="text-xs text-zinc-400 mt-0.5">Recorded in database</p>
           </div>
+          <div className="text-[11px] text-zinc-400">All channels combined</div>
         </div>
 
-        {/* Metric 2: New Enquiries */}
-        <div className="bg-white rounded-2xl p-5 border border-black/[0.08] shadow-xs flex flex-col justify-between relative overflow-hidden">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-bold uppercase tracking-wider text-[#FE6000]">
-              Action Required
-            </span>
-            <div className="w-8 h-8 rounded-xl bg-orange-50 text-[#FE6000] flex items-center justify-center">
-              <Clock className="w-4 h-4" />
-            </div>
+        {/* Metric 2: Action Required */}
+        <div className="bg-white rounded-xl p-5 border border-black/[0.06] shadow-xs flex flex-col justify-between border-l-3 border-l-[#FE6000]">
+          <div className="text-xs font-medium text-[#FE6000] tracking-wide uppercase">
+            Action Required
           </div>
-          <div>
-            <div className="text-3xl font-extrabold text-[#FE6000]">
+          <div className="my-2.5">
+            <div className="text-3xl font-semibold text-[#FE6000] tracking-tight">
               {loading ? '—' : stats?.newEnquiries ?? 0}
             </div>
-            <p className="text-[11px] text-[#888] mt-1">Unreviewed customer leads</p>
+            <p className="text-xs text-zinc-500 mt-0.5">Awaiting first review</p>
           </div>
+          <div className="text-[11px] text-zinc-400">&lt; 2-hour response goal</div>
         </div>
 
-        {/* Metric 3: Reviewed & Scheduled */}
-        <div className="bg-white rounded-2xl p-5 border border-black/[0.08] shadow-xs flex flex-col justify-between">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-bold uppercase tracking-wider text-[#888]">
-              In Pipeline
-            </span>
-            <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center">
-              <CheckCircle2 className="w-4 h-4" />
-            </div>
+        {/* Metric 3: Pipeline */}
+        <div className="bg-white rounded-xl p-5 border border-black/[0.06] shadow-xs flex flex-col justify-between">
+          <div className="text-xs font-medium text-zinc-500 tracking-wide uppercase">
+            In Pipeline
           </div>
-          <div>
-            <div className="text-3xl font-extrabold text-[#202024]">
+          <div className="my-2.5">
+            <div className="text-3xl font-semibold text-zinc-900 tracking-tight">
               {loading ? '—' : (stats?.reviewed ?? 0) + (stats?.scheduled ?? 0)}
             </div>
-            <p className="text-[11px] text-[#888] mt-1">
-              {stats?.reviewed ?? 0} reviewed • {stats?.scheduled ?? 0} scheduled
-            </p>
+            <p className="text-xs text-zinc-400 mt-0.5">Reviewed or scheduled</p>
+          </div>
+          <div className="text-[11px] text-zinc-400">
+            {stats?.reviewed ?? 0} reviewed • {stats?.scheduled ?? 0} scheduled
           </div>
         </div>
 
         {/* Metric 4: AI Escalations */}
-        <div className="bg-white rounded-2xl p-5 border border-black/[0.08] shadow-xs flex flex-col justify-between">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-bold uppercase tracking-wider text-[#888]">
-              AI Human Handoffs
-            </span>
-            <div className="w-8 h-8 rounded-xl bg-purple-50 text-[#49056B] flex items-center justify-center">
-              <PhoneCall className="w-4 h-4 text-[#FE6000]" />
-            </div>
+        <div className="bg-white rounded-xl p-5 border border-black/[0.06] shadow-xs flex flex-col justify-between">
+          <div className="text-xs font-medium text-zinc-500 tracking-wide uppercase">
+            Assistant Handoffs
           </div>
-          <div>
-            <div className="text-3xl font-extrabold text-[#49056B]">
+          <div className="my-2.5">
+            <div className="text-3xl font-semibold text-zinc-900 tracking-tight">
               {loading ? '—' : stats?.pendingHandoffs ?? 0}
             </div>
-            <p className="text-[11px] text-[#888] mt-1">Visitor requested direct callback</p>
+            <p className="text-xs text-zinc-400 mt-0.5">Chat requests for callback</p>
           </div>
+          <div className="text-[11px] text-zinc-400">Direct human escalation</div>
         </div>
       </div>
 
-      {/* Operational Attention Panel */}
-      <div className="bg-white rounded-3xl p-6 sm:p-7 border border-black/[0.08] shadow-xs space-y-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="w-3 h-3 rounded-full bg-[#FE6000]" />
-            <h2 className="text-base font-extrabold text-[#49056B]">
-              Operational Attention Checklist
-            </h2>
-          </div>
-          <span className="text-xs text-[#888] font-medium">Daily Lead SLA: &lt; 2 Hours</span>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
-          <div className="p-4 rounded-2xl bg-[#F8F7F4] border border-black/[0.05]">
-            <p className="text-xs font-bold text-[#202024] mb-1">New Unreviewed Requests</p>
-            <p className="text-xs text-[#575757] leading-relaxed">
-              {(stats?.newEnquiries ?? 0) > 0 ? (
-                <>
-                  <span className="font-bold text-[#FE6000]">{stats?.newEnquiries}</span> customer
-                  enquir{stats?.newEnquiries === 1 ? 'y' : 'ies'} awaiting review and quote preparation.
-                </>
-              ) : (
-                'All inbound enquiries have been reviewed. Excellent response time!'
-              )}
-            </p>
-          </div>
-
-          <div className="p-4 rounded-2xl bg-[#F8F7F4] border border-black/[0.05]">
-            <p className="text-xs font-bold text-[#202024] mb-1">AI Assistant Escalations</p>
-            <p className="text-xs text-[#575757] leading-relaxed">
-              {(stats?.pendingHandoffs ?? 0) > 0 ? (
-                <>
-                  <span className="font-bold text-[#49056B]">{stats?.pendingHandoffs}</span> customer
-                  chat session(s) escalated to human dispatch.
-                </>
-              ) : (
-                'No pending chat handoffs awaiting customer contact.'
-              )}
-            </p>
-          </div>
-
-          <div className="p-4 rounded-2xl bg-[#F8F7F4] border border-black/[0.05]">
-            <p className="text-xs font-bold text-[#202024] mb-1">Notification Delivery Status</p>
-            <p className="text-xs text-[#575757] leading-relaxed">
-              {(stats?.failedDeliveries ?? 0) === 0 ? (
-                <span className="text-emerald-700 font-medium">
-                  ✓ 100% dispatch delivery health. Zero outbound notification failures.
-                </span>
-              ) : (
-                <span className="text-red-700 font-bold">
-                  {stats?.failedDeliveries} email delivery alert(s) logged.
-                </span>
-              )}
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Recent Activity Table */}
-      <div className="bg-white rounded-3xl border border-black/[0.08] shadow-xs overflow-hidden">
-        <div className="p-6 border-b border-black/[0.06] flex items-center justify-between">
+      {/* Executive Operational Overview - Coherent control surface, no boxes inside boxes */}
+      <div className="bg-white rounded-xl border border-black/[0.06] shadow-xs p-6">
+        <div className="flex items-center justify-between pb-4 border-b border-black/[0.06]">
           <div>
-            <h2 className="text-base font-extrabold text-[#49056B]">Recent Inbound Enquiries</h2>
-            <p className="text-xs text-[#575757] mt-0.5">
-              Latest service requests received through website quote forms and contact channels.
+            <h2 className="text-sm font-semibold text-zinc-900">Operational Priority Checklist</h2>
+            <p className="text-xs text-zinc-500 mt-0.5">Key daily touchpoints requiring lead coordinator response.</p>
+          </div>
+          <span className="text-[11px] text-zinc-400 font-medium">Daily Target: 100% Qualified</span>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-black/[0.06] pt-4">
+          {/* Column 1 */}
+          <div className="py-3 md:py-0 md:pr-6">
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-xs font-semibold text-zinc-800">Unreviewed Inquiries</span>
+              <span className="text-xs font-bold text-[#FE6000]">{stats?.newEnquiries ?? 0}</span>
+            </div>
+            <p className="text-xs text-zinc-500 leading-relaxed">
+              {(stats?.newEnquiries ?? 0) > 0
+                ? `${stats?.newEnquiries} customer lead(s) require qualification and estimate dispatch.`
+                : 'All inbound quote requests have been reviewed and processed.'}
+            </p>
+            <Link
+              href="/admin/enquiries?status=new"
+              className="inline-flex items-center gap-1 text-xs font-medium text-[#49056B] hover:text-[#5B0785] mt-2.5 transition-colors"
+            >
+              <span>Review pending leads</span>
+              <ArrowRight className="w-3 h-3" />
+            </Link>
+          </div>
+
+          {/* Column 2 */}
+          <div className="py-3 md:py-0 md:px-6">
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-xs font-semibold text-zinc-800">AI Assistant Escalations</span>
+              <span className="text-xs font-bold text-zinc-900">{stats?.pendingHandoffs ?? 0}</span>
+            </div>
+            <p className="text-xs text-zinc-500 leading-relaxed">
+              {(stats?.pendingHandoffs ?? 0) > 0
+                ? `${stats?.pendingHandoffs} visitor chat session(s) escalated to human callback.`
+                : 'No pending AI chat escalations requiring telephone follow-up.'}
+            </p>
+            <Link
+              href="/admin/enquiries"
+              className="inline-flex items-center gap-1 text-xs font-medium text-[#49056B] hover:text-[#5B0785] mt-2.5 transition-colors"
+            >
+              <span>View handoff requests</span>
+              <ArrowRight className="w-3 h-3" />
+            </Link>
+          </div>
+
+          {/* Column 3 */}
+          <div className="py-3 md:py-0 md:pl-6">
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-xs font-semibold text-zinc-800">Dispatch Notification Health</span>
+              <span className="text-xs font-medium text-emerald-600">Active</span>
+            </div>
+            <p className="text-xs text-zinc-500 leading-relaxed">
+              {(stats?.failedDeliveries ?? 0) === 0
+                ? 'Outbound email notifications operational. Zero delivery failures logged.'
+                : `${stats?.failedDeliveries} notification delivery warnings recorded.`}
+            </p>
+            <span className="inline-block text-[11px] text-zinc-400 mt-2.5">
+              Automated logging enabled
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Recent Enquiries Table - Editorial, calm typography */}
+      <div className="bg-white rounded-xl border border-black/[0.06] shadow-xs overflow-hidden">
+        <div className="px-6 py-4 border-b border-black/[0.06] flex items-center justify-between">
+          <div>
+            <h2 className="text-sm font-semibold text-zinc-900">Recent Customer Inquiries</h2>
+            <p className="text-xs text-zinc-500 mt-0.5">
+              Latest submissions received via website estimate forms and contact routes.
             </p>
           </div>
           <Link
             href="/admin/enquiries"
-            className="text-xs font-bold text-[#49056B] hover:text-[#FE6000] inline-flex items-center gap-1 transition-colors"
+            className="text-xs font-semibold text-[#49056B] hover:text-[#5B0785] inline-flex items-center gap-1 transition-colors"
           >
             <span>View All ({stats?.totalEnquiries ?? 0})</span>
             <ArrowRight className="w-3.5 h-3.5" />
@@ -324,55 +322,57 @@ export default function AdminOverviewPage() {
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse text-xs">
             <thead>
-              <tr className="bg-[#F8F7F4]/80 border-b border-black/[0.06] text-[#888] font-bold uppercase tracking-wider text-[10px]">
-                <th className="py-3 px-5">ID & Date</th>
-                <th className="py-3 px-5">Customer</th>
-                <th className="py-3 px-5">Services Requested</th>
-                <th className="py-3 px-5">Location</th>
-                <th className="py-3 px-5">Status</th>
-                <th className="py-3 px-5 text-right">Action</th>
+              <tr className="bg-zinc-50/60 border-b border-black/[0.06] text-zinc-400 font-semibold uppercase tracking-wider text-[10px]">
+                <th className="py-3 px-6">Reference</th>
+                <th className="py-3 px-6">Customer</th>
+                <th className="py-3 px-6">Services</th>
+                <th className="py-3 px-6">Location</th>
+                <th className="py-3 px-6">Status</th>
+                <th className="py-3 px-6 text-right">Action</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-black/[0.04]">
               {recentEnquiries.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="py-10 text-center text-[#888]">
-                    {loading ? 'Loading customer records from Neon...' : 'No customer enquiries found.'}
+                  <td colSpan={6} className="py-10 text-center text-zinc-400">
+                    {loading ? 'Loading records...' : 'No enquiries found.'}
                   </td>
                 </tr>
               ) : (
                 recentEnquiries.map((enq) => (
-                  <tr key={enq.id} className="hover:bg-[#F8F7F4]/50 transition-colors">
-                    <td className="py-3.5 px-5 font-mono text-[11px] text-[#575757]">
-                      <div className="font-bold text-[#202024]">{enq.id}</div>
-                      <div>{new Date(enq.createdAt).toLocaleDateString()}</div>
+                  <tr key={enq.id} className="hover:bg-zinc-50/60 transition-colors">
+                    <td className="py-3.5 px-6 font-mono text-zinc-500 text-[11px]">
+                      <div className="font-semibold text-zinc-900">{enq.id}</div>
+                      <div className="text-zinc-400 text-[10px]">
+                        {new Date(enq.createdAt).toLocaleDateString()}
+                      </div>
                     </td>
-                    <td className="py-3.5 px-5">
-                      <div className="font-bold text-[#202024]">{enq.customer.name}</div>
-                      <div className="text-[#888] text-[11px]">{enq.customer.email}</div>
+                    <td className="py-3.5 px-6">
+                      <div className="font-medium text-zinc-900">{enq.customer.name}</div>
+                      <div className="text-zinc-400 text-[11px]">{enq.customer.email}</div>
                     </td>
-                    <td className="py-3.5 px-5">
+                    <td className="py-3.5 px-6">
                       <div className="flex flex-wrap gap-1">
                         {enq.services.map((s) => (
                           <span
                             key={s}
-                            className="px-2 py-0.5 rounded bg-black/[0.04] text-[10px] font-semibold text-[#575757] capitalize"
+                            className="px-2 py-0.5 rounded-md bg-zinc-100 text-[11px] font-medium text-zinc-600 capitalize"
                           >
                             {s}
                           </span>
                         ))}
                       </div>
                     </td>
-                    <td className="py-3.5 px-5 text-[#575757]">
-                      {enq.serviceLocation || 'Ottawa Area'}
+                    <td className="py-3.5 px-6 text-zinc-600">
+                      {enq.serviceLocation || 'Ottawa, ON'}
                     </td>
-                    <td className="py-3.5 px-5">
-                      {statusBadge(enq.status)}
+                    <td className="py-3.5 px-6">
+                      {renderStatus(enq.status)}
                     </td>
-                    <td className="py-3.5 px-5 text-right">
+                    <td className="py-3.5 px-6 text-right">
                       <Link
                         href={`/admin/enquiries?id=${enq.id}`}
-                        className="px-2.5 py-1 rounded-lg bg-white border border-black/10 text-[11px] font-bold text-[#49056B] hover:bg-[#49056B] hover:text-white transition-all shadow-2xs"
+                        className="px-3 py-1 rounded-[8px] bg-zinc-100 hover:bg-[#49056B] hover:text-white text-xs font-medium text-zinc-700 transition-colors"
                       >
                         Inspect
                       </Link>

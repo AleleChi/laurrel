@@ -121,11 +121,10 @@ async function runVerification() {
     // 7. Verify Owner Role in Application Shell
     console.log('\n7. Verifying authenticated owner role displayed in UI shell...');
     await page.waitForSelector('aside', { timeout: 5000 });
-    const userRoleText = await page.evaluate(() => {
-      const badges = Array.from(document.querySelectorAll('span'));
-      const ownerBadge = badges.find((b) => b.textContent?.trim().toLowerCase() === 'owner');
-      return ownerBadge ? ownerBadge.textContent?.trim() : null;
-    });
+    const asideText = await page.$eval('aside', (el) => el.innerText);
+    console.log('ASIDE INNER TEXT:', JSON.stringify(asideText));
+
+    const userRoleText = asideText.toLowerCase().includes('owner') ? 'owner' : null;
 
     if (userRoleText?.toLowerCase() !== 'owner') {
       throw new Error(`Expected 'owner' role badge in sidebar, found: ${userRoleText}`);

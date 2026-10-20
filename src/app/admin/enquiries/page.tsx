@@ -3,25 +3,17 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import {
-  Inbox,
   Search,
-  Filter,
   RefreshCw,
   Mail,
   Phone,
   MapPin,
   Calendar,
-  Clock,
-  CheckCircle2,
-  AlertCircle,
-  FileText,
-  User,
-  MessageSquare,
-  Sparkles,
-  ChevronRight,
   X,
   Send,
-  ExternalLink,
+  ArrowRight,
+  User,
+  Clock,
 } from 'lucide-react';
 
 interface EnquiryItem {
@@ -177,86 +169,88 @@ export default function AdminEnquiriesPage() {
     return true;
   });
 
-  const statusBadge = (status: string) => {
+  // Quiet, refined status indicator (dot + label, no heavy pill outline)
+  const renderStatus = (status: string) => {
     switch (status) {
       case 'new':
         return (
-          <span className="px-2 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider bg-orange-100 text-[#FE6000] border border-[#FE6000]/20">
-            New Lead
+          <span className="inline-flex items-center gap-1.5 text-xs font-medium text-zinc-900">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#FE6000]" />
+            <span>New Lead</span>
           </span>
         );
       case 'reviewed':
         return (
-          <span className="px-2 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider bg-blue-100 text-blue-700 border border-blue-200">
-            Reviewed
+          <span className="inline-flex items-center gap-1.5 text-xs font-medium text-zinc-700">
+            <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+            <span>Reviewed</span>
           </span>
         );
       case 'quoted':
         return (
-          <span className="px-2 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider bg-purple-100 text-[#49056B] border border-[#49056B]/20">
-            Quoted
+          <span className="inline-flex items-center gap-1.5 text-xs font-medium text-zinc-700">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#49056B]" />
+            <span>Quoted</span>
           </span>
         );
       case 'scheduled':
         return (
-          <span className="px-2 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-200">
-            Scheduled
+          <span className="inline-flex items-center gap-1.5 text-xs font-medium text-zinc-700">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
+            <span>Scheduled</span>
           </span>
         );
       case 'closed':
         return (
-          <span className="px-2 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider bg-gray-100 text-gray-700 border border-gray-200">
-            Closed
+          <span className="inline-flex items-center gap-1.5 text-xs font-medium text-zinc-400">
+            <span className="w-1.5 h-1.5 rounded-full bg-zinc-300" />
+            <span>Closed</span>
           </span>
         );
       default:
-        return (
-          <span className="px-2 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider bg-gray-100 text-gray-700">
-            {status}
-          </span>
-        );
+        return <span className="text-xs text-zinc-500 capitalize">{status}</span>;
     }
   };
 
   return (
     <div className="space-y-6">
-      {/* Title & Tabs */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      {/* Title & View Segmented Control */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-2">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-[#49056B] tracking-tight">
-            Customer Enquiries & Handoffs
+          <h1 className="text-2xl font-bold tracking-tight text-zinc-900">
+            Customer Enquiries & Dispatch
           </h1>
-          <p className="text-xs sm:text-sm text-[#575757] mt-1">
-            Manage incoming cleaning, moving, and storage quote requests and AI escalations.
+          <p className="text-sm text-zinc-500 mt-1">
+            Review inbound quote requests, qualify leads, and manage customer communications.
           </p>
         </div>
 
-        <div className="flex items-center gap-2 bg-white p-1 rounded-2xl border border-black/10 shadow-xs self-start">
+        <div className="flex items-center p-1 bg-zinc-200/60 rounded-[10px] self-start sm:self-auto">
           <button
             onClick={() => setActiveTab('enquiries')}
-            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
+            className={`px-3.5 py-1.5 rounded-md text-xs font-semibold transition-all ${
               activeTab === 'enquiries'
-                ? 'bg-[#49056B] text-white shadow-2xs'
-                : 'text-[#575757] hover:text-[#202024]'
+                ? 'bg-white text-zinc-900 shadow-2xs'
+                : 'text-zinc-600 hover:text-zinc-900'
             }`}
           >
             Inbound Enquiries ({enquiries.length})
           </button>
           <button
             onClick={() => setActiveTab('handoffs')}
-            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
+            className={`px-3.5 py-1.5 rounded-md text-xs font-semibold transition-all ${
               activeTab === 'handoffs'
-                ? 'bg-[#49056B] text-white shadow-2xs'
-                : 'text-[#575757] hover:text-[#202024]'
+                ? 'bg-white text-zinc-900 shadow-2xs'
+                : 'text-zinc-600 hover:text-zinc-900'
             }`}
           >
-            AI Escalations ({handoffs.length})
+            Assistant Escalations ({handoffs.length})
           </button>
         </div>
       </div>
 
-      {/* Filter & Search Bar */}
-      <div className="bg-white rounded-3xl p-4 sm:p-5 border border-black/[0.08] shadow-xs space-y-4">
+      {/* Filter & Search Bar - Clean, calm, restrained */}
+      <div className="bg-white rounded-xl p-3.5 border border-black/[0.06] shadow-xs">
         <div className="flex flex-col md:flex-row gap-3">
           {/* Search Box */}
           <div className="relative flex-1">
@@ -265,9 +259,9 @@ export default function AdminEnquiriesPage() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search by customer name, email, phone, location or ID..."
-              className="w-full pl-9 pr-4 py-2.5 bg-[#F8F7F4] border border-black/15 rounded-xl text-xs text-[#202024] placeholder:text-[#888] focus:outline-none focus:ring-2 focus:ring-[#49056B]"
+              className="w-full pl-9 pr-4 py-2 bg-[#F8F7F4] border border-black/10 rounded-[10px] text-xs text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#49056B] focus:border-transparent transition-all"
             />
-            <Search className="w-4 h-4 text-[#888] absolute left-3 top-3" />
+            <Search className="w-4 h-4 text-zinc-400 absolute left-3 top-2.5" />
           </div>
 
           <div className="flex items-center gap-2 overflow-x-auto pb-1 md:pb-0">
@@ -275,7 +269,8 @@ export default function AdminEnquiriesPage() {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-3 py-2.5 bg-[#F8F7F4] border border-black/15 rounded-xl text-xs font-semibold text-[#202024] focus:outline-none focus:ring-2 focus:ring-[#49056B]"
+              aria-label="Filter by status"
+              className="px-3 py-2 bg-[#F8F7F4] border border-black/10 rounded-[10px] text-xs font-medium text-zinc-700 focus:outline-none focus:ring-2 focus:ring-[#49056B]"
             >
               <option value="all">All Statuses</option>
               <option value="new">New Leads</option>
@@ -289,7 +284,8 @@ export default function AdminEnquiriesPage() {
             <select
               value={serviceFilter}
               onChange={(e) => setServiceFilter(e.target.value)}
-              className="px-3 py-2.5 bg-[#F8F7F4] border border-black/15 rounded-xl text-xs font-semibold text-[#202024] focus:outline-none focus:ring-2 focus:ring-[#49056B]"
+              aria-label="Filter by service"
+              className="px-3 py-2 bg-[#F8F7F4] border border-black/10 rounded-[10px] text-xs font-medium text-zinc-700 focus:outline-none focus:ring-2 focus:ring-[#49056B]"
             >
               <option value="all">All Services</option>
               <option value="cleaning">Cleaning</option>
@@ -301,7 +297,8 @@ export default function AdminEnquiriesPage() {
             <button
               onClick={loadData}
               title="Refresh"
-              className="p-2.5 rounded-xl bg-[#F8F7F4] border border-black/15 text-[#575757] hover:text-[#49056B] transition-colors"
+              aria-label="Refresh data"
+              className="p-2 rounded-[10px] bg-[#F8F7F4] border border-black/10 text-zinc-500 hover:text-[#49056B] transition-colors"
             >
               <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-[#49056B]' : ''}`} />
             </button>
@@ -309,33 +306,33 @@ export default function AdminEnquiriesPage() {
         </div>
       </div>
 
-      {/* Main Content: Table + Detail Modal */}
+      {/* Main Content Area */}
       {activeTab === 'enquiries' ? (
-        <div className="bg-white rounded-3xl border border-black/[0.08] shadow-xs overflow-hidden">
+        <div className="bg-white rounded-xl border border-black/[0.06] shadow-xs overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
-                <tr className="bg-[#F8F7F4]/80 border-b border-black/[0.06] text-[#888] font-bold uppercase tracking-wider text-[10px]">
-                  <th className="py-3.5 px-5">Reference</th>
-                  <th className="py-3.5 px-5">Customer</th>
-                  <th className="py-3.5 px-5">Services</th>
-                  <th className="py-3.5 px-5">Location</th>
-                  <th className="py-3.5 px-5">Preferred Timing</th>
-                  <th className="py-3.5 px-5">Status</th>
-                  <th className="py-3.5 px-5 text-right">Details</th>
+                <tr className="bg-zinc-50/60 border-b border-black/[0.06] text-zinc-400 font-semibold uppercase tracking-wider text-[10px]">
+                  <th className="py-3 px-6">Reference</th>
+                  <th className="py-3 px-6">Customer</th>
+                  <th className="py-3 px-6">Services</th>
+                  <th className="py-3 px-6">Location</th>
+                  <th className="py-3 px-6">Preferred Timing</th>
+                  <th className="py-3 px-6">Status</th>
+                  <th className="py-3 px-6 text-right">Details</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-black/[0.04]">
                 {loading && enquiries.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="py-12 text-center text-[#888]">
-                      Loading records from Neon PostgreSQL...
+                    <td colSpan={7} className="py-12 text-center text-zinc-400">
+                      Loading records from database...
                     </td>
                   </tr>
                 ) : filteredEnquiries.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="py-12 text-center text-[#888]">
-                      No customer enquiries matched your search filters.
+                    <td colSpan={7} className="py-12 text-center text-zinc-400">
+                      No customer enquiries matched your search criteria.
                     </td>
                   </tr>
                 ) : (
@@ -346,48 +343,50 @@ export default function AdminEnquiriesPage() {
                         key={enq.id}
                         onClick={() => setSelectedEnquiry(enq)}
                         className={`cursor-pointer transition-colors ${
-                          isSelected ? 'bg-[#49056B]/[0.05]' : 'hover:bg-[#F8F7F4]/60'
+                          isSelected ? 'bg-[#49056B]/[0.04]' : 'hover:bg-zinc-50/60'
                         }`}
                       >
-                        <td className="py-3.5 px-5 font-mono text-[11px] text-[#575757]">
-                          <div className="font-bold text-[#202024]">{enq.id}</div>
-                          <div>{new Date(enq.createdAt).toLocaleDateString()}</div>
+                        <td className="py-3.5 px-6 font-mono text-[11px] text-zinc-500">
+                          <div className="font-semibold text-zinc-900">{enq.id}</div>
+                          <div className="text-zinc-400 text-[10px]">
+                            {new Date(enq.createdAt).toLocaleDateString()}
+                          </div>
                         </td>
-                        <td className="py-3.5 px-5">
-                          <div className="font-bold text-[#202024]">{enq.customer.name}</div>
-                          <div className="text-[#888] text-[11px]">{enq.customer.email}</div>
+                        <td className="py-3.5 px-6">
+                          <div className="font-medium text-zinc-900">{enq.customer.name}</div>
+                          <div className="text-zinc-400 text-[11px]">{enq.customer.email}</div>
                           {enq.customer.phone && (
-                            <div className="text-[#888] text-[11px]">{enq.customer.phone}</div>
+                            <div className="text-zinc-400 text-[11px]">{enq.customer.phone}</div>
                           )}
                         </td>
-                        <td className="py-3.5 px-5">
+                        <td className="py-3.5 px-6">
                           <div className="flex flex-wrap gap-1">
                             {enq.services.map((s) => (
                               <span
                                 key={s}
-                                className="px-2 py-0.5 rounded bg-black/[0.04] text-[10px] font-semibold text-[#575757] capitalize"
+                                className="px-2 py-0.5 rounded-md bg-zinc-100 text-[11px] font-medium text-zinc-600 capitalize"
                               >
                                 {s}
                               </span>
                             ))}
                           </div>
                         </td>
-                        <td className="py-3.5 px-5 text-[#575757]">
-                          {enq.serviceLocation || 'Ottawa, ON'}
+                        <td className="py-3.5 px-6 text-zinc-600">
+                          {enq.serviceLocation || 'Ottawa Area'}
                         </td>
-                        <td className="py-3.5 px-5 text-[#575757]">
+                        <td className="py-3.5 px-6 text-zinc-600">
                           {enq.preferredTiming || 'Flexible'}
                         </td>
-                        <td className="py-3.5 px-5">
-                          {statusBadge(enq.status)}
+                        <td className="py-3.5 px-6">
+                          {renderStatus(enq.status)}
                         </td>
-                        <td className="py-3.5 px-5 text-right">
+                        <td className="py-3.5 px-6 text-right">
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
                               setSelectedEnquiry(enq);
                             }}
-                            className="px-3 py-1 rounded-lg bg-white border border-black/10 text-xs font-bold text-[#49056B] hover:bg-[#49056B] hover:text-white transition-all shadow-2xs"
+                            className="px-3 py-1 rounded-[8px] bg-zinc-100 hover:bg-[#49056B] hover:text-white text-xs font-medium text-zinc-700 transition-colors"
                           >
                             Inspect
                           </button>
@@ -401,60 +400,63 @@ export default function AdminEnquiriesPage() {
           </div>
         </div>
       ) : (
-        /* AI Escalations Tab */
-        <div className="bg-white rounded-3xl border border-black/[0.08] shadow-xs overflow-hidden">
+        /* AI Assistant Escalations Tab */
+        <div className="bg-white rounded-xl border border-black/[0.06] shadow-xs overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
-                <tr className="bg-[#F8F7F4]/80 border-b border-black/[0.06] text-[#888] font-bold uppercase tracking-wider text-[10px]">
-                  <th className="py-3.5 px-5">ID & Date</th>
-                  <th className="py-3.5 px-5">Customer Contact</th>
-                  <th className="py-3.5 px-5">Escalation Reason</th>
-                  <th className="py-3.5 px-5">Services</th>
-                  <th className="py-3.5 px-5">Status</th>
+                <tr className="bg-zinc-50/60 border-b border-black/[0.06] text-zinc-400 font-semibold uppercase tracking-wider text-[10px]">
+                  <th className="py-3 px-6">Reference</th>
+                  <th className="py-3 px-6">Customer Contact</th>
+                  <th className="py-3 px-6">Escalation Reason</th>
+                  <th className="py-3 px-6">Services</th>
+                  <th className="py-3 px-6">Status</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-black/[0.04]">
                 {handoffs.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="py-12 text-center text-[#888]">
-                      No AI human handoff escalations on record.
+                    <td colSpan={5} className="py-12 text-center text-zinc-400">
+                      No customer chat escalations on record.
                     </td>
                   </tr>
                 ) : (
                   handoffs.map((h) => (
-                    <tr key={h.id} className="hover:bg-[#F8F7F4]/60 transition-colors">
-                      <td className="py-3.5 px-5 font-mono text-[11px] text-[#575757]">
-                        <div className="font-bold text-[#202024]">{h.id}</div>
-                        <div>{new Date(h.createdAt).toLocaleDateString()}</div>
+                    <tr key={h.id} className="hover:bg-zinc-50/60 transition-colors">
+                      <td className="py-3.5 px-6 font-mono text-[11px] text-zinc-500">
+                        <div className="font-semibold text-zinc-900">{h.id}</div>
+                        <div className="text-zinc-400 text-[10px]">
+                          {new Date(h.createdAt).toLocaleDateString()}
+                        </div>
                       </td>
-                      <td className="py-3.5 px-5">
-                        <div className="font-bold text-[#202024]">
+                      <td className="py-3.5 px-6">
+                        <div className="font-medium text-zinc-900">
                           {h.customerName || 'Laurrel Visitor'}
                         </div>
-                        <div className="text-[#888] text-[11px]">{h.customerEmail}</div>
+                        <div className="text-zinc-400 text-[11px]">{h.customerEmail}</div>
                         {h.customerPhone && (
-                          <div className="text-[#888] text-[11px]">{h.customerPhone}</div>
+                          <div className="text-zinc-400 text-[11px]">{h.customerPhone}</div>
                         )}
                       </td>
-                      <td className="py-3.5 px-5 max-w-xs text-[#575757]">
+                      <td className="py-3.5 px-6 max-w-sm text-zinc-600">
                         {h.reason}
                       </td>
-                      <td className="py-3.5 px-5">
+                      <td className="py-3.5 px-6">
                         <div className="flex flex-wrap gap-1">
                           {(h.services || ['general']).map((s) => (
                             <span
                               key={s}
-                              className="px-2 py-0.5 rounded bg-black/[0.04] text-[10px] font-semibold text-[#575757] capitalize"
+                              className="px-2 py-0.5 rounded-md bg-zinc-100 text-[11px] font-medium text-zinc-600 capitalize"
                             >
                               {s}
                             </span>
                           ))}
                         </div>
                       </td>
-                      <td className="py-3.5 px-5">
-                        <span className="px-2 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider bg-orange-100 text-[#FE6000]">
-                          {h.status}
+                      <td className="py-3.5 px-6">
+                        <span className="inline-flex items-center gap-1.5 text-xs font-medium text-zinc-700 capitalize">
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#FE6000]" />
+                          <span>{h.status}</span>
                         </span>
                       </td>
                     </tr>
@@ -466,109 +468,114 @@ export default function AdminEnquiriesPage() {
         </div>
       )}
 
-      {/* Detail Slide-Over Modal */}
+      {/* Refined CRM Slide-Over Drawer - No heavy boxed fragments, clean typographic structure */}
       {selectedEnquiry && (
-        <div className="fixed inset-0 z-50 flex items-center justify-end bg-black/40 backdrop-blur-xs">
-          <div className="w-full max-w-xl h-full bg-white shadow-2xl flex flex-col border-l border-black/10 overflow-hidden">
-            {/* Modal Header */}
-            <div className="p-5 border-b border-black/[0.08] flex items-center justify-between bg-[#F8F7F4]/80">
+        <div className="fixed inset-0 z-50 flex items-center justify-end bg-black/30 backdrop-blur-xs">
+          <div className="w-full max-w-lg h-full bg-white shadow-2xl flex flex-col border-l border-black/[0.08] overflow-hidden">
+            {/* Drawer Header */}
+            <div className="px-6 py-4.5 border-b border-black/[0.06] flex items-center justify-between bg-zinc-50/60">
               <div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-mono font-bold text-[#49056B]">
+                <div className="flex items-center gap-2.5">
+                  <span className="text-xs font-mono font-semibold text-zinc-900">
                     {selectedEnquiry.id}
                   </span>
-                  {statusBadge(selectedEnquiry.status)}
+                  {renderStatus(selectedEnquiry.status)}
                 </div>
-                <p className="text-[11px] text-[#888] mt-0.5">
-                  Received {new Date(selectedEnquiry.createdAt).toLocaleString()} via{' '}
-                  <span className="font-semibold">{selectedEnquiry.source}</span>
+                <p className="text-[11px] text-zinc-400 mt-0.5">
+                  Received {new Date(selectedEnquiry.createdAt).toLocaleDateString()} via{' '}
+                  <span className="font-medium text-zinc-600 capitalize">{selectedEnquiry.source}</span>
                 </p>
               </div>
               <button
                 onClick={() => setSelectedEnquiry(null)}
-                className="p-2 rounded-xl text-[#888] hover:bg-black/5 hover:text-[#202024] transition-colors"
+                className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-900 hover:bg-black/5 transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            {/* Modal Body */}
-            <div className="flex-1 overflow-y-auto p-6 space-y-6">
-              {/* Customer Contact */}
-              <div className="bg-[#F8F7F4] rounded-2xl p-4 border border-black/[0.06] space-y-2">
-                <p className="text-xs font-bold uppercase tracking-wider text-[#888]">
-                  Customer Contact Details
-                </p>
-                <p className="text-base font-bold text-[#202024]">{selectedEnquiry.customer.name}</p>
-                <div className="flex flex-col gap-1 text-xs text-[#575757]">
+            {/* Drawer Content Body */}
+            <div className="flex-1 overflow-y-auto px-6 py-5 space-y-6">
+              {/* Customer Profile Section - Clean, open, editorial */}
+              <div className="space-y-3 pb-5 border-b border-black/[0.06]">
+                <div className="text-[10px] font-semibold uppercase tracking-widest text-zinc-400">
+                  Customer Contact
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-zinc-900 tracking-tight">
+                    {selectedEnquiry.customer.name}
+                  </h3>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs pt-1">
                   <a
                     href={`mailto:${selectedEnquiry.customer.email}`}
-                    className="flex items-center gap-2 hover:text-[#49056B] font-medium"
+                    className="inline-flex items-center gap-2 text-zinc-700 hover:text-[#49056B] transition-colors"
                   >
-                    <Mail className="w-3.5 h-3.5 text-[#FE6000]" />
-                    <span>{selectedEnquiry.customer.email}</span>
+                    <Mail className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
+                    <span className="truncate">{selectedEnquiry.customer.email}</span>
                   </a>
+
                   {selectedEnquiry.customer.phone && (
                     <a
                       href={`tel:${selectedEnquiry.customer.phone}`}
-                      className="flex items-center gap-2 hover:text-[#49056B] font-medium"
+                      className="inline-flex items-center gap-2 text-zinc-700 hover:text-[#49056B] transition-colors"
                     >
-                      <Phone className="w-3.5 h-3.5 text-[#49056B]" />
+                      <Phone className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
                       <span>{selectedEnquiry.customer.phone}</span>
                     </a>
                   )}
+
                   {selectedEnquiry.serviceLocation && (
-                    <div className="flex items-center gap-2">
-                      <MapPin className="w-3.5 h-3.5 text-[#888]" />
-                      <span>Location: {selectedEnquiry.serviceLocation}</span>
+                    <div className="inline-flex items-center gap-2 text-zinc-600">
+                      <MapPin className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
+                      <span>{selectedEnquiry.serviceLocation}</span>
                     </div>
                   )}
+
                   {selectedEnquiry.preferredTiming && (
-                    <div className="flex items-center gap-2">
-                      <Calendar className="w-3.5 h-3.5 text-[#888]" />
-                      <span>Preferred Date/Timing: {selectedEnquiry.preferredTiming}</span>
+                    <div className="inline-flex items-center gap-2 text-zinc-600">
+                      <Calendar className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
+                      <span>{selectedEnquiry.preferredTiming}</span>
                     </div>
                   )}
                 </div>
               </div>
 
-              {/* Service Details & Notes */}
-              <div>
-                <p className="text-xs font-bold uppercase tracking-wider text-[#888] mb-2">
-                  Service Request Details
-                </p>
-                <div className="p-4 rounded-2xl bg-white border border-black/10 text-xs text-[#202024] leading-relaxed">
+              {/* Service Request Text */}
+              <div className="space-y-2 pb-5 border-b border-black/[0.06]">
+                <div className="text-[10px] font-semibold uppercase tracking-widest text-zinc-400">
+                  Inquiry Details
+                </div>
+                <div className="border-l-2 border-[#49056B]/40 pl-3.5 py-0.5 text-xs text-zinc-700 leading-relaxed">
                   {selectedEnquiry.details}
                 </div>
+
+                {/* Structured parameters if present */}
+                {selectedEnquiry.serviceDetails && Object.keys(selectedEnquiry.serviceDetails).length > 0 && (
+                  <div className="pt-2">
+                    <pre className="p-3 rounded-lg bg-zinc-50 border border-black/[0.06] text-[11px] font-mono text-zinc-600 overflow-x-auto">
+                      {JSON.stringify(selectedEnquiry.serviceDetails, null, 2)}
+                    </pre>
+                  </div>
+                )}
               </div>
 
-              {/* Structured Service Data (if any) */}
-              {selectedEnquiry.serviceDetails && Object.keys(selectedEnquiry.serviceDetails).length > 0 && (
-                <div>
-                  <p className="text-xs font-bold uppercase tracking-wider text-[#888] mb-2">
-                    Property / Quote Parameters
-                  </p>
-                  <pre className="p-3 rounded-2xl bg-[#F8F7F4] border border-black/[0.06] text-[11px] font-mono text-[#575757] overflow-x-auto">
-                    {JSON.stringify(selectedEnquiry.serviceDetails, null, 2)}
-                  </pre>
+              {/* Status Pipeline Transition Control - Segmented bar */}
+              <div className="space-y-2 pb-5 border-b border-black/[0.06]">
+                <div className="text-[10px] font-semibold uppercase tracking-widest text-zinc-400">
+                  Lead Status Pipeline
                 </div>
-              )}
-
-              {/* Status Transition Control */}
-              <div className="bg-[#F8F7F4] rounded-2xl p-4 border border-black/[0.06] space-y-3">
-                <p className="text-xs font-bold uppercase tracking-wider text-[#888]">
-                  Update Lead Pipeline Status
-                </p>
-                <div className="grid grid-cols-2 sm:grid-cols-5 gap-1.5">
+                <div className="grid grid-cols-5 p-1 bg-zinc-100 rounded-[10px] gap-1">
                   {(['new', 'reviewed', 'quoted', 'scheduled', 'closed'] as const).map((s) => (
                     <button
                       key={s}
                       disabled={isUpdatingStatus}
                       onClick={() => handleStatusUpdate(s)}
-                      className={`py-2 px-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all ${
+                      className={`py-1.5 rounded-md text-xs font-semibold capitalize transition-all ${
                         selectedEnquiry.status === s
-                          ? 'bg-[#49056B] text-white shadow-xs'
-                          : 'bg-white border border-black/10 text-[#575757] hover:border-[#49056B]'
+                          ? 'bg-[#49056B] text-white shadow-2xs'
+                          : 'text-zinc-600 hover:text-zinc-900'
                       }`}
                     >
                       {s}
@@ -576,51 +583,57 @@ export default function AdminEnquiriesPage() {
                   ))}
                 </div>
                 {statusError && (
-                  <p className="text-xs text-red-600 font-semibold">{statusError}</p>
+                  <p className="text-xs text-red-600 font-medium">{statusError}</p>
                 )}
               </div>
 
-              {/* Internal Notes History */}
+              {/* Internal Operations Notes - Premium CRM Timeline */}
               <div className="space-y-3">
-                <p className="text-xs font-bold uppercase tracking-wider text-[#888]">
-                  Internal Operations Notes ({selectedEnquiry.internalNotes?.length || 0})
-                </p>
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-semibold uppercase tracking-widest text-zinc-400">
+                    Internal Notes History
+                  </span>
+                  <span className="text-xs text-zinc-400 font-mono">
+                    {selectedEnquiry.internalNotes?.length || 0} entry(ies)
+                  </span>
+                </div>
 
-                <div className="space-y-2">
+                {/* Timeline Entries */}
+                <div className="space-y-3 relative pl-4 before:absolute before:left-1.5 before:top-2 before:bottom-2 before:w-[1px] before:bg-zinc-200">
                   {selectedEnquiry.internalNotes && selectedEnquiry.internalNotes.length > 0 ? (
                     selectedEnquiry.internalNotes.map((note) => (
-                      <div
-                        key={note.id}
-                        className="p-3 rounded-xl bg-white border border-black/10 text-xs space-y-1"
-                      >
-                        <div className="flex items-center justify-between text-[10px] text-[#888]">
-                          <span className="font-bold text-[#49056B]">{note.author}</span>
-                          <span>{new Date(note.createdAt).toLocaleString()}</span>
+                      <div key={note.id} className="relative space-y-1">
+                        <div className="absolute -left-4 top-1.5 w-2 h-2 rounded-full bg-zinc-300 ring-4 ring-white" />
+                        <div className="flex items-center justify-between text-[11px]">
+                          <span className="font-semibold text-zinc-800">{note.author}</span>
+                          <span className="text-zinc-400 text-[10px]">
+                            {new Date(note.createdAt).toLocaleString()}
+                          </span>
                         </div>
-                        <p className="text-[#202024]">{note.note}</p>
+                        <p className="text-xs text-zinc-600 leading-relaxed">{note.note}</p>
                       </div>
                     ))
                   ) : (
-                    <p className="text-xs text-[#888] italic">No internal notes recorded yet.</p>
+                    <p className="text-xs text-zinc-400 italic">No notes recorded yet.</p>
                   )}
                 </div>
 
                 {/* Add Note Form */}
-                <form onSubmit={handleAddNoteOnly} className="space-y-2 pt-2">
+                <form onSubmit={handleAddNoteOnly} className="space-y-2 pt-3">
                   <textarea
                     rows={2}
                     value={newNoteText}
                     onChange={(e) => setNewNoteText(e.target.value)}
-                    placeholder="Add an internal operations note (e.g. called customer, quoted $450, awaiting confirmation)..."
-                    className="w-full p-3 bg-white border border-black/15 rounded-xl text-xs text-[#202024] focus:outline-none focus:ring-2 focus:ring-[#49056B]"
+                    placeholder="Record customer contact, estimated hours, or dispatch instructions..."
+                    className="w-full p-2.5 bg-[#F8F7F4] border border-black/10 rounded-[10px] text-xs text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#49056B] focus:border-transparent transition-all"
                   />
                   <div className="flex justify-end">
                     <button
                       type="submit"
                       disabled={isUpdatingStatus || !newNoteText.trim()}
-                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#49056B] text-white text-xs font-bold hover:bg-[#49056B]/90 disabled:opacity-50 transition-all"
+                      className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-[8px] bg-[#49056B] text-white text-xs font-semibold hover:bg-[#5B0785] disabled:opacity-50 transition-all shadow-2xs"
                     >
-                      <Send className="w-3 h-3 text-[#FE6000]" />
+                      <Send className="w-3 h-3 text-orange-400" />
                       <span>Append Note</span>
                     </button>
                   </div>

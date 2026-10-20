@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Shield, Lock, Mail, Eye, EyeOff, Loader2, ArrowLeft, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, Lock, Mail, Eye, EyeOff, Loader2 } from 'lucide-react';
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -54,49 +54,48 @@ export default function AdminLoginPage() {
   };
 
   return (
-    <main className="min-h-screen flex items-center justify-center bg-[#F8F7F4] px-4 py-12">
-      <div className="w-full max-w-[420px]">
+    <main className="min-h-screen flex items-center justify-center bg-[#F8F7F4] px-4 py-12 font-sans antialiased text-[#202024]">
+      <div className="w-full max-w-[400px]">
         {/* Top return link */}
-        <div className="mb-6">
+        <div className="mb-5">
           <Link
             href="/"
-            className="inline-flex items-center gap-2 text-xs font-semibold text-[#575757] hover:text-[#49056B] transition-colors"
+            className="inline-flex items-center gap-1.5 text-xs font-medium text-zinc-500 hover:text-zinc-900 transition-colors"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
             <span>Return to Public Website</span>
           </Link>
         </div>
 
-        {/* Login Card */}
-        <div className="bg-white rounded-3xl p-8 sm:p-9 border border-black/[0.08] shadow-xl shadow-black/[0.03]">
-          {/* Logo & Portal Heading */}
-          <div className="flex flex-col items-center text-center mb-8">
-            <div className="relative h-11 w-44 mb-4 select-none">
+        {/* Refined Login Card */}
+        <div className="bg-white rounded-2xl p-7 sm:p-9 border border-black/[0.08] shadow-xs">
+          {/* Logo & Heading - Clean, editorial, no decorative pills */}
+          <div className="flex flex-col items-center text-center mb-7">
+            <Link href="/" className="relative h-9 w-40 mb-3 select-none block">
               <Image
                 src="/assets/brand/laurrel-logo-primary.png"
                 alt="Laurrel Services"
                 fill
-                sizes="176px"
+                sizes="160px"
                 className="object-contain"
                 priority
               />
-            </div>
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#49056B]/[0.08] border border-[#49056B]/15 text-[#49056B] text-[11px] font-bold uppercase tracking-wider mb-2">
-              <Shield className="w-3 h-3 text-[#FE6000]" />
-              <span>Administration Portal</span>
-            </div>
-            <p className="text-xs text-[#575757]">
-              Secure sign-in for authorized Laurrel operations personnel.
+            </Link>
+            <h1 className="text-lg font-bold tracking-tight text-zinc-900">
+              Operations Portal
+            </h1>
+            <p className="text-xs text-zinc-500 mt-0.5">
+              Authorized Laurrel administrative access
             </p>
           </div>
 
-          {/* Error Banner */}
+          {/* Accessible Error Alert */}
           {errorMessage && (
             <div
               role="alert"
-              className="mb-6 p-3.5 rounded-xl bg-red-50 border border-red-200/80 text-xs text-red-800 leading-relaxed flex items-start gap-2.5"
+              className="mb-5 p-3 rounded-lg bg-red-50/80 border border-red-200/80 text-xs text-red-800 leading-relaxed flex items-start gap-2"
             >
-              <span className="font-bold shrink-0 text-red-600">Notice:</span>
+              <span className="font-semibold shrink-0 text-red-700">Notice:</span>
               <span>{errorMessage}</span>
             </div>
           )}
@@ -106,7 +105,7 @@ export default function AdminLoginPage() {
             <div>
               <label
                 htmlFor="admin-email"
-                className="block text-xs font-bold uppercase tracking-wider text-[#202024]/80 mb-1.5"
+                className="block text-xs font-semibold text-zinc-700 mb-1.5"
               >
                 Administrator Email
               </label>
@@ -120,9 +119,9 @@ export default function AdminLoginPage() {
                   required
                   autoFocus
                   autoComplete="email"
-                  className="w-full px-4 py-3 bg-[#F8F7F4] border border-black/15 rounded-xl text-sm text-[#202024] placeholder:text-[#888] focus:outline-none focus:ring-2 focus:ring-[#49056B] focus:border-transparent transition-all"
+                  className="w-full px-3.5 py-2.5 bg-[#F8F7F4] border border-black/10 rounded-[10px] text-xs text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#49056B] focus:border-transparent transition-all"
                 />
-                <Mail className="w-4 h-4 text-[#888] absolute right-3.5 top-3.5 pointer-events-none" />
+                <Mail className="w-4 h-4 text-zinc-400 absolute right-3 top-2.5 pointer-events-none" />
               </div>
             </div>
 
@@ -130,14 +129,14 @@ export default function AdminLoginPage() {
               <div className="flex items-center justify-between mb-1.5">
                 <label
                   htmlFor="admin-password"
-                  className="block text-xs font-bold uppercase tracking-wider text-[#202024]/80"
+                  className="block text-xs font-semibold text-zinc-700"
                 >
                   Password
                 </label>
                 <button
                   type="button"
                   onClick={() => setShowRecoveryInfo(!showRecoveryInfo)}
-                  className="text-xs text-[#49056B] hover:text-[#FE6000] font-semibold transition-colors"
+                  className="text-xs text-[#49056B] hover:text-[#5B0785] font-medium transition-colors"
                 >
                   Need help?
                 </button>
@@ -151,25 +150,25 @@ export default function AdminLoginPage() {
                   placeholder="••••••••••••"
                   required
                   autoComplete="current-password"
-                  className="w-full px-4 py-3 pr-11 bg-[#F8F7F4] border border-black/15 rounded-xl text-sm text-[#202024] placeholder:text-[#888] focus:outline-none focus:ring-2 focus:ring-[#49056B] focus:border-transparent transition-all"
+                  className="w-full px-3.5 py-2.5 pr-10 bg-[#F8F7F4] border border-black/10 rounded-[10px] text-xs text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#49056B] focus:border-transparent transition-all"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   aria-label={showPassword ? 'Hide password' : 'Show password'}
-                  className="absolute right-3 top-3 p-1 text-[#888] hover:text-[#202024] transition-colors focus:outline-none"
+                  className="absolute right-2.5 top-2.5 p-0.5 text-zinc-400 hover:text-zinc-800 transition-colors focus:outline-none"
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
             </div>
 
-            {/* Assistance Box */}
+            {/* Assistance Information Box */}
             {showRecoveryInfo && (
-              <div className="p-3 bg-[#F8F7F4] border border-black/10 rounded-xl text-xs text-[#575757] leading-relaxed">
-                <p className="font-semibold text-[#202024] mb-1">Access Assistance</p>
+              <div className="p-3 bg-zinc-50 border border-black/[0.06] rounded-lg text-xs text-zinc-600 leading-relaxed">
+                <p className="font-semibold text-zinc-800 mb-0.5">Account Credentials</p>
                 <p>
-                  To reset credentials or provision a new team member account, contact the system owner or dispatch lead directly. Accounts are managed centrally with strict role-based access.
+                  To rotate your password or provision new team credentials, use the secure server CLI tool (<code className="font-mono text-[11px] text-zinc-800">npm run admin:reset-password</code>) or contact dispatch leadership.
                 </p>
               </div>
             )}
@@ -178,7 +177,7 @@ export default function AdminLoginPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full mt-2 py-3.5 px-4 rounded-xl bg-[#49056B] text-white text-sm font-bold shadow-md shadow-[#49056B]/20 hover:bg-[#49056B]/90 focus:outline-none focus:ring-4 focus:ring-[#49056B]/30 disabled:opacity-60 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
+              className="w-full mt-2 py-2.5 px-4 rounded-[10px] bg-[#49056B] text-white text-xs font-semibold shadow-xs hover:bg-[#5B0785] focus:outline-none focus:ring-2 focus:ring-[#49056B] focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
             >
               {isLoading ? (
                 <>
@@ -187,17 +186,17 @@ export default function AdminLoginPage() {
                 </>
               ) : (
                 <>
-                  <Lock className="w-4 h-4 text-[#FE6000]" />
-                  <span>Sign In to Dashboard</span>
+                  <Lock className="w-3.5 h-3.5 text-orange-400" />
+                  <span>Sign In</span>
                 </>
               )}
             </button>
           </form>
 
           {/* Footer note */}
-          <div className="mt-8 pt-6 border-t border-black/[0.06] text-center">
-            <p className="text-[11px] text-[#888] tracking-wide">
-              LAURREL SERVICES • OTTAWA OPERATIONS
+          <div className="mt-7 pt-5 border-t border-black/[0.06] text-center">
+            <p className="text-[10px] text-zinc-400 tracking-wider uppercase font-medium">
+              Laurrel Services • Ottawa Operations
             </p>
           </div>
         </div>
