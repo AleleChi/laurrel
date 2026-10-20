@@ -1,6 +1,7 @@
 import React from 'react';
 import { CmsField, CmsInput, CmsTextarea } from './CmsFormControls';
 import { Plus, Trash2 } from 'lucide-react';
+import { CmsMediaField } from './CmsMediaField';
 
 interface SectionEditorProps<T> {
   data: T;
@@ -157,15 +158,41 @@ export function HeroSectionEditor({ data, onChange, disabled }: SectionEditorPro
         </div>
       </div>
 
-      <div className="bg-white p-6 rounded-xl border border-black/[0.06] shadow-xs space-y-4">
+      <div className="bg-white p-6 rounded-xl border border-black/[0.06] shadow-xs space-y-5">
         <h3 className="text-sm font-bold text-zinc-900 tracking-tight">Hero Media & 3-Video Rotator References</h3>
         <p className="text-xs text-zinc-400">
-          The three-service rotation (Cleaning, Moving, Storage) runs continuously on the live website. Edit asset paths and accessible descriptions.
+          The three-service rotation (Cleaning, Moving, Storage) runs continuously on the live website. Manage video streams, poster frames, and fallback imagery.
         </p>
 
-        <div className="space-y-4 pt-2">
+        {/* Fallback Photograph */}
+        <div className="pt-2">
+          <CmsMediaField
+            label="Hero Fallback / Social Share Photograph"
+            description="Displayed when video playback is not active or during reduced-motion preferences."
+            value={media.imageSrc || ''}
+            altText={media.altText || ''}
+            assetId={media.assetId || ''}
+            focalPoint={media.objectPosition || 'center 60%'}
+            allowedType="image"
+            disabled={disabled}
+            onChange={(patch) =>
+              update({
+                media: {
+                  ...media,
+                  imageSrc: patch.src !== undefined ? patch.src : media.imageSrc,
+                  altText: patch.altText !== undefined ? patch.altText : media.altText,
+                  assetId: patch.assetId !== undefined ? patch.assetId : media.assetId,
+                  objectPosition: patch.focalPoint !== undefined ? patch.focalPoint : media.objectPosition,
+                },
+              })
+            }
+          />
+        </div>
+
+        <div className="space-y-4 pt-3 border-t border-black/[0.04]">
+          <h4 className="text-xs font-bold text-zinc-800 tracking-tight">Rotating Service Videos (Dual-Slot Architecture)</h4>
           {videos.map((vid: any, idx: number) => (
-            <div key={vid.id || idx} className="p-4 bg-zinc-50/70 rounded-xl border border-black/[0.04] space-y-3">
+            <div key={vid.id || idx} className="p-4 bg-zinc-50/70 rounded-xl border border-black/[0.04] space-y-4">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-zinc-900 tracking-tight">
                   Video {idx + 1}: {vid.service} Service
@@ -173,31 +200,45 @@ export function HeroSectionEditor({ data, onChange, disabled }: SectionEditorPro
                 <span className="text-[10px] text-zinc-400 font-mono">order: {vid.order}</span>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <CmsField label="Video File Path (.mp4)">
-                  <CmsInput
-                    disabled={disabled}
-                    value={vid.src || ''}
-                    onChange={(e) => updateVideo(idx, { src: e.target.value })}
-                    placeholder="/assets/videos/clean.mp4"
-                  />
-                </CmsField>
-                <CmsField label="Poster Image (.jpg)">
-                  <CmsInput
-                    disabled={disabled}
-                    value={vid.poster || ''}
-                    onChange={(e) => updateVideo(idx, { poster: e.target.value })}
-                    placeholder="/assets/videos/cleaning-poster.jpg"
-                  />
-                </CmsField>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <CmsMediaField
+                  label={`Video Stream (${vid.service})`}
+                  description="MP4 or WebM video file"
+                  value={vid.src || ''}
+                  assetId={vid.assetId || ''}
+                  allowedType="video"
+                  disabled={disabled}
+                  onChange={(patch) =>
+                    updateVideo(idx, {
+                      src: patch.src !== undefined ? patch.src : vid.src,
+                      assetId: patch.assetId !== undefined ? patch.assetId : vid.assetId,
+                    })
+                  }
+                />
+                <CmsMediaField
+                  label={`Poster Frame (${vid.service})`}
+                  description="Instant initial frame"
+                  value={vid.poster || ''}
+                  assetId={vid.posterAssetId || ''}
+                  focalPoint={vid.objectPosition || 'center 45%'}
+                  allowedType="image"
+                  disabled={disabled}
+                  onChange={(patch) =>
+                    updateVideo(idx, {
+                      poster: patch.src !== undefined ? patch.src : vid.poster,
+                      posterAssetId: patch.assetId !== undefined ? patch.assetId : vid.posterAssetId,
+                      objectPosition: patch.focalPoint !== undefined ? patch.focalPoint : vid.objectPosition,
+                    })
+                  }
+                />
               </div>
 
-              <CmsField label="Accessible Description / Alt Text">
+              <CmsField label="Accessible Video Description">
                 <CmsInput
                   disabled={disabled}
                   value={vid.description || ''}
                   onChange={(e) => updateVideo(idx, { description: e.target.value })}
-                  placeholder="Laurrel Services cleaning professional inspecting residential space..."
+                  placeholder="Laurrel Services professional inspecting residential space..."
                 />
               </CmsField>
             </div>
@@ -275,6 +316,28 @@ export function HomeAboutEditor({ data, onChange, disabled }: SectionEditorProps
               placeholder="CORE SERVICES"
             />
           </CmsField>
+        </div>
+
+        <div className="pt-3 border-t border-black/[0.04]">
+          <CmsMediaField
+            label="About Section Featured Photograph"
+            description="Photograph displayed alongside the core services narrative."
+            value={media.imageSrc || ''}
+            altText={media.altText || ''}
+            assetId={media.assetId || ''}
+            allowedType="image"
+            disabled={disabled}
+            onChange={(patch) =>
+              update({
+                media: {
+                  ...media,
+                  imageSrc: patch.src !== undefined ? patch.src : media.imageSrc,
+                  altText: patch.altText !== undefined ? patch.altText : media.altText,
+                  assetId: patch.assetId !== undefined ? patch.assetId : media.assetId,
+                },
+              })
+            }
+          />
         </div>
       </div>
 
@@ -448,6 +511,24 @@ export function OverlappingPlansEditor({ data, onChange, disabled }: SectionEdit
                   onChange={(e) => updateSituation(idx, { description: e.target.value })}
                 />
               </CmsField>
+
+              <div className="pt-2 border-t border-black/[0.04]">
+                <CmsMediaField
+                  label="Scenario Illustrative Photograph"
+                  value={sit.imageSrc || ''}
+                  altText={sit.imageAlt || ''}
+                  assetId={sit.assetId || ''}
+                  allowedType="image"
+                  disabled={disabled}
+                  onChange={(patch) =>
+                    updateSituation(idx, {
+                      imageSrc: patch.src !== undefined ? patch.src : sit.imageSrc,
+                      imageAlt: patch.altText !== undefined ? patch.altText : sit.imageAlt,
+                      assetId: patch.assetId !== undefined ? patch.assetId : sit.assetId,
+                    })
+                  }
+                />
+              </div>
             </div>
           ))}
         </div>

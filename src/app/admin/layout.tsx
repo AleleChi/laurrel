@@ -8,6 +8,7 @@ import {
   LayoutDashboard,
   Inbox,
   FileEdit,
+  Image as ImageIcon,
   Receipt,
   Users,
   Settings,
@@ -124,6 +125,12 @@ export default function AdminLayout({
       href: '/admin/website',
       icon: FileEdit,
       active: pathname.startsWith('/admin/website'),
+    },
+    {
+      label: 'Media Library',
+      href: '/admin/media',
+      icon: ImageIcon,
+      active: pathname.startsWith('/admin/media'),
     },
   ];
 

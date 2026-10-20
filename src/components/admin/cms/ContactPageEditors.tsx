@@ -1,5 +1,6 @@
 import React from 'react';
 import { CmsField, CmsInput, CmsTextarea } from './CmsFormControls';
+import { CmsMediaField } from './CmsMediaField';
 
 interface SectionProps<T> {
   data: T;
@@ -21,21 +22,23 @@ export function ContactBannerEditor({ data, onChange, disabled }: SectionProps<a
           onChange={(e) => update({ title: e.target.value })}
         />
       </CmsField>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <CmsField label="Banner Image Path">
-          <CmsInput
-            disabled={disabled}
-            value={banner.imageSrc || ''}
-            onChange={(e) => update({ imageSrc: e.target.value })}
-          />
-        </CmsField>
-        <CmsField label="Image Alt Text">
-          <CmsInput
-            disabled={disabled}
-            value={banner.altText || ''}
-            onChange={(e) => update({ altText: e.target.value })}
-          />
-        </CmsField>
+      <div className="pt-2">
+        <CmsMediaField
+          label="Banner Photograph"
+          description="High-resolution banner photograph for Contact header."
+          value={banner.imageSrc || ''}
+          altText={banner.altText || ''}
+          assetId={banner.assetId || ''}
+          allowedType="image"
+          disabled={disabled}
+          onChange={(patch) =>
+            update({
+              imageSrc: patch.src !== undefined ? patch.src : banner.imageSrc,
+              altText: patch.altText !== undefined ? patch.altText : banner.altText,
+              assetId: patch.assetId !== undefined ? patch.assetId : banner.assetId,
+            })
+          }
+        />
       </div>
     </div>
   );

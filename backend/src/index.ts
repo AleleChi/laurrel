@@ -6,10 +6,12 @@ import { enquireRouter } from './routes/enquire';
 import { assistantRouter } from './routes/assistant';
 import { adminRouter } from './routes/admin';
 import { cmsRouter } from './routes/cms';
+import { mediaRouter } from './routes/media';
 import { runMigrations } from './database/migrate';
 import { bootstrapOwnerAccount } from './database/adminRepo';
 import { syncHistoricalEnquiries } from './database/syncData';
 import { seedCmsContent } from './database/seedCms';
+import { seedMediaAssets } from './database/seedMedia';
 
 dotenv.config();
 
@@ -38,7 +40,7 @@ app.use(
       }
       return callback(new Error(`CORS policy: origin ${origin} is not allowed.`));
     },
-    methods: ['GET', 'POST', 'PATCH', 'OPTIONS'],
+    methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: [
       'Content-Type',
       'Authorization',
@@ -60,6 +62,7 @@ app.use(enquireRouter);
 app.use(assistantRouter);
 app.use(adminRouter);
 app.use(cmsRouter);
+app.use(mediaRouter);
 
 // Root informational endpoint
 app.get('/', (_req, res) => {
@@ -79,6 +82,7 @@ if (process.env.DATABASE_URL) {
       await bootstrapOwnerAccount();
       await syncHistoricalEnquiries();
       await seedCmsContent();
+      await seedMediaAssets();
     })
     .catch((err) => {
       console.warn('[Startup Migration Warning]:', err.message);

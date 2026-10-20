@@ -41,7 +41,10 @@ coverage/
 # Local data & customer submissions
 data/
 
-# Unreferenced raw video scratch files (keep only active clean.mp4, movinng.mp4, storagge.mp4)
+# Local uploads (for dev storage provider)
+public/uploads/
+!public/uploads/.gitkeep
+
 public/assets/videos/Creating_*
 public/assets/videos/cleaning_laurrel.mp4
 public/assets/videos/moving.mp4

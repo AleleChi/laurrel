@@ -114,12 +114,71 @@ export async function POST(req: NextRequest, { params }: { params: { slug: strin
   const target = `${backendUrl.replace(/\/$/, '')}/api/admin/${path}`;
 
   try {
-    const body = await req.json();
+    const contentType = req.headers.get('content-type') || '';
+    const isMultipart = contentType.includes('multipart/form-data');
+
+    const forwardHeaders: Record<string, string> = {
+      ...(secret ? { 'x-admin-token': secret } : {}),
+      ...(session?.sessionId ? { 'x-admin-session-id': session.sessionId } : {}),
+      ...(session?.user
+        ? {
+            'x-admin-user-id': session.user.id,
+            'x-admin-user-email': session.user.email,
+            'x-admin-user-name': session.user.name,
+            'x-admin-user-role': session.user.role,
+          }
+        : {}),
+    };
+
+    let bodyData: any;
+    if (isMultipart) {
+      const arrayBuffer = await req.arrayBuffer();
+      bodyData = Buffer.from(arrayBuffer);
+      forwardHeaders['Content-Type'] = contentType;
+    } else {
+      const jsonBody = await req.json();
+      bodyData = JSON.stringify(jsonBody);
+      forwardHeaders['Content-Type'] = 'application/json';
+    }
 
     const res = await fetch(target, {
       method: 'POST',
+      headers: forwardHeaders,
+      body: bodyData,
+    });
+
+    const data = await res.json();
+    return NextResponse.json(data, { status: res.status });
+  } catch (err: any) {
+    console.error(`[Admin Gateway Error] Failed POST to backend at ${target}:`, err.message);
+    return NextResponse.json(
+      { error: 'Backend administrative service is unreachable.' },
+      { status: 503 }
+    );
+  }
+}
+
+export async function DELETE(req: NextRequest, { params }: { params: { slug: string[] } }) {
+  const session = getAdminSessionFromRequest(req);
+  const secret = process.env.ADMIN_API_SECRET;
+  const tokenHeader = req.headers.get('x-admin-token');
+  const isDirectSecretCall = secret && tokenHeader === secret;
+
+  if (!session && !isDirectSecretCall) {
+    return NextResponse.json(
+      { error: 'Unauthorized: Valid administrator session required.' },
+      { status: 401 }
+    );
+  }
+
+  const backendUrl = process.env.BACKEND_API_URL || process.env.API_BASE_URL || 'http://localhost:5000';
+  const path = params.slug.join('/');
+  const target = `${backendUrl.replace(/\/$/, '')}/api/admin/${path}`;
+
+  try {
+    const res = await fetch(target, {
+      method: 'DELETE',
       headers: {
-        'Content-Type': 'application/json',
         ...(secret ? { 'x-admin-token': secret } : {}),
         ...(session?.sessionId ? { 'x-admin-session-id': session.sessionId } : {}),
         ...(session?.user
@@ -131,13 +190,12 @@ export async function POST(req: NextRequest, { params }: { params: { slug: strin
             }
           : {}),
       },
-      body: JSON.stringify(body),
     });
 
     const data = await res.json();
     return NextResponse.json(data, { status: res.status });
   } catch (err: any) {
-    console.error(`[Admin Gateway Error] Failed POST to backend at ${target}:`, err.message);
+    console.error(`[Admin Gateway Error] Failed DELETE to backend at ${target}:`, err.message);
     return NextResponse.json(
       { error: 'Backend administrative service is unreachable.' },
       { status: 503 }

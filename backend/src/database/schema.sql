@@ -244,3 +244,39 @@ CREATE TABLE IF NOT EXISTS cms_site_settings (
     last_editor_email VARCHAR(255),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+-- =========================================================
+-- 11. MEDIA LIBRARY DATA MODEL (MODULE 03)
+-- =========================================================
+
+CREATE TABLE IF NOT EXISTS media_assets (
+    id VARCHAR(64) PRIMARY KEY,
+    original_filename VARCHAR(255) NOT NULL,
+    stored_filename VARCHAR(255) NOT NULL,
+    asset_type VARCHAR(32) NOT NULL DEFAULT 'image', -- 'image', 'video', 'document'
+    mime_type VARCHAR(128) NOT NULL,
+    file_size BIGINT NOT NULL,
+    width INT,
+    height INT,
+    duration NUMERIC(8, 2), -- in seconds, for videos
+    storage_provider VARCHAR(32) NOT NULL DEFAULT 'local', -- 'local', 'r2', 'cloudinary'
+    storage_reference TEXT NOT NULL,
+    public_url TEXT NOT NULL,
+    thumbnail_url TEXT,
+    alt_text TEXT NOT NULL DEFAULT '',
+    caption TEXT,
+    copyright TEXT,
+    focal_point VARCHAR(64) NOT NULL DEFAULT 'center', -- 'center', 'top', 'bottom', 'left', 'right' or coordinates
+    folder VARCHAR(64) NOT NULL DEFAULT 'general', -- 'general', 'hero', 'about', 'services', 'videos', 'brand'
+    uploaded_by_id VARCHAR(64) REFERENCES admin_users(id) ON DELETE SET NULL,
+    uploaded_by_email VARCHAR(255),
+    is_archived BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_media_assets_folder ON media_assets(folder);
+CREATE INDEX IF NOT EXISTS idx_media_assets_asset_type ON media_assets(asset_type);
+CREATE INDEX IF NOT EXISTS idx_media_assets_is_archived ON media_assets(is_archived);
+CREATE INDEX IF NOT EXISTS idx_media_assets_created_at ON media_assets(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_media_assets_public_url ON media_assets(public_url);
