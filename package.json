@@ -11,7 +11,8 @@
     "studio:build": "npm --prefix studio run build",
     "studio:preview": "npm --prefix studio run start",
     "seed:sanity": "node scripts/seed-sanity.js",
-    "admin:bootstrap": "npm --prefix backend run admin:bootstrap"
+    "admin:bootstrap": "npm --prefix backend run admin:bootstrap",
+    "admin:reset-password": "npm --prefix backend run admin:reset-password"
   },
   "dependencies": {
     "@google/genai": "^2.30.0",
