@@ -1,16 +1,20 @@
 import type { Metadata } from 'next';
-import { getServicesPageData } from '@/sanity/client';
+import { getPublishedServicesPageData } from '@/lib/cms/content';
 import { ServicesPageClient } from './ServicesPageClient';
 
+export const dynamic = 'force-dynamic';
+
 export async function generateMetadata(): Promise<Metadata> {
-  const { data } = await getServicesPageData();
+  const { data } = await getPublishedServicesPageData();
+  const title = data.meta?.title || 'Cleaning, Moving & Storage Services Ottawa | Laurrel Services';
+  const description = data.meta?.description || 'Explore cleaning, moving and storage services in Ottawa.';
 
   return {
-    title: data.meta.title,
-    description: data.meta.description,
+    title,
+    description,
     openGraph: {
-      title: data.meta.title,
-      description: data.meta.description,
+      title,
+      description,
       locale: 'en_CA',
       type: 'website',
     },
@@ -21,7 +25,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function ServicesPage() {
-  const { data } = await getServicesPageData();
+  const { data } = await getPublishedServicesPageData();
 
   const jsonLd = {
     '@context': 'https://schema.org',

@@ -119,10 +119,15 @@ export default function AdminLayout({
       icon: Inbox,
       active: pathname === '/admin/enquiries',
     },
+    {
+      label: 'Website Content',
+      href: '/admin/website',
+      icon: FileEdit,
+      active: pathname.startsWith('/admin/website'),
+    },
   ];
 
   const plannedModules = [
-    { label: 'Website Content', icon: FileEdit },
     { label: 'Quotes & Billing', icon: Receipt },
     { label: 'Staff & Dispatch', icon: Users },
     { label: 'System Settings', icon: Settings },

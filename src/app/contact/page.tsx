@@ -1,9 +1,11 @@
 import type { Metadata } from 'next';
-import { getContactPageData } from '@/sanity/client';
+import { getPublishedContactPageData } from '@/lib/cms/content';
 import { ContactPageClient } from './ContactPageClient';
 
+export const dynamic = 'force-dynamic';
+
 export async function generateMetadata(): Promise<Metadata> {
-  const { data: content } = await getContactPageData();
+  const { data: content } = await getPublishedContactPageData();
 
   return {
     title: content.meta.title,
@@ -29,7 +31,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function ContactPage() {
-  const { data: content } = await getContactPageData();
+  const { data: content } = await getPublishedContactPageData();
 
   // Structured Data (JSON-LD) for BreadcrumbList
   const jsonLd = {

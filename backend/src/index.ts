@@ -5,9 +5,11 @@ import { healthRouter } from './routes/health';
 import { enquireRouter } from './routes/enquire';
 import { assistantRouter } from './routes/assistant';
 import { adminRouter } from './routes/admin';
+import { cmsRouter } from './routes/cms';
 import { runMigrations } from './database/migrate';
 import { bootstrapOwnerAccount } from './database/adminRepo';
 import { syncHistoricalEnquiries } from './database/syncData';
+import { seedCmsContent } from './database/seedCms';
 
 dotenv.config();
 
@@ -50,13 +52,14 @@ app.use(
   })
 );
 
-app.use(express.json({ limit: '1mb' }));
+app.use(express.json({ limit: '10mb' }));
 
 // Mount routes
 app.use(healthRouter);
 app.use(enquireRouter);
 app.use(assistantRouter);
 app.use(adminRouter);
+app.use(cmsRouter);
 
 // Root informational endpoint
 app.get('/', (_req, res) => {
@@ -68,13 +71,14 @@ app.get('/', (_req, res) => {
   });
 });
 
-// Run database migrations, historical sync, and bootstrap owner on startup if DATABASE_URL is configured
+// Run database migrations, historical sync, bootstrap owner, and seed CMS on startup if DATABASE_URL is configured
 if (process.env.DATABASE_URL) {
   runMigrations()
     .then(async (res) => {
       console.log('[Startup Migration]:', res.message);
       await bootstrapOwnerAccount();
       await syncHistoricalEnquiries();
+      await seedCmsContent();
     })
     .catch((err) => {
       console.warn('[Startup Migration Warning]:', err.message);

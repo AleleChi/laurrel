@@ -1,9 +1,11 @@
 import type { Metadata } from 'next';
-import { getAboutPageData } from '@/sanity/client';
+import { getPublishedAboutPageData } from '@/lib/cms/content';
 import { AboutPageClient } from './AboutPageClient';
 
+export const dynamic = 'force-dynamic';
+
 export async function generateMetadata(): Promise<Metadata> {
-  const { data } = await getAboutPageData();
+  const { data } = await getPublishedAboutPageData();
 
   return {
     title: data.meta.title,
@@ -29,7 +31,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function AboutPage() {
-  const { data } = await getAboutPageData();
+  const { data } = await getPublishedAboutPageData();
 
   // Structured Data (JSON-LD) for BreadcrumbList
   const jsonLd = {

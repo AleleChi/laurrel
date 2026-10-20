@@ -177,3 +177,70 @@ CREATE TABLE IF NOT EXISTS admin_auth_events (
 
 CREATE INDEX IF NOT EXISTS idx_admin_auth_events_email ON admin_auth_events(email);
 CREATE INDEX IF NOT EXISTS idx_admin_auth_events_created_at ON admin_auth_events(created_at DESC);
+
+-- =========================================================
+-- 10. CMS DATA MODEL (MODULE 02)
+-- =========================================================
+
+-- Pages table
+CREATE TABLE IF NOT EXISTS cms_pages (
+    id VARCHAR(64) PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    slug VARCHAR(255) UNIQUE NOT NULL,
+    template VARCHAR(64) NOT NULL DEFAULT 'standard',
+    status VARCHAR(32) NOT NULL DEFAULT 'published', -- 'draft', 'published', 'scheduled'
+    seo JSONB NOT NULL DEFAULT '{}',
+    current_revision_id VARCHAR(64),
+    last_editor_id VARCHAR(64) REFERENCES admin_users(id) ON DELETE SET NULL,
+    last_editor_email VARCHAR(255),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    published_at TIMESTAMPTZ
+);
+
+CREATE INDEX IF NOT EXISTS idx_cms_pages_slug ON cms_pages(slug);
+CREATE INDEX IF NOT EXISTS idx_cms_pages_status ON cms_pages(status);
+
+-- Page Sections table
+CREATE TABLE IF NOT EXISTS cms_sections (
+    id VARCHAR(64) PRIMARY KEY,
+    page_id VARCHAR(64) NOT NULL REFERENCES cms_pages(id) ON DELETE CASCADE,
+    section_key VARCHAR(64) NOT NULL,
+    section_type VARCHAR(64) NOT NULL,
+    sort_order INT NOT NULL DEFAULT 0,
+    content JSONB NOT NULL,
+    draft_content JSONB,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE(page_id, section_key)
+);
+
+CREATE INDEX IF NOT EXISTS idx_cms_sections_page_id ON cms_sections(page_id);
+CREATE INDEX IF NOT EXISTS idx_cms_sections_sort_order ON cms_sections(page_id, sort_order);
+
+-- Content Revisions table (Version history, transactional publishing, rollback)
+CREATE TABLE IF NOT EXISTS cms_revisions (
+    id VARCHAR(64) PRIMARY KEY,
+    page_id VARCHAR(64) NOT NULL REFERENCES cms_pages(id) ON DELETE CASCADE,
+    revision_number INT NOT NULL,
+    data JSONB NOT NULL,
+    is_published BOOLEAN NOT NULL DEFAULT FALSE,
+    author_id VARCHAR(64) REFERENCES admin_users(id) ON DELETE SET NULL,
+    author_email VARCHAR(255),
+    author_name VARCHAR(255),
+    notes TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE(page_id, revision_number)
+);
+
+CREATE INDEX IF NOT EXISTS idx_cms_revisions_page_id ON cms_revisions(page_id);
+CREATE INDEX IF NOT EXISTS idx_cms_revisions_created_at ON cms_revisions(created_at DESC);
+
+-- Site Settings table
+CREATE TABLE IF NOT EXISTS cms_site_settings (
+    key VARCHAR(64) PRIMARY KEY,
+    value JSONB NOT NULL,
+    last_editor_id VARCHAR(64) REFERENCES admin_users(id) ON DELETE SET NULL,
+    last_editor_email VARCHAR(255),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
