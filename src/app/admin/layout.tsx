@@ -81,10 +81,24 @@ export default function AdminLayout({
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#F8F7F4]">
+      <div
+        role="status"
+        aria-live="polite"
+        aria-busy="true"
+        className="min-h-screen flex items-center justify-center bg-[#F8F7F4]"
+      >
         <div className="flex flex-col items-center gap-3">
-          <div className="w-7 h-7 border-2 border-[#49056B] border-t-transparent rounded-full animate-spin" />
-          <p className="text-xs font-semibold text-zinc-500 tracking-wider uppercase">
+          <div className="relative h-9 w-40 motion-safe:animate-pulse">
+            <Image
+              src="/assets/brand/laurrel-logo-primary.png"
+              alt="Laurrel Services"
+              fill
+              sizes="160px"
+              className="object-contain"
+              priority
+            />
+          </div>
+          <p className="text-[11px] font-semibold tracking-wider uppercase text-zinc-400">
             Loading Operations Portal...
           </p>
         </div>

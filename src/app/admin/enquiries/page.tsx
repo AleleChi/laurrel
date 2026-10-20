@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { useSearchParams } from 'next/navigation';
 import {
   Search,
@@ -169,44 +170,19 @@ export default function AdminEnquiriesPage() {
     return true;
   });
 
-  // Quiet, refined status indicator (dot + label, no heavy pill outline)
+  // Clean, restrained status presentation without decorative dots or badge-heavy styling
   const renderStatus = (status: string) => {
     switch (status) {
       case 'new':
-        return (
-          <span className="inline-flex items-center gap-1.5 text-xs font-medium text-zinc-900">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#FE6000]" />
-            <span>New Lead</span>
-          </span>
-        );
+        return <span className="text-xs font-semibold text-[#FE6000]">New Lead</span>;
       case 'reviewed':
-        return (
-          <span className="inline-flex items-center gap-1.5 text-xs font-medium text-zinc-700">
-            <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
-            <span>Reviewed</span>
-          </span>
-        );
+        return <span className="text-xs font-medium text-zinc-700">Reviewed</span>;
       case 'quoted':
-        return (
-          <span className="inline-flex items-center gap-1.5 text-xs font-medium text-zinc-700">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#49056B]" />
-            <span>Quoted</span>
-          </span>
-        );
+        return <span className="text-xs font-medium text-[#49056B]">Quoted</span>;
       case 'scheduled':
-        return (
-          <span className="inline-flex items-center gap-1.5 text-xs font-medium text-zinc-700">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
-            <span>Scheduled</span>
-          </span>
-        );
+        return <span className="text-xs font-medium text-emerald-700">Scheduled</span>;
       case 'closed':
-        return (
-          <span className="inline-flex items-center gap-1.5 text-xs font-medium text-zinc-400">
-            <span className="w-1.5 h-1.5 rounded-full bg-zinc-300" />
-            <span>Closed</span>
-          </span>
-        );
+        return <span className="text-xs text-zinc-400">Closed</span>;
       default:
         return <span className="text-xs text-zinc-500 capitalize">{status}</span>;
     }
@@ -326,7 +302,20 @@ export default function AdminEnquiriesPage() {
                 {loading && enquiries.length === 0 ? (
                   <tr>
                     <td colSpan={7} className="py-12 text-center text-zinc-400">
-                      Loading records from database...
+                      <div className="flex flex-col items-center justify-center gap-2.5" role="status" aria-busy="true">
+                        <div className="relative w-6 h-6 motion-safe:animate-pulse">
+                          <Image
+                            src="/assets/brand/laurrel-symbol.png"
+                            alt="Loading"
+                            fill
+                            sizes="24px"
+                            className="object-contain"
+                          />
+                        </div>
+                        <span className="text-xs text-zinc-400 font-medium tracking-wide">
+                          Loading records from database...
+                        </span>
+                      </div>
                     </td>
                   </tr>
                 ) : filteredEnquiries.length === 0 ? (
@@ -346,8 +335,8 @@ export default function AdminEnquiriesPage() {
                           isSelected ? 'bg-[#49056B]/[0.04]' : 'hover:bg-zinc-50/60'
                         }`}
                       >
-                        <td className="py-3.5 px-6 font-mono text-[11px] text-zinc-500">
-                          <div className="font-semibold text-zinc-900">{enq.id}</div>
+                        <td className="py-3.5 px-6 text-[11px] text-zinc-500">
+                          <div className="font-semibold text-zinc-900 tracking-tight">{enq.id}</div>
                           <div className="text-zinc-400 text-[10px]">
                             {new Date(enq.createdAt).toLocaleDateString()}
                           </div>
@@ -360,16 +349,9 @@ export default function AdminEnquiriesPage() {
                           )}
                         </td>
                         <td className="py-3.5 px-6">
-                          <div className="flex flex-wrap gap-1">
-                            {enq.services.map((s) => (
-                              <span
-                                key={s}
-                                className="px-2 py-0.5 rounded-md bg-zinc-100 text-[11px] font-medium text-zinc-600 capitalize"
-                              >
-                                {s}
-                              </span>
-                            ))}
-                          </div>
+                          <span className="text-xs text-zinc-700 capitalize font-medium">
+                            {enq.services.join(' • ')}
+                          </span>
                         </td>
                         <td className="py-3.5 px-6 text-zinc-600">
                           {enq.serviceLocation || 'Ottawa Area'}
@@ -386,7 +368,7 @@ export default function AdminEnquiriesPage() {
                               e.stopPropagation();
                               setSelectedEnquiry(enq);
                             }}
-                            className="px-3 py-1 rounded-[8px] bg-zinc-100 hover:bg-[#49056B] hover:text-white text-xs font-medium text-zinc-700 transition-colors"
+                            className="inline-flex items-center text-xs font-semibold text-[#49056B] hover:text-[#FE6000] transition-colors"
                           >
                             Inspect
                           </button>
@@ -423,8 +405,8 @@ export default function AdminEnquiriesPage() {
                 ) : (
                   handoffs.map((h) => (
                     <tr key={h.id} className="hover:bg-zinc-50/60 transition-colors">
-                      <td className="py-3.5 px-6 font-mono text-[11px] text-zinc-500">
-                        <div className="font-semibold text-zinc-900">{h.id}</div>
+                      <td className="py-3.5 px-6 text-[11px] text-zinc-500">
+                        <div className="font-semibold text-zinc-900 tracking-tight">{h.id}</div>
                         <div className="text-zinc-400 text-[10px]">
                           {new Date(h.createdAt).toLocaleDateString()}
                         </div>
@@ -442,21 +424,13 @@ export default function AdminEnquiriesPage() {
                         {h.reason}
                       </td>
                       <td className="py-3.5 px-6">
-                        <div className="flex flex-wrap gap-1">
-                          {(h.services || ['general']).map((s) => (
-                            <span
-                              key={s}
-                              className="px-2 py-0.5 rounded-md bg-zinc-100 text-[11px] font-medium text-zinc-600 capitalize"
-                            >
-                              {s}
-                            </span>
-                          ))}
-                        </div>
+                        <span className="text-xs text-zinc-700 capitalize font-medium">
+                          {(h.services || ['general']).join(' • ')}
+                        </span>
                       </td>
                       <td className="py-3.5 px-6">
-                        <span className="inline-flex items-center gap-1.5 text-xs font-medium text-zinc-700 capitalize">
-                          <span className="w-1.5 h-1.5 rounded-full bg-[#FE6000]" />
-                          <span>{h.status}</span>
+                        <span className="text-xs font-medium text-zinc-700 capitalize">
+                          {h.status}
                         </span>
                       </td>
                     </tr>
@@ -476,7 +450,7 @@ export default function AdminEnquiriesPage() {
             <div className="px-6 py-4.5 border-b border-black/[0.06] flex items-center justify-between bg-zinc-50/60">
               <div>
                 <div className="flex items-center gap-2.5">
-                  <span className="text-xs font-mono font-semibold text-zinc-900">
+                  <span className="text-xs font-semibold text-zinc-900 tracking-tight">
                     {selectedEnquiry.id}
                   </span>
                   {renderStatus(selectedEnquiry.status)}
@@ -593,7 +567,7 @@ export default function AdminEnquiriesPage() {
                   <span className="text-[10px] font-semibold uppercase tracking-widest text-zinc-400">
                     Internal Notes History
                   </span>
-                  <span className="text-xs text-zinc-400 font-mono">
+                  <span className="text-xs text-zinc-400 font-medium">
                     {selectedEnquiry.internalNotes?.length || 0} entry(ies)
                   </span>
                 </div>

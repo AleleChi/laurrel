@@ -80,44 +80,19 @@ export default function AdminOverviewPage() {
     loadOverviewData();
   }, []);
 
-  // Refined, subtle status presentation: minimal dot + quiet typography (no loud multi-colored badges)
+  // Clean, restrained status presentation without decorative dots or badge-heavy styling
   const renderStatus = (status: string) => {
     switch (status) {
       case 'new':
-        return (
-          <span className="inline-flex items-center gap-1.5 text-xs font-medium text-zinc-900">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#FE6000]" />
-            <span>New Lead</span>
-          </span>
-        );
+        return <span className="text-xs font-semibold text-[#FE6000]">New Lead</span>;
       case 'reviewed':
-        return (
-          <span className="inline-flex items-center gap-1.5 text-xs font-medium text-zinc-700">
-            <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
-            <span>Reviewed</span>
-          </span>
-        );
+        return <span className="text-xs font-medium text-zinc-700">Reviewed</span>;
       case 'quoted':
-        return (
-          <span className="inline-flex items-center gap-1.5 text-xs font-medium text-zinc-700">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#49056B]" />
-            <span>Quoted</span>
-          </span>
-        );
+        return <span className="text-xs font-medium text-[#49056B]">Quoted</span>;
       case 'scheduled':
-        return (
-          <span className="inline-flex items-center gap-1.5 text-xs font-medium text-zinc-700">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
-            <span>Scheduled</span>
-          </span>
-        );
+        return <span className="text-xs font-medium text-emerald-700">Scheduled</span>;
       case 'closed':
-        return (
-          <span className="inline-flex items-center gap-1.5 text-xs font-medium text-zinc-400">
-            <span className="w-1.5 h-1.5 rounded-full bg-zinc-300" />
-            <span>Closed</span>
-          </span>
-        );
+        return <span className="text-xs text-zinc-400">Closed</span>;
       default:
         return <span className="text-xs text-zinc-500 capitalize">{status}</span>;
     }
@@ -341,8 +316,8 @@ export default function AdminOverviewPage() {
               ) : (
                 recentEnquiries.map((enq) => (
                   <tr key={enq.id} className="hover:bg-zinc-50/60 transition-colors">
-                    <td className="py-3.5 px-6 font-mono text-zinc-500 text-[11px]">
-                      <div className="font-semibold text-zinc-900">{enq.id}</div>
+                    <td className="py-3.5 px-6 text-zinc-500 text-[11px]">
+                      <div className="font-semibold text-zinc-900 tracking-tight">{enq.id}</div>
                       <div className="text-zinc-400 text-[10px]">
                         {new Date(enq.createdAt).toLocaleDateString()}
                       </div>
@@ -352,16 +327,9 @@ export default function AdminOverviewPage() {
                       <div className="text-zinc-400 text-[11px]">{enq.customer.email}</div>
                     </td>
                     <td className="py-3.5 px-6">
-                      <div className="flex flex-wrap gap-1">
-                        {enq.services.map((s) => (
-                          <span
-                            key={s}
-                            className="px-2 py-0.5 rounded-md bg-zinc-100 text-[11px] font-medium text-zinc-600 capitalize"
-                          >
-                            {s}
-                          </span>
-                        ))}
-                      </div>
+                      <span className="text-xs text-zinc-700 capitalize font-medium">
+                        {enq.services.join(' • ')}
+                      </span>
                     </td>
                     <td className="py-3.5 px-6 text-zinc-600">
                       {enq.serviceLocation || 'Ottawa, ON'}
@@ -372,7 +340,7 @@ export default function AdminOverviewPage() {
                     <td className="py-3.5 px-6 text-right">
                       <Link
                         href={`/admin/enquiries?id=${enq.id}`}
-                        className="px-3 py-1 rounded-[8px] bg-zinc-100 hover:bg-[#49056B] hover:text-white text-xs font-medium text-zinc-700 transition-colors"
+                        className="inline-flex items-center text-xs font-semibold text-[#49056B] hover:text-[#FE6000] transition-colors"
                       >
                         Inspect
                       </Link>
