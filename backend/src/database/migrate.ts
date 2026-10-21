@@ -28,6 +28,20 @@ const MIGRATION_PIPELINE: MigrationStep[] = [
       `);
     },
   },
+  {
+    version: '20261021_associate_staging_r2_bucket',
+    description: 'Safely associate confirmed staging R2 assets with laurrel-media-staging without guessing',
+    run: async (client) => {
+      const updateRes = await client.query(`
+        UPDATE media_assets
+        SET storage_bucket = 'laurrel-media-staging', updated_at = NOW()
+        WHERE storage_provider = 'r2'
+          AND storage_bucket IS NULL
+          AND public_url LIKE 'https://pub-185e32b3a8d04a9e92249aa5108b673f.r2.dev%'
+      `);
+      console.log(`[Migration] Associated ${updateRes.rowCount} confirmed staging R2 asset(s) with laurrel-media-staging.`);
+    },
+  },
 ];
 
 export async function runMigrations(): Promise<{ success: boolean; message: string; appliedCount?: number }> {

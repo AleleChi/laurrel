@@ -166,7 +166,17 @@ mediaRouter.get(
         return;
       }
 
-      const usage = await getMediaAssetUsage(asset.id, asset.publicUrl);
+      let usage: any[] = [];
+      try {
+        usage = await getMediaAssetUsage(asset.id, asset.publicUrl);
+      } catch (usageErr: any) {
+        console.error('[Media Router] Detail usage lookup error:', usageErr);
+        res.status(500).json({
+          success: false,
+          error: `Failed to retrieve media asset usage references: ${usageErr.message}.`,
+        });
+        return;
+      }
 
       res.json({
         success: true,
@@ -413,7 +423,18 @@ mediaRouter.delete(
       }
 
       // Check where asset is currently referenced
-      const usage = await getMediaAssetUsage(asset.id, asset.publicUrl);
+      let usage: any[];
+      try {
+        usage = await getMediaAssetUsage(asset.id, asset.publicUrl);
+      } catch (usageErr: any) {
+        console.error('[Media Router] Failed to verify asset usage references:', usageErr);
+        res.status(500).json({
+          success: false,
+          error: `Failed to verify media asset usage references: ${usageErr.message}. Deletion aborted to prevent accidental destruction of active content.`,
+        });
+        return;
+      }
+
       const activePublished = usage.filter((u) => u.inPublished);
       const inRevisions = usage.filter((u) => u.inRevisionHistory);
 
@@ -439,7 +460,16 @@ mediaRouter.delete(
         return;
       }
 
-      // Guard 3: Dispatch physical deletion using the asset's original storage provider & bucket
+      // Guard 3: Block physical deletion of any R2 asset whose bucket cannot be verified
+      if (asset.storageProvider === 'r2' && !asset.storageBucket) {
+        res.status(422).json({
+          success: false,
+          error: `Cannot delete R2 asset '${asset.originalFilename}': Storage bucket ownership is unverified (storage_bucket is null). Physical deletion is blocked to prevent deleting assets from an incorrect or ambiguous bucket.`,
+        });
+        return;
+      }
+
+      // Guard 4: Dispatch physical deletion using the asset's original storage provider & bucket
       let storage: StorageProvider;
       try {
         storage = getStorageProviderByName(
@@ -459,7 +489,7 @@ mediaRouter.delete(
         asset.storageBucket || undefined
       );
 
-      // Guard 4: Never delete database metadata if physical storage deletion failed
+      // Guard 5: Never delete database metadata if physical storage deletion failed
       if (!storageDeleted) {
         res.status(502).json({
           success: false,

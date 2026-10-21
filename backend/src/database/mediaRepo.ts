@@ -424,7 +424,7 @@ export async function archiveMediaAsset(id: string, isArchived: boolean): Promis
  */
 export async function getMediaAssetUsage(assetId: string, publicUrl?: string): Promise<MediaUsageItem[]> {
   const pool = getDbPool();
-  if (!pool) return [];
+  if (!pool) throw new Error('Database pool unavailable.');
 
   const patternId = `%${assetId}%`;
   const patternUrl = publicUrl ? `%${publicUrl}%` : '';
@@ -468,9 +468,9 @@ export async function getMediaAssetUsage(assetId: string, publicUrl?: string): P
     ]);
 
     return [...sectionsRes.rows, ...revisionsRes.rows];
-  } catch (err) {
-    console.warn('[MediaRepo] getMediaAssetUsage query warning:', err);
-    return [];
+  } catch (err: any) {
+    console.error('[MediaRepo] getMediaAssetUsage query failed:', err.message);
+    throw new Error(`Failed to query media asset usage references: ${err.message}`);
   }
 }
 

@@ -105,6 +105,20 @@ async function runFinalDeploymentCorrectionsSuite() {
     }
     console.log(`✅ Column 'storage_bucket' verified in media_assets (${columnCheck.rows[0].data_type}).`);
 
+    // Verify confirmed staging R2 assets are associated with 'laurrel-media-staging'
+    const stagingR2Check = await pool.query(
+      `SELECT COUNT(*) as count 
+       FROM media_assets 
+       WHERE storage_provider = 'r2' 
+         AND public_url LIKE 'https://pub-185e32b3a8d04a9e92249aa5108b673f.r2.dev%' 
+         AND storage_bucket = 'laurrel-media-staging'`
+    );
+    const confirmedCount = parseInt(stagingR2Check.rows[0].count, 10);
+    if (confirmedCount === 0) {
+      throw new Error("Migration 20261021_associate_staging_r2_bucket failed to associate confirmed staging assets.");
+    }
+    console.log(`✅ Confirmed staging R2 assets successfully associated with 'laurrel-media-staging' (${confirmedCount} records).`);
+
     // Verify schema_migrations table has records
     const migRecords = await pool.query('SELECT version, applied_at FROM schema_migrations ORDER BY applied_at ASC');
     console.log(`✅ Applied migration records verified (${migRecords.rows.length} total):`);
@@ -343,7 +357,6 @@ async function runFinalDeploymentCorrectionsSuite() {
 
     // 4C: Verify AVIF Signature Validation
     console.log('Testing AVIF signature verification...');
-    // Real AVIF header: length (4 bytes) + 'ftyp' (4 bytes) + 'avif' (4 bytes)
     const validAvifBuffer = Buffer.alloc(32);
     validAvifBuffer.writeUInt32BE(32, 0);
     validAvifBuffer.write('ftyp', 4, 'ascii');
@@ -394,7 +407,6 @@ async function runFinalDeploymentCorrectionsSuite() {
 
     // 4D: Verify WebM Signature Validation
     console.log('Testing WebM signature verification...');
-    // EBML header (1A 45 DF A3) + 'webm'
     const validWebmBuffer = Buffer.alloc(32);
     validWebmBuffer[0] = 0x1a;
     validWebmBuffer[1] = 0x45;
@@ -574,8 +586,7 @@ async function runFinalDeploymentCorrectionsSuite() {
     }
     console.log(`✅ Staging R2 asset created with explicit bucket isolation: '${r2Row.rows[0].storage_bucket}'.`);
 
-    // Attempt deletion when R2 is configured for local or invalid credentials (simulating storage deletion failure)
-    // The server must NOT delete the metadata if the physical delete fails!
+    // Attempt deletion
     const r2DeleteRes = await httpRequest({
       hostname: '127.0.0.1',
       port: TEST_BACKEND_PORT,
@@ -597,6 +608,122 @@ async function runFinalDeploymentCorrectionsSuite() {
 
     // Clean up temporary R2 test record
     await pool.query('DELETE FROM media_assets WHERE id = $1', [testR2AssetId]);
+
+    // -------------------------------------------------------------
+    // Test 5F: getMediaAssetUsage Query Failure Blocks Deletion
+    // -------------------------------------------------------------
+    console.log('\nTesting getMediaAssetUsage failure behavior (must throw and block deletion)...');
+    const { getMediaAssetUsage } = require(path.join(__dirname, '..', 'backend', 'dist', 'database', 'mediaRepo'));
+    
+    // Direct repository verification: verify getMediaAssetUsage throws on error rather than returning []
+    let usageThrew = false;
+    try {
+      // Simulate invalid query by testing behavior when pool connection fails or invalid query happens
+      // Directly check getMediaAssetUsage implementation throws
+      const origGetPool = require(path.join(__dirname, '..', 'backend', 'dist', 'database', 'pool')).getDbPool;
+      require(path.join(__dirname, '..', 'backend', 'dist', 'database', 'pool')).getDbPool = () => null;
+      await getMediaAssetUsage('test-id');
+    } catch (usageErr) {
+      usageThrew = true;
+      console.log('   Confirmed getMediaAssetUsage threw on unavailable database:', usageErr.message);
+    }
+    if (!usageThrew) {
+      throw new Error('SECURITY FAILURE: getMediaAssetUsage did not throw when database was unavailable!');
+    }
+    console.log('✅ PASS: getMediaAssetUsage strictly throws on query failure; never returns empty result.');
+
+    // -------------------------------------------------------------
+    // Test 5G: Block Physical Deletion of Unverified Bucket R2 Asset
+    // -------------------------------------------------------------
+    console.log('\nTesting block of physical deletion for R2 asset with unverified bucket (storage_bucket IS NULL)...');
+    const unverifiedR2Id = `media_r2_unverified_${Date.now()}`;
+    await pool.query(
+      `INSERT INTO media_assets (
+        id, original_filename, stored_filename, asset_type, mime_type, file_size,
+        storage_provider, storage_bucket, storage_reference, public_url, focal_point, folder, is_archived
+       ) VALUES (
+        $1, 'unverified-r2.jpg', 'unverified-r2.jpg', 'image', 'image/jpeg', 54321,
+        'r2', NULL, 'hero/unverified-r2.jpg', 'https://custom-unverified.r2.dev/hero/unverified-r2.jpg', 'center', 'hero', FALSE
+       )`,
+      [unverifiedR2Id]
+    );
+
+    const deleteUnverifiedRes = await httpRequest({
+      hostname: '127.0.0.1',
+      port: TEST_BACKEND_PORT,
+      path: `/api/admin/media/${unverifiedR2Id}`,
+      method: 'DELETE',
+      headers: authHeaders,
+    });
+
+    console.log(`   Unverified R2 deletion response status: ${deleteUnverifiedRes.statusCode}`);
+    console.log(`   Unverified R2 deletion response error:`, deleteUnverifiedRes.json?.error);
+
+    if (deleteUnverifiedRes.statusCode !== 422 || !deleteUnverifiedRes.json?.error.includes('unverified')) {
+      throw new Error(`Expected HTTP 422 Unprocessable Entity for unverified R2 bucket asset, got ${deleteUnverifiedRes.statusCode}`);
+    }
+
+    // Verify record was preserved in database
+    const unverifiedStillInDb = await pool.query('SELECT id FROM media_assets WHERE id = $1', [unverifiedR2Id]);
+    if (unverifiedStillInDb.rows.length === 0) {
+      throw new Error('SECURITY BUG: Unverified R2 asset was deleted from database!');
+    }
+    console.log('✅ PASS: Deletion of R2 asset with unverified bucket strictly blocked (HTTP 422); metadata preserved.');
+
+    // Clean up unverified test record
+    await pool.query('DELETE FROM media_assets WHERE id = $1', [unverifiedR2Id]);
+
+    // -------------------------------------------------------------
+    // Test 5H: Switching Default Bucket Cannot Misidentify or Delete Historical Asset
+    // -------------------------------------------------------------
+    console.log('\nTesting bucket switching safety (default bucket change cannot misidentify historical asset)...');
+    const historicalStagingId = `media_r2_hist_${Date.now()}`;
+    await pool.query(
+      `INSERT INTO media_assets (
+        id, original_filename, stored_filename, asset_type, mime_type, file_size,
+        storage_provider, storage_bucket, storage_reference, public_url, focal_point, folder, is_archived
+       ) VALUES (
+        $1, 'historical-staging.png', 'historical-staging.png', 'image', 'image/png', 99999,
+        'r2', 'laurrel-media-staging', 'general/historical-staging.png', 'https://pub-185e32b3a8d04a9e92249aa5108b673f.r2.dev/general/historical-staging.png', 'center', 'general', FALSE
+       )`,
+      [historicalStagingId]
+    );
+
+    // Fetch single asset via API to confirm storageBucket returns explicit bucket
+    const histDetailRes = await httpRequest({
+      hostname: '127.0.0.1',
+      port: TEST_BACKEND_PORT,
+      path: `/api/admin/media/${historicalStagingId}`,
+      method: 'GET',
+      headers: authHeaders,
+    });
+
+    if (histDetailRes.statusCode !== 200 || histDetailRes.json?.data?.storageBucket !== 'laurrel-media-staging') {
+      throw new Error(`Expected storageBucket 'laurrel-media-staging', got '${histDetailRes.json?.data?.storageBucket}'`);
+    }
+    console.log(`   Historical asset verified in API with explicit bucket: '${histDetailRes.json?.data?.storageBucket}'.`);
+
+    // Verify storage provider resolver with switched bucket
+    const { getStorageProviderByName } = require(path.join(__dirname, '..', 'backend', 'dist', 'services', 'storage'));
+    
+    // Ambient env configured with production bucket
+    process.env.R2_BUCKET_NAME = 'laurrel-media-prod';
+    const resolvedProd = getStorageProviderByName('r2', histDetailRes.json?.data?.storageBucket);
+    // Provider instance bucket must be the asset's bucket 'laurrel-media-staging', NOT the ambient 'laurrel-media-prod'
+    if (resolvedProd.bucket !== 'laurrel-media-staging') {
+      throw new Error(`Expected resolver to honor asset bucket 'laurrel-media-staging', got '${resolvedProd.bucket}'`);
+    }
+
+    // Now switch ambient default bucket to another arbitrary bucket
+    process.env.R2_BUCKET_NAME = 'laurrel-media-different-bucket';
+    const resolvedSwitched = getStorageProviderByName('r2', histDetailRes.json?.data?.storageBucket);
+    if (resolvedSwitched.bucket !== 'laurrel-media-staging') {
+      throw new Error(`Expected resolver to retain historical bucket 'laurrel-media-staging', got '${resolvedSwitched.bucket}'`);
+    }
+    console.log('✅ PASS: Switching default bucket does NOT misidentify or alter historical asset bucket ownership.');
+
+    // Clean up historical staging test record
+    await pool.query('DELETE FROM media_assets WHERE id = $1', [historicalStagingId]);
 
     // Clean up test admin user & session
     await pool.query('DELETE FROM admin_sessions WHERE user_id = $1', [testAdminUserId]);
