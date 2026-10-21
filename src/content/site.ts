@@ -1,3 +1,13 @@
+export function getSiteUrl(): string {
+  if (process.env.NEXT_PUBLIC_SITE_URL) {
+    return process.env.NEXT_PUBLIC_SITE_URL.replace(/\/$/, '');
+  }
+  if (process.env.URL) {
+    return process.env.URL.replace(/\/$/, '');
+  }
+  return 'https://laurrel.netlify.app';
+}
+
 export interface NavDropdownItem {
   label: string;
   href: string;

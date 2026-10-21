@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { getPublishedHomePageData } from '@/lib/cms/content';
+import { getSiteUrl } from '@/content/site';
 import { HomePageClient } from './HomePageClient';
 
 export const dynamic = 'force-dynamic';
@@ -25,7 +26,7 @@ export async function generateMetadata(): Promise<Metadata> {
       ],
     },
     alternates: {
-      canonical: 'https://laurrelservices.ca/',
+      canonical: `${getSiteUrl()}/`,
     },
   };
 }

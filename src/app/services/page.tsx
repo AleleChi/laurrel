@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { getPublishedServicesPageData } from '@/lib/cms/content';
+import { getSiteUrl } from '@/content/site';
 import { ServicesPageClient } from './ServicesPageClient';
 
 export const dynamic = 'force-dynamic';
@@ -19,13 +20,14 @@ export async function generateMetadata(): Promise<Metadata> {
       type: 'website',
     },
     alternates: {
-      canonical: 'https://laurrelservices.ca/services',
+      canonical: `${getSiteUrl()}/services`,
     },
   };
 }
 
 export default async function ServicesPage() {
   const { data } = await getPublishedServicesPageData();
+  const siteUrl = getSiteUrl();
 
   const jsonLd = {
     '@context': 'https://schema.org',
@@ -35,13 +37,13 @@ export default async function ServicesPage() {
         '@type': 'ListItem',
         position: 1,
         name: 'Home',
-        item: 'https://laurrelservices.ca',
+        item: siteUrl,
       },
       {
         '@type': 'ListItem',
         position: 2,
         name: 'Services',
-        item: 'https://laurrelservices.ca/services',
+        item: `${siteUrl}/services`,
       },
     ],
   };

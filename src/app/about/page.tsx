@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { getPublishedAboutPageData } from '@/lib/cms/content';
+import { getSiteUrl } from '@/content/site';
 import { AboutPageClient } from './AboutPageClient';
 
 export const dynamic = 'force-dynamic';
@@ -25,13 +26,14 @@ export async function generateMetadata(): Promise<Metadata> {
       ],
     },
     alternates: {
-      canonical: 'https://laurrelservices.ca/about',
+      canonical: `${getSiteUrl()}/about`,
     },
   };
 }
 
 export default async function AboutPage() {
   const { data } = await getPublishedAboutPageData();
+  const siteUrl = getSiteUrl();
 
   // Structured Data (JSON-LD) for BreadcrumbList
   const jsonLd = {
@@ -42,13 +44,13 @@ export default async function AboutPage() {
         '@type': 'ListItem',
         position: 1,
         name: 'Home',
-        item: 'https://laurrelservices.ca',
+        item: siteUrl,
       },
       {
         '@type': 'ListItem',
         position: 2,
         name: 'About',
-        item: 'https://laurrelservices.ca/about',
+        item: `${siteUrl}/about`,
       },
     ],
   };
