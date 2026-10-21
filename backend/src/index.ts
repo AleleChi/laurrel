@@ -20,25 +20,46 @@ const app = express();
 const port = parseInt(process.env.PORT || '5000', 10);
 const host = '0.0.0.0';
 
-// CORS configuration: Allow configured frontend origin, Netlify domains, and local dev
-const allowedOrigins = [
-  process.env.FRONTEND_ORIGIN || 'https://laurrel.netlify.app',
+// Explicit allowed origins for CORS. Unrestricted wildcard or suffix matching is strictly disallowed.
+const explicitAllowedOrigins: string[] = [
   'https://laurrel.netlify.app',
+  'https://staging--laurrel.netlify.app',
   'http://localhost:3000',
   'http://127.0.0.1:3000',
 ];
+
+if (process.env.FRONTEND_ORIGIN?.trim()) {
+  explicitAllowedOrigins.push(process.env.FRONTEND_ORIGIN.trim());
+}
+
+if (process.env.ALLOWED_ORIGINS) {
+  const extras = process.env.ALLOWED_ORIGINS.split(',')
+    .map((o) => o.trim())
+    .filter(Boolean);
+  explicitAllowedOrigins.push(...extras);
+}
+
+const allowedOriginsSet = new Set(explicitAllowedOrigins);
 
 app.use(
   cors({
     origin: (origin, callback) => {
       // Allow requests with no origin (e.g. curl, server-to-server forwarders from Next.js server actions)
       if (!origin) return callback(null, true);
+
+      // Check explicit allowed origins list
+      if (allowedOriginsSet.has(origin)) {
+        return callback(null, true);
+      }
+
+      // Outside of production, allow legitimate local development loopback ports
       if (
-        allowedOrigins.some((allowed) => origin === allowed) ||
-        origin.endsWith('.netlify.app')
+        process.env.NODE_ENV !== 'production' &&
+        /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)
       ) {
         return callback(null, true);
       }
+
       return callback(new Error(`CORS policy: origin ${origin} is not allowed.`));
     },
     methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
@@ -79,7 +100,12 @@ app.get('/', (_req, res) => {
   });
 });
 
-async function startServer() {
+// Bind port immediately so Render health check probes can connect while initialization runs
+const server = app.listen(port, host, () => {
+  console.log(`[LAURREL API] Backend server listening on http://${host}:${port}`);
+});
+
+async function initializeDependencies() {
   if (process.env.DATABASE_URL) {
     try {
       console.log('[Startup] Executing controlled database initialization...');
@@ -90,9 +116,13 @@ async function startServer() {
       console.log('[Startup Migration]:', migrationRes.message);
 
       await bootstrapOwnerAccount();
+      console.log('[Startup] Owner account checked.');
       await syncHistoricalEnquiries();
+      console.log('[Startup] Enquiries synced.');
       await seedCmsContent();
+      console.log('[Startup] CMS content checked.');
       await seedMediaAssets();
+      console.log('[Startup] Media assets checked.');
 
       setBackendReady(true, {
         database: 'ready',
@@ -108,16 +138,16 @@ async function startServer() {
       }
     }
   } else {
-    setBackendReady(true, { mode: 'local_no_database' });
+    if (process.env.NODE_ENV === 'production') {
+      console.error('[CRITICAL] DATABASE_URL is missing in production environment. Backend cannot report ready.');
+      setBackendReady(false, { error: 'DATABASE_URL is required in production environment' });
+    } else {
+      console.warn('[Startup] DATABASE_URL is not configured. Running in local fallback mode (development only).');
+      setBackendReady(true, { mode: 'local_no_database' });
+    }
   }
-
-  const server = app.listen(port, host, () => {
-    console.log(`[LAURREL API] Backend server listening on http://${host}:${port}`);
-  });
-
-  return server;
 }
 
-startServer();
+initializeDependencies();
 
 export default app;

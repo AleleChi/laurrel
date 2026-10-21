@@ -260,6 +260,7 @@ CREATE TABLE IF NOT EXISTS media_assets (
     height INT,
     duration NUMERIC(8, 2), -- in seconds, for videos
     storage_provider VARCHAR(32) NOT NULL DEFAULT 'local', -- 'local', 'r2', 'cloudinary'
+    storage_bucket VARCHAR(128),
     storage_reference TEXT NOT NULL,
     public_url TEXT NOT NULL,
     thumbnail_url TEXT,
@@ -278,5 +279,6 @@ CREATE TABLE IF NOT EXISTS media_assets (
 CREATE INDEX IF NOT EXISTS idx_media_assets_folder ON media_assets(folder);
 CREATE INDEX IF NOT EXISTS idx_media_assets_asset_type ON media_assets(asset_type);
 CREATE INDEX IF NOT EXISTS idx_media_assets_is_archived ON media_assets(is_archived);
+CREATE INDEX IF NOT EXISTS idx_media_assets_storage_bucket ON media_assets(storage_bucket);
 CREATE INDEX IF NOT EXISTS idx_media_assets_created_at ON media_assets(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_media_assets_public_url ON media_assets(public_url);

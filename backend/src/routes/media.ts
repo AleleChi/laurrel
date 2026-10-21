@@ -13,7 +13,7 @@ import {
   recordMediaAuditEvent,
   ListMediaOptions,
 } from '../database/mediaRepo';
-import { getStorageProvider } from '../services/storage';
+import { getStorageProvider, getStorageProviderByName, StorageProvider } from '../services/storage';
 
 export const mediaRouter = Router();
 
@@ -25,51 +25,86 @@ const upload = multer({
   },
 });
 
+// Explicit whitelist of allowed MIME types. SVG is excluded until secure XML sanitization is provisioned.
 const ALLOWED_MIME_TYPES = new Set([
   'image/jpeg',
   'image/png',
   'image/webp',
   'image/avif',
-  'image/svg+xml',
   'video/mp4',
   'video/webm',
   'video/quicktime',
 ]);
 
 /**
- * Validate actual file buffer magic bytes to ensure file content matches MIME header
+ * Validate actual file buffer magic bytes to ensure file content matches MIME header.
+ * Rejects malformed files, active scripts, or disguised executables.
  */
 function validateFileSignature(buffer: Buffer, mimeType: string): boolean {
-  if (buffer.length < 4) return false;
+  if (!buffer || buffer.length < 4) return false;
 
   // JPEG: FF D8 FF
   if (mimeType === 'image/jpeg') {
-    return buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff;
+    return buffer.length >= 3 && buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff;
   }
-  // PNG: 89 50 4E 47
+
+  // PNG: 89 50 4E 47 0D 0A 1A 0A
   if (mimeType === 'image/png') {
-    return buffer[0] === 0x89 && buffer[1] === 0x50 && buffer[2] === 0x4e && buffer[3] === 0x47;
+    return (
+      buffer.length >= 8 &&
+      buffer[0] === 0x89 &&
+      buffer[1] === 0x50 &&
+      buffer[2] === 0x4e &&
+      buffer[3] === 0x47 &&
+      buffer[4] === 0x0d &&
+      buffer[5] === 0x0a &&
+      buffer[6] === 0x1a &&
+      buffer[7] === 0x0a
+    );
   }
-  // WebP: RIFF ... WEBP
+
+  // WebP: RIFF .... WEBP
   if (mimeType === 'image/webp') {
     return (
+      buffer.length >= 12 &&
       buffer.toString('ascii', 0, 4) === 'RIFF' &&
       buffer.toString('ascii', 8, 12) === 'WEBP'
     );
   }
-  // MP4 / QuickTime: ftyp box
+
+  // AVIF: ISOBMFF container with 'ftyp' box and 'avif' / 'avis' brand
+  if (mimeType === 'image/avif') {
+    if (buffer.length < 12) return false;
+    const boxType = buffer.toString('ascii', 4, 8);
+    if (boxType !== 'ftyp') return false;
+    const brand = buffer.toString('ascii', 8, 12);
+    if (brand === 'avif' || brand === 'avis') return true;
+    const headerPrefix = buffer.toString('ascii', 8, Math.min(buffer.length, 64));
+    return headerPrefix.includes('avif') || headerPrefix.includes('avis');
+  }
+
+  // MP4 / QuickTime: 'ftyp' box or 'moov' atom
   if (mimeType === 'video/mp4' || mimeType === 'video/quicktime') {
     if (buffer.length < 12) return false;
     const boxType = buffer.toString('ascii', 4, 8);
     return boxType === 'ftyp' || buffer.toString('ascii', 4, 12).includes('moov');
   }
-  // SVG or text
-  if (mimeType === 'image/svg+xml') {
-    const head = buffer.toString('utf8', 0, Math.min(buffer.length, 1024)).toLowerCase();
-    return head.includes('<svg') && !head.includes('<script');
+
+  // WebM: EBML header (0x1A 0x45 0xDF 0xA3) with 'webm' DocType
+  if (mimeType === 'video/webm') {
+    if (buffer.length < 8) return false;
+    const isEbml =
+      buffer[0] === 0x1a &&
+      buffer[1] === 0x45 &&
+      buffer[2] === 0xdf &&
+      buffer[3] === 0xa3;
+    if (!isEbml) return false;
+    const header = buffer.toString('latin1', 0, Math.min(buffer.length, 128));
+    return header.includes('webm');
   }
 
-  return true;
+  // Default reject: any unhandled or unrecognized file
+  return false;
 }
 
 // ============================================================================
@@ -139,6 +174,7 @@ mediaRouter.get(
           ...asset,
           usage,
           inActiveUse: usage.some((u) => u.inPublished),
+          inRevisionHistory: usage.some((u) => u.inRevisionHistory),
         },
       });
     } catch (err: any) {
@@ -165,15 +201,26 @@ mediaRouter.post(
       }
 
       const mimeType = file.mimetype.toLowerCase();
-      if (!ALLOWED_MIME_TYPES.has(mimeType)) {
+
+      // Specifically intercept SVG uploads and reject with security notice
+      if (mimeType === 'image/svg+xml' || file.originalname.toLowerCase().endsWith('.svg')) {
         res.status(400).json({
           success: false,
-          error: `Unsupported file type '${mimeType}'. Allowed formats: JPEG, PNG, WebP, AVIF, SVG, MP4, WebM.`,
+          error:
+            'SVG uploads are currently disabled for security until an isolated XML sanitization pipeline is provisioned.',
         });
         return;
       }
 
-      // Check file signature
+      if (!ALLOWED_MIME_TYPES.has(mimeType)) {
+        res.status(400).json({
+          success: false,
+          error: `Unsupported file type '${mimeType}'. Allowed formats: JPEG, PNG, WebP, AVIF, MP4, WebM, QuickTime.`,
+        });
+        return;
+      }
+
+      // Check file magic bytes signature
       if (!validateFileSignature(file.buffer, mimeType)) {
         res.status(400).json({
           success: false,
@@ -222,7 +269,7 @@ mediaRouter.post(
         folder,
       });
 
-      // Persist in Neon DB
+      // Persist in Neon DB with bucket & provider tracking
       const asset = await createMediaAsset({
         originalFilename: file.originalname,
         storedFilename: stored.storedFilename,
@@ -233,6 +280,7 @@ mediaRouter.post(
         height,
         duration: isVideo ? 10.0 : null,
         storageProvider: stored.provider,
+        storageBucket: stored.bucket || null,
         storageReference: stored.storageReference,
         publicUrl: stored.publicUrl,
         thumbnailUrl: isVideo ? (stored.thumbnailUrl || null) : (stored.thumbnailUrl || stored.publicUrl),
@@ -253,6 +301,7 @@ mediaRouter.post(
         size: asset.fileSize,
         publicUrl: asset.publicUrl,
         provider: asset.storageProvider,
+        bucket: asset.storageBucket,
       });
 
       res.status(201).json({
@@ -349,7 +398,7 @@ mediaRouter.post(
 );
 
 // ============================================================================
-// 6. GUARDED PERMANENT DELETE (PREVENTS BREAKING LIVE PAGES)
+// 6. GUARDED PERMANENT DELETE (PREVENTS BREAKING LIVE PAGES & CMS REVISIONS)
 // ============================================================================
 mediaRouter.delete(
   '/api/admin/media/:id',
@@ -363,10 +412,12 @@ mediaRouter.delete(
         return;
       }
 
-      // Check where asset is currently used
+      // Check where asset is currently referenced
       const usage = await getMediaAssetUsage(asset.id, asset.publicUrl);
       const activePublished = usage.filter((u) => u.inPublished);
+      const inRevisions = usage.filter((u) => u.inRevisionHistory);
 
+      // Guard 1: Block deletion if referenced in live published content
       if (activePublished.length > 0) {
         const locations = activePublished.map((u) => `${u.pageName} (${u.sectionKey})`).join(', ');
         res.status(409).json({
@@ -377,11 +428,47 @@ mediaRouter.delete(
         return;
       }
 
-      // If safe, delete from physical storage
-      const storage = getStorageProvider();
-      await storage.delete(asset.storageReference);
+      // Guard 2: Block deletion if preserved in historical CMS revisions (protects rollback integrity)
+      if (inRevisions.length > 0) {
+        const locations = inRevisions.map((u) => `${u.pageName} (${u.sectionKey})`).join(', ');
+        res.status(409).json({
+          success: false,
+          error: `Cannot delete asset '${asset.originalFilename}': it is preserved in historical CMS revisions (${locations}) to safeguard rollback integrity. You may archive this asset instead.`,
+          usage,
+        });
+        return;
+      }
 
-      // Delete from Neon DB
+      // Guard 3: Dispatch physical deletion using the asset's original storage provider & bucket
+      let storage: StorageProvider;
+      try {
+        storage = getStorageProviderByName(
+          asset.storageProvider,
+          asset.storageBucket || undefined
+        );
+      } catch (providerErr: any) {
+        res.status(500).json({
+          success: false,
+          error: `Storage provider '${asset.storageProvider}' is not available: ${providerErr.message}. Asset metadata preserved.`,
+        });
+        return;
+      }
+
+      const storageDeleted = await storage.delete(
+        asset.storageReference,
+        asset.storageBucket || undefined
+      );
+
+      // Guard 4: Never delete database metadata if physical storage deletion failed
+      if (!storageDeleted) {
+        res.status(502).json({
+          success: false,
+          error: `Physical deletion from storage provider '${asset.storageProvider}' failed for asset '${asset.originalFilename}'. Database metadata has been preserved to avoid an inconsistent or orphaned state.`,
+        });
+        return;
+      }
+
+      // Delete from Neon DB only after physical deletion has succeeded
       await deleteMediaAsset(asset.id);
 
       await recordMediaAuditEvent('media_delete', asset.id, {
@@ -390,11 +477,13 @@ mediaRouter.delete(
         ipAddress: req.ip,
         originalFilename: asset.originalFilename,
         publicUrl: asset.publicUrl,
+        storageProvider: asset.storageProvider,
+        storageBucket: asset.storageBucket,
       });
 
       res.json({
         success: true,
-        message: `Asset '${asset.originalFilename}' deleted successfully.`,
+        message: `Asset '${asset.originalFilename}' deleted successfully from ${asset.storageProvider} storage and catalog.`,
       });
     } catch (err: any) {
       console.error('[Media Router] Delete error:', err);

@@ -128,7 +128,16 @@ export async function seedMediaAssets(): Promise<MediaSeedReport> {
     return report;
   }
 
+  // Optimize: query existing asset IDs in one single query to eliminate redundant remote queries on startup
+  const existingRes = await pool.query('SELECT id FROM media_assets');
+  const existingIds = new Set(existingRes.rows.map((r: any) => r.id));
+
   for (const config of KNOWN_ASSETS) {
+    if (existingIds.has(config.id)) {
+      report.assetsSkipped++;
+      continue;
+    }
+
     const fullPath = path.join(assetsDir, config.relativePath);
     if (!fs.existsSync(fullPath)) {
       report.details.push(`Skipped (not found): ${config.relativePath}`);

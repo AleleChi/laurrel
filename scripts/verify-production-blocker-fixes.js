@@ -298,8 +298,13 @@ async function runBlockerVerificationSuite() {
       throw new Error('/health check failed!');
     }
 
-    const readyRes = await fetch(`${API_BASE}/ready`);
-    const readyData = await readyRes.json();
+    let readyRes, readyData;
+    for (let i = 0; i < 20; i++) {
+      readyRes = await fetch(`${API_BASE}/ready`);
+      readyData = await readyRes.json();
+      if (readyRes.status === 200 && readyData.status === 'ready') break;
+      await new Promise((r) => setTimeout(r, 500));
+    }
     console.log(`✅ /ready status: ${readyRes.status} (status='${readyData.status}', database='${readyData.database}')`);
     if (readyRes.status !== 200 || readyData.status !== 'ready') {
       throw new Error('/ready readiness probe failed!');

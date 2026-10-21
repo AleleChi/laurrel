@@ -2,10 +2,35 @@ import fs from 'fs';
 import path from 'path';
 import { getDbPool } from './pool';
 
-const MIGRATION_VERSION = '20261021_module_01_02_03_consolidated';
 const ADVISORY_LOCK_ID = 74239842;
 
-export async function runMigrations(): Promise<{ success: boolean; message: string }> {
+interface MigrationStep {
+  version: string;
+  description: string;
+  run: (client: any, baseSql: string) => Promise<void>;
+}
+
+const MIGRATION_PIPELINE: MigrationStep[] = [
+  {
+    version: '20261021_module_01_02_03_consolidated',
+    description: 'Initial consolidated DDL for Modules 01, 02, and 03',
+    run: async (client, baseSql) => {
+      await client.query(baseSql);
+    },
+  },
+  {
+    version: '20261021_storage_bucket_and_integrity',
+    description: 'Add storage_bucket column and index to media_assets for multi-bucket isolation',
+    run: async (client) => {
+      await client.query(`
+        ALTER TABLE media_assets ADD COLUMN IF NOT EXISTS storage_bucket VARCHAR(128);
+        CREATE INDEX IF NOT EXISTS idx_media_assets_storage_bucket ON media_assets(storage_bucket);
+      `);
+    },
+  },
+];
+
+export async function runMigrations(): Promise<{ success: boolean; message: string; appliedCount?: number }> {
   const pool = getDbPool();
   if (!pool) {
     return {
@@ -48,33 +73,41 @@ export async function runMigrations(): Promise<{ success: boolean; message: stri
         )
       `);
 
-      // 3. Check if this consolidated migration has already been applied
-      const existing = await client.query(
-        'SELECT version, applied_at FROM schema_migrations WHERE version = $1',
-        [MIGRATION_VERSION]
-      );
+      // 3. Query existing applied migrations
+      const appliedRes = await client.query('SELECT version FROM schema_migrations');
+      const appliedVersions = new Set<string>(appliedRes.rows.map((r: any) => r.version));
 
-      if (existing.rows.length > 0) {
-        await client.query('COMMIT');
-        console.log(`[Migration] Version ${MIGRATION_VERSION} already applied at ${existing.rows[0].applied_at}. Skipping redundant DDL.`);
+      let newCount = 0;
+      for (const step of MIGRATION_PIPELINE) {
+        if (!appliedVersions.has(step.version)) {
+          console.log(`[Migration] Applying ${step.version}: ${step.description}...`);
+          await step.run(client, sql);
+          await client.query(
+            'INSERT INTO schema_migrations (version, applied_at) VALUES ($1, NOW())',
+            [step.version]
+          );
+          newCount++;
+          console.log(`[Migration] Successfully applied ${step.version}.`);
+        }
+      }
+
+      await client.query('COMMIT');
+
+      if (newCount === 0) {
+        console.log('[Migration] All schema migrations are up-to-date.');
         return {
           success: true,
-          message: `Schema version ${MIGRATION_VERSION} is already current.`,
+          message: 'All schema migrations are up-to-date.',
+          appliedCount: 0,
         };
       }
 
-      // 4. Execute non-destructive schema DDL
-      await client.query(sql);
-
-      // 5. Record completed migration version
-      await client.query(
-        'INSERT INTO schema_migrations (version, applied_at) VALUES ($1, NOW())',
-        [MIGRATION_VERSION]
-      );
-
-      await client.query('COMMIT');
-      console.log(`[Migration] PostgreSQL schema migration ${MIGRATION_VERSION} executed successfully.`);
-      return { success: true, message: `Migration ${MIGRATION_VERSION} initialized successfully.` };
+      console.log(`[Migration] Successfully executed ${newCount} schema migration(s).`);
+      return {
+        success: true,
+        message: `Successfully executed ${newCount} schema migration(s).`,
+        appliedCount: newCount,
+      };
     } catch (err: any) {
       await client.query('ROLLBACK');
       console.error('[Migration Error]:', err.message);

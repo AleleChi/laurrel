@@ -5,34 +5,52 @@ import { CloudinaryStorageProvider } from './cloudinaryProvider';
 
 export * from './types';
 
-let cachedProvider: StorageProvider | null = null;
+let cachedDefaultProvider: StorageProvider | null = null;
 
+/**
+ * Returns the currently active default storage provider for new uploads.
+ */
 export function getStorageProvider(): StorageProvider {
-  if (cachedProvider) {
-    return cachedProvider;
+  if (cachedDefaultProvider) {
+    return cachedDefaultProvider;
   }
 
-  const configuredProvider = (process.env.STORAGE_PROVIDER || 'local').toLowerCase().trim();
+  const configuredProvider = (process.env.STORAGE_PROVIDER || 'local').toLowerCase().trim() as
+    | 'local'
+    | 'r2'
+    | 'cloudinary';
 
-  if (configuredProvider === 'r2') {
+  cachedDefaultProvider = getStorageProviderByName(configuredProvider);
+  return cachedDefaultProvider;
+}
+
+/**
+ * Returns a storage provider by name and optional target bucket.
+ * This guarantees that assets are managed by their original storage provider and bucket,
+ * preventing accidental deletion of staging assets from production buckets, or local files via R2.
+ */
+export function getStorageProviderByName(
+  providerName: 'local' | 'r2' | 'cloudinary',
+  targetBucket?: string
+): StorageProvider {
+  if (providerName === 'r2') {
     const missing: string[] = [];
     if (!process.env.R2_ACCOUNT_ID) missing.push('R2_ACCOUNT_ID');
     if (!process.env.R2_ACCESS_KEY_ID) missing.push('R2_ACCESS_KEY_ID');
     if (!process.env.R2_SECRET_ACCESS_KEY) missing.push('R2_SECRET_ACCESS_KEY');
-    if (!process.env.R2_BUCKET_NAME) missing.push('R2_BUCKET_NAME');
+    if (!targetBucket && !process.env.R2_BUCKET_NAME) missing.push('R2_BUCKET_NAME');
     if (!process.env.R2_PUBLIC_URL) missing.push('R2_PUBLIC_URL');
 
     if (missing.length > 0) {
       throw new Error(
-        `[Storage Configuration Error] STORAGE_PROVIDER is set to 'r2', but required configuration is missing: ${missing.join(', ')}. Silent fallback to local storage is disabled.`
+        `[Storage Configuration Error] STORAGE_PROVIDER is 'r2', but required configuration is missing: ${missing.join(', ')}. Silent fallback to local storage is disabled.`
       );
     }
 
-    cachedProvider = new CloudflareR2StorageProvider();
-    return cachedProvider;
+    return new CloudflareR2StorageProvider(targetBucket);
   }
 
-  if (configuredProvider === 'cloudinary') {
+  if (providerName === 'cloudinary') {
     const missing: string[] = [];
     if (!process.env.CLOUDINARY_CLOUD_NAME) missing.push('CLOUDINARY_CLOUD_NAME');
     if (!process.env.CLOUDINARY_API_KEY) missing.push('CLOUDINARY_API_KEY');
@@ -40,14 +58,12 @@ export function getStorageProvider(): StorageProvider {
 
     if (missing.length > 0) {
       throw new Error(
-        `[Storage Configuration Error] STORAGE_PROVIDER is set to 'cloudinary', but required configuration is missing: ${missing.join(', ')}. Silent fallback to local storage is disabled.`
+        `[Storage Configuration Error] STORAGE_PROVIDER is 'cloudinary', but required configuration is missing: ${missing.join(', ')}. Silent fallback to local storage is disabled.`
       );
     }
 
-    cachedProvider = new CloudinaryStorageProvider();
-    return cachedProvider;
+    return new CloudinaryStorageProvider();
   }
 
-  cachedProvider = new LocalStorageProvider();
-  return cachedProvider;
+  return new LocalStorageProvider();
 }

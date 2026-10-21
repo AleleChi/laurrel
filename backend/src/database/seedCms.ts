@@ -23,6 +23,16 @@ export async function seedCmsContent(): Promise<MigrationReport> {
     details: [],
   };
 
+  // Fast path: if pages are already seeded, check whether all default pages exist
+  const existingPagesRes = await pool.query('SELECT id FROM cms_pages');
+  const existingPageIds = new Set(existingPagesRes.rows.map((r: any) => r.id));
+  const allPagesExist = defaultCmsPages.every((p) => existingPageIds.has(p.id));
+
+  if (allPagesExist) {
+    report.pagesProcessed = defaultCmsPages.length;
+    return report;
+  }
+
   const client = await pool.connect();
   try {
     await client.query('BEGIN');

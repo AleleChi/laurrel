@@ -8,11 +8,11 @@ export class CloudflareR2StorageProvider implements StorageProvider {
   private bucket: string;
   private publicBaseUrl: string;
 
-  constructor() {
+  constructor(overrideBucket?: string) {
     const accountId = process.env.R2_ACCOUNT_ID || '';
     const accessKeyId = process.env.R2_ACCESS_KEY_ID || '';
     const secretAccessKey = process.env.R2_SECRET_ACCESS_KEY || '';
-    this.bucket = process.env.R2_BUCKET_NAME || '';
+    this.bucket = overrideBucket || process.env.R2_BUCKET_NAME || '';
     this.publicBaseUrl = (process.env.R2_PUBLIC_URL || '').replace(/\/$/, '');
 
     if (!accountId || !accessKeyId || !secretAccessKey || !this.bucket) {
@@ -64,19 +64,29 @@ export class CloudflareR2StorageProvider implements StorageProvider {
       thumbnailUrl: isVideo ? undefined : publicUrl,
       storageReference: objectKey,
       provider: 'r2',
+      bucket: this.bucket,
     };
   }
 
-  async delete(storageReference: string): Promise<boolean> {
+  async delete(storageReference: string, targetBucket?: string): Promise<boolean> {
+    // If targetBucket is explicitly provided (e.g. from the asset record), use it.
+    // This prevents deleting a staging asset from the production bucket or vice versa.
+    const destinationBucket = targetBucket || this.bucket;
+
+    if (!destinationBucket) {
+      console.error('[CloudflareR2StorageProvider] No target bucket identified for deletion.');
+      return false;
+    }
+
     try {
       const command = new DeleteObjectCommand({
-        Bucket: this.bucket,
+        Bucket: destinationBucket,
         Key: storageReference,
       });
       await this.s3Client.send(command);
       return true;
-    } catch (err) {
-      console.error('[CloudflareR2StorageProvider] Delete error:', err);
+    } catch (err: any) {
+      console.error(`[CloudflareR2StorageProvider] Delete error for bucket ${destinationBucket}:`, err.message);
       return false;
     }
   }

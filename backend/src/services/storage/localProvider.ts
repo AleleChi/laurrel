@@ -38,17 +38,19 @@ export class LocalStorageProvider implements StorageProvider {
       thumbnailUrl: publicUrl,
       storageReference: `${safeFolder}/${storedFilename}`,
       provider: 'local',
+      bucket: 'local',
     };
   }
 
-  async delete(storageReference: string): Promise<boolean> {
+  async delete(storageReference: string, _targetBucket?: string): Promise<boolean> {
     try {
       const filePath = path.join(this.uploadsBaseDir, storageReference);
       if (fs.existsSync(filePath)) {
         await fs.promises.unlink(filePath);
         return true;
       }
-      return false;
+      // If the file does not exist on disk, it is already deleted (idempotent delete)
+      return true;
     } catch (err) {
       console.error('[LocalStorageProvider] Delete error:', err);
       return false;

@@ -2,11 +2,11 @@
 # LAURREL SERVICES — RENDER PRODUCTION BLUEPRINT
 # =========================================================
 # Infrastructure Cost & Plan Overview:
-# - Web Service: 'starter' plan is $7 USD / month (24/7 dedicated, 512MB RAM, no spin-down).
-#   To use zero-cost evaluation tier, set plan: free (spins down after 15 min idle).
-# - PostgreSQL Database: 'starter' plan is $7 USD / month (1GB storage, daily automated backups).
-#   To use evaluation database, set plan: free (active for 30 days).
-# Total Starter monthly recurring cost: $14 USD / month.
+# - Web Service: 'starter' plan ($7 USD / month) for 24/7 dedicated backend API.
+#   (To evaluate at zero cost, set plan: free - note that free services spin down after 15 min idle).
+# - Database: Hosted externally on Neon PostgreSQL (Serverless PostgreSQL with SSL/TLS).
+#   No Render PostgreSQL database is provisioned by this blueprint, preventing duplicate database charges.
+# Total Render monthly recurring cost: $7 USD / month (or $0 on free tier).
 # =========================================================
 
 services:
@@ -16,19 +16,17 @@ services:
     rootDir: backend
     buildCommand: npm ci --include=dev && npm run build
     startCommand: npm run start
-    plan: starter # $7/month (or 'free' for staging evaluation)
-    healthCheckPath: /health
+    plan: starter # $7/month (or 'free' for evaluation)
+    healthCheckPath: /ready
     envVars:
       - key: NODE_ENV
         value: production
       - key: PORT
         value: 5000
       - key: DATABASE_URL
-        fromDatabase:
-          name: laurrel-postgres
-          property: connectionString
+        sync: false # Set to your existing Neon PostgreSQL connection string (postgresql://...?sslmode=require)
       - key: FRONTEND_ORIGIN
-        sync: false # Set to your Netlify URL (e.g. https://laurrelservices.ca or https://staging--laurrel.netlify.app)
+        value: https://laurrel.netlify.app
       - key: ADMIN_API_SECRET
         generateValue: true # Secure 32-character master API token generated automatically by Render
       - key: ADMIN_SESSION_SECRET
@@ -47,9 +45,15 @@ services:
         sync: false # Set your verified sender (e.g. "Laurrel Dispatch <dispatch@laurrelservices.ca>" or "onboarding@resend.dev")
       - key: ENQUIRY_TO_EMAIL
         sync: false # Set your intake mailbox address (e.g. info@laurrelservices.ca)
-
-databases:
-  - name: laurrel-postgres
-    plan: starter # $7/month with automated backups (or 'free' for 30-day eval)
-    databaseName: laurrel_production
-    user: laurrel_admin
+      - key: STORAGE_PROVIDER
+        value: r2 # Cloudflare R2 object storage provider
+      - key: R2_ACCOUNT_ID
+        sync: false # Cloudflare Account ID
+      - key: R2_ACCESS_KEY_ID
+        sync: false # Cloudflare R2 API Token Access Key ID
+      - key: R2_SECRET_ACCESS_KEY
+        sync: false # Cloudflare R2 API Token Secret Access Key
+      - key: R2_BUCKET_NAME
+        value: laurrel-media-prod # Dedicated production bucket
+      - key: R2_PUBLIC_URL
+        sync: false # Verified public delivery CDN URL (e.g. https://media.laurrelservices.ca or R2 custom domain)

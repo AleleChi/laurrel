@@ -68,10 +68,11 @@ export class CloudinaryStorageProvider implements StorageProvider {
       thumbnailUrl,
       storageReference: data.public_id || publicId,
       provider: 'cloudinary',
+      bucket: this.cloudName,
     };
   }
 
-  async delete(storageReference: string): Promise<boolean> {
+  async delete(storageReference: string, _targetBucket?: string): Promise<boolean> {
     if (!this.cloudName || !this.apiKey || !this.apiSecret) return false;
 
     const timestamp = Math.floor(Date.now() / 1000);

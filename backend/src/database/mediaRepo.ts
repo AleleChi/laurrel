@@ -11,6 +11,7 @@ export interface MediaAsset {
   height?: number | null;
   duration?: number | null;
   storageProvider: 'local' | 'r2' | 'cloudinary';
+  storageBucket?: string | null;
   storageReference: string;
   publicUrl: string;
   thumbnailUrl?: string | null;
@@ -32,6 +33,7 @@ export interface MediaUsageItem {
   sectionKey: string;
   inPublished: boolean;
   inDraft: boolean;
+  inRevisionHistory?: boolean;
 }
 
 export interface ListMediaOptions {
@@ -55,6 +57,7 @@ export async function createMediaAsset(data: {
   height?: number | null;
   duration?: number | null;
   storageProvider: 'local' | 'r2' | 'cloudinary';
+  storageBucket?: string | null;
   storageReference: string;
   publicUrl: string;
   thumbnailUrl?: string | null;
@@ -86,6 +89,7 @@ export async function createMediaAsset(data: {
       height,
       duration,
       storage_provider,
+      storage_bucket,
       storage_reference,
       public_url,
       thumbnail_url,
@@ -100,7 +104,7 @@ export async function createMediaAsset(data: {
       created_at,
       updated_at
     ) VALUES (
-      $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, FALSE, NOW(), NOW()
+      $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, FALSE, NOW(), NOW()
     )
     ON CONFLICT (id) DO UPDATE SET
       original_filename = EXCLUDED.original_filename,
@@ -112,6 +116,7 @@ export async function createMediaAsset(data: {
       height = EXCLUDED.height,
       duration = EXCLUDED.duration,
       storage_provider = EXCLUDED.storage_provider,
+      storage_bucket = EXCLUDED.storage_bucket,
       storage_reference = EXCLUDED.storage_reference,
       public_url = EXCLUDED.public_url,
       thumbnail_url = EXCLUDED.thumbnail_url,
@@ -127,6 +132,7 @@ export async function createMediaAsset(data: {
       height,
       duration,
       storage_provider AS "storageProvider",
+      storage_bucket AS "storageBucket",
       storage_reference AS "storageReference",
       public_url AS "publicUrl",
       thumbnail_url AS "thumbnailUrl",
@@ -153,6 +159,7 @@ export async function createMediaAsset(data: {
     data.height ?? null,
     data.duration ?? null,
     data.storageProvider,
+    data.storageBucket ?? null,
     data.storageReference,
     data.publicUrl,
     data.thumbnailUrl ?? null,
@@ -185,6 +192,7 @@ export async function getMediaAssetById(id: string): Promise<MediaAsset | null> 
       height,
       duration,
       storage_provider AS "storageProvider",
+      storage_bucket AS "storageBucket",
       storage_reference AS "storageReference",
       public_url AS "publicUrl",
       thumbnail_url AS "thumbnailUrl",
@@ -269,6 +277,7 @@ export async function listMediaAssets(options: ListMediaOptions = {}): Promise<{
       height,
       duration,
       storage_provider AS "storageProvider",
+      storage_bucket AS "storageBucket",
       storage_reference AS "storageReference",
       public_url AS "publicUrl",
       thumbnail_url AS "thumbnailUrl",
@@ -350,6 +359,7 @@ export async function updateMediaAsset(
       height,
       duration,
       storage_provider AS "storageProvider",
+      storage_bucket AS "storageBucket",
       storage_reference AS "storageReference",
       public_url AS "publicUrl",
       thumbnail_url AS "thumbnailUrl",
@@ -388,6 +398,7 @@ export async function archiveMediaAsset(id: string, isArchived: boolean): Promis
       height,
       duration,
       storage_provider AS "storageProvider",
+      storage_bucket AS "storageBucket",
       storage_reference AS "storageReference",
       public_url AS "publicUrl",
       thumbnail_url AS "thumbnailUrl",
@@ -408,20 +419,25 @@ export async function archiveMediaAsset(id: string, isArchived: boolean): Promis
 }
 
 /**
- * Reference Tracking: Discovers which CMS sections currently reference this media asset
- * Searches both published content and draft_content by ID or public URL.
+ * Reference Tracking: Discovers which CMS sections and historical CMS revisions reference this media asset.
+ * Checks cms_sections (published content and draft_content) as well as cms_revisions (historical versions).
  */
 export async function getMediaAssetUsage(assetId: string, publicUrl?: string): Promise<MediaUsageItem[]> {
   const pool = getDbPool();
   if (!pool) return [];
 
-  const query = `
+  const patternId = `%${assetId}%`;
+  const patternUrl = publicUrl ? `%${publicUrl}%` : '';
+
+  // 1. Current sections (published and draft)
+  const sectionsQuery = `
     SELECT
       s.page_id AS "pageId",
       COALESCE(p.name, s.page_id) AS "pageName",
       s.section_key AS "sectionKey",
       (s.content::text LIKE $1 OR ($2 != '' AND s.content::text LIKE $2)) AS "inPublished",
-      (s.draft_content IS NOT NULL AND (s.draft_content::text LIKE $1 OR ($2 != '' AND s.draft_content::text LIKE $2))) AS "inDraft"
+      (s.draft_content IS NOT NULL AND (s.draft_content::text LIKE $1 OR ($2 != '' AND s.draft_content::text LIKE $2))) AS "inDraft",
+      FALSE AS "inRevisionHistory"
     FROM cms_sections s
     LEFT JOIN cms_pages p ON s.page_id = p.id
     WHERE 
@@ -430,15 +446,36 @@ export async function getMediaAssetUsage(assetId: string, publicUrl?: string): P
     ORDER BY s.page_id ASC, s.sort_order ASC
   `;
 
-  const patternId = `%${assetId}%`;
-  const patternUrl = publicUrl ? `%${publicUrl}%` : '';
+  // 2. Content revisions (historical versions)
+  const revisionsQuery = `
+    SELECT
+      r.page_id AS "pageId",
+      COALESCE(p.name, r.page_id) AS "pageName",
+      CONCAT('Revision #', r.revision_number) AS "sectionKey",
+      FALSE AS "inPublished",
+      FALSE AS "inDraft",
+      TRUE AS "inRevisionHistory"
+    FROM cms_revisions r
+    LEFT JOIN cms_pages p ON r.page_id = p.id
+    WHERE (r.data::text LIKE $1 OR ($2 != '' AND r.data::text LIKE $2))
+    ORDER BY r.page_id ASC, r.revision_number DESC
+  `;
 
-  const { rows } = await pool.query(query, [patternId, patternUrl]);
-  return rows;
+  try {
+    const [sectionsRes, revisionsRes] = await Promise.all([
+      pool.query(sectionsQuery, [patternId, patternUrl]),
+      pool.query(revisionsQuery, [patternId, patternUrl]),
+    ]);
+
+    return [...sectionsRes.rows, ...revisionsRes.rows];
+  } catch (err) {
+    console.warn('[MediaRepo] getMediaAssetUsage query warning:', err);
+    return [];
+  }
 }
 
 /**
- * Permanently delete media asset if not in active published usage
+ * Permanently delete media asset record from the database.
  */
 export async function deleteMediaAsset(id: string): Promise<boolean> {
   const pool = getDbPool();
