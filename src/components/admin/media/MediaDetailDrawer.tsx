@@ -44,6 +44,7 @@ export function MediaDetailDrawer({
   const [copiedUrl, setCopiedUrl] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const lastAssetIdRef = React.useRef<string | null>(null);
 
   useEffect(() => {
     if (asset) {
@@ -51,9 +52,12 @@ export function MediaDetailDrawer({
       setCaption(asset.caption || '');
       setFolder(asset.folder || 'general');
       setFocalPoint(asset.focalPoint || 'center');
-      setSaveSuccess(false);
-      setErrorMsg('');
-      setConfirmDelete(false);
+      if (lastAssetIdRef.current !== asset.id) {
+        lastAssetIdRef.current = asset.id;
+        setSaveSuccess(false);
+        setErrorMsg('');
+        setConfirmDelete(false);
+      }
     }
   }, [asset]);
 

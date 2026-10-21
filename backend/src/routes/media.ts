@@ -235,7 +235,7 @@ mediaRouter.post(
         storageProvider: stored.provider,
         storageReference: stored.storageReference,
         publicUrl: stored.publicUrl,
-        thumbnailUrl: stored.thumbnailUrl || (isVideo ? null : stored.publicUrl),
+        thumbnailUrl: isVideo ? (stored.thumbnailUrl || null) : (stored.thumbnailUrl || stored.publicUrl),
         altText,
         caption: caption || null,
         copyright: copyright || null,

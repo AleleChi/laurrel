@@ -12,8 +12,20 @@ export class CloudflareR2StorageProvider implements StorageProvider {
     const accountId = process.env.R2_ACCOUNT_ID || '';
     const accessKeyId = process.env.R2_ACCESS_KEY_ID || '';
     const secretAccessKey = process.env.R2_SECRET_ACCESS_KEY || '';
-    this.bucket = process.env.R2_BUCKET_NAME || 'laurrel-assets';
+    this.bucket = process.env.R2_BUCKET_NAME || '';
     this.publicBaseUrl = (process.env.R2_PUBLIC_URL || '').replace(/\/$/, '');
+
+    if (!accountId || !accessKeyId || !secretAccessKey || !this.bucket) {
+      throw new Error(
+        '[CloudflareR2StorageProvider] Missing S3 credentials or bucket name in environment.'
+      );
+    }
+
+    if (!this.publicBaseUrl) {
+      throw new Error(
+        '[CloudflareR2StorageProvider] R2_PUBLIC_URL is not configured. Public URLs must be generated from the configured public delivery domain, never from private S3 API endpoints.'
+      );
+    }
 
     this.s3Client = new S3Client({
       region: 'auto',
@@ -43,14 +55,13 @@ export class CloudflareR2StorageProvider implements StorageProvider {
 
     await this.s3Client.send(command);
 
-    const publicUrl = this.publicBaseUrl
-      ? `${this.publicBaseUrl}/${objectKey}`
-      : `https://${this.bucket}.r2.cloudflarestorage.com/${objectKey}`;
+    const isVideo = options.mimeType.startsWith('video/');
+    const publicUrl = `${this.publicBaseUrl}/${objectKey}`;
 
     return {
       storedFilename,
       publicUrl,
-      thumbnailUrl: publicUrl,
+      thumbnailUrl: isVideo ? undefined : publicUrl,
       storageReference: objectKey,
       provider: 'r2',
     };
@@ -71,8 +82,6 @@ export class CloudflareR2StorageProvider implements StorageProvider {
   }
 
   getPublicUrl(storageReference: string): string {
-    return this.publicBaseUrl
-      ? `${this.publicBaseUrl}/${storageReference}`
-      : `https://${this.bucket}.r2.cloudflarestorage.com/${storageReference}`;
+    return `${this.publicBaseUrl}/${storageReference.replace(/\\/g, '/')}`;
   }
 }
