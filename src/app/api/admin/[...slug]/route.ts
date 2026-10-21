@@ -3,18 +3,16 @@ import { getAdminSessionFromRequest } from '@/lib/auth/session';
 
 export async function GET(req: NextRequest, { params }: { params: { slug: string[] } }) {
   const session = getAdminSessionFromRequest(req);
-  const secret = process.env.ADMIN_API_SECRET;
-  const tokenHeader = req.headers.get('x-admin-token');
-  const isDirectSecretCall = secret && tokenHeader === secret;
 
-  if (!session && !isDirectSecretCall) {
+  if (!session?.sessionId) {
     return NextResponse.json(
-      { error: 'Unauthorized: Valid administrator session required.' },
+      { error: 'Unauthorized: Active administrator session required.' },
       { status: 401 }
     );
   }
 
   const backendUrl = process.env.BACKEND_API_URL || process.env.API_BASE_URL || 'http://localhost:5000';
+  const secret = process.env.ADMIN_API_SECRET;
   const path = params.slug.join('/');
   const search = req.nextUrl.search;
   const target = `${backendUrl.replace(/\/$/, '')}/api/admin/${path}${search}`;
@@ -23,15 +21,7 @@ export async function GET(req: NextRequest, { params }: { params: { slug: string
     const res = await fetch(target, {
       headers: {
         ...(secret ? { 'x-admin-token': secret } : {}),
-        ...(session?.sessionId ? { 'x-admin-session-id': session.sessionId } : {}),
-        ...(session?.user
-          ? {
-              'x-admin-user-id': session.user.id,
-              'x-admin-user-email': session.user.email,
-              'x-admin-user-name': session.user.name,
-              'x-admin-user-role': session.user.role,
-            }
-          : {}),
+        'x-admin-session-id': session.sessionId,
       },
       cache: 'no-store',
     });
@@ -49,18 +39,16 @@ export async function GET(req: NextRequest, { params }: { params: { slug: string
 
 export async function PATCH(req: NextRequest, { params }: { params: { slug: string[] } }) {
   const session = getAdminSessionFromRequest(req);
-  const secret = process.env.ADMIN_API_SECRET;
-  const tokenHeader = req.headers.get('x-admin-token');
-  const isDirectSecretCall = secret && tokenHeader === secret;
 
-  if (!session && !isDirectSecretCall) {
+  if (!session?.sessionId) {
     return NextResponse.json(
-      { error: 'Unauthorized: Valid administrator session required.' },
+      { error: 'Unauthorized: Active administrator session required.' },
       { status: 401 }
     );
   }
 
   const backendUrl = process.env.BACKEND_API_URL || process.env.API_BASE_URL || 'http://localhost:5000';
+  const secret = process.env.ADMIN_API_SECRET;
   const path = params.slug.join('/');
   const target = `${backendUrl.replace(/\/$/, '')}/api/admin/${path}`;
 
@@ -72,15 +60,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { slug: stri
       headers: {
         'Content-Type': 'application/json',
         ...(secret ? { 'x-admin-token': secret } : {}),
-        ...(session?.sessionId ? { 'x-admin-session-id': session.sessionId } : {}),
-        ...(session?.user
-          ? {
-              'x-admin-user-id': session.user.id,
-              'x-admin-user-email': session.user.email,
-              'x-admin-user-name': session.user.name,
-              'x-admin-user-role': session.user.role,
-            }
-          : {}),
+        'x-admin-session-id': session.sessionId,
       },
       body: JSON.stringify(body),
     });
@@ -98,18 +78,16 @@ export async function PATCH(req: NextRequest, { params }: { params: { slug: stri
 
 export async function POST(req: NextRequest, { params }: { params: { slug: string[] } }) {
   const session = getAdminSessionFromRequest(req);
-  const secret = process.env.ADMIN_API_SECRET;
-  const tokenHeader = req.headers.get('x-admin-token');
-  const isDirectSecretCall = secret && tokenHeader === secret;
 
-  if (!session && !isDirectSecretCall) {
+  if (!session?.sessionId) {
     return NextResponse.json(
-      { error: 'Unauthorized: Valid administrator session required.' },
+      { error: 'Unauthorized: Active administrator session required.' },
       { status: 401 }
     );
   }
 
   const backendUrl = process.env.BACKEND_API_URL || process.env.API_BASE_URL || 'http://localhost:5000';
+  const secret = process.env.ADMIN_API_SECRET;
   const path = params.slug.join('/');
   const target = `${backendUrl.replace(/\/$/, '')}/api/admin/${path}`;
 
@@ -119,15 +97,7 @@ export async function POST(req: NextRequest, { params }: { params: { slug: strin
 
     const forwardHeaders: Record<string, string> = {
       ...(secret ? { 'x-admin-token': secret } : {}),
-      ...(session?.sessionId ? { 'x-admin-session-id': session.sessionId } : {}),
-      ...(session?.user
-        ? {
-            'x-admin-user-id': session.user.id,
-            'x-admin-user-email': session.user.email,
-            'x-admin-user-name': session.user.name,
-            'x-admin-user-role': session.user.role,
-          }
-        : {}),
+      'x-admin-session-id': session.sessionId,
     };
 
     let bodyData: any;
@@ -160,18 +130,16 @@ export async function POST(req: NextRequest, { params }: { params: { slug: strin
 
 export async function DELETE(req: NextRequest, { params }: { params: { slug: string[] } }) {
   const session = getAdminSessionFromRequest(req);
-  const secret = process.env.ADMIN_API_SECRET;
-  const tokenHeader = req.headers.get('x-admin-token');
-  const isDirectSecretCall = secret && tokenHeader === secret;
 
-  if (!session && !isDirectSecretCall) {
+  if (!session?.sessionId) {
     return NextResponse.json(
-      { error: 'Unauthorized: Valid administrator session required.' },
+      { error: 'Unauthorized: Active administrator session required.' },
       { status: 401 }
     );
   }
 
   const backendUrl = process.env.BACKEND_API_URL || process.env.API_BASE_URL || 'http://localhost:5000';
+  const secret = process.env.ADMIN_API_SECRET;
   const path = params.slug.join('/');
   const target = `${backendUrl.replace(/\/$/, '')}/api/admin/${path}`;
 
@@ -180,15 +148,7 @@ export async function DELETE(req: NextRequest, { params }: { params: { slug: str
       method: 'DELETE',
       headers: {
         ...(secret ? { 'x-admin-token': secret } : {}),
-        ...(session?.sessionId ? { 'x-admin-session-id': session.sessionId } : {}),
-        ...(session?.user
-          ? {
-              'x-admin-user-id': session.user.id,
-              'x-admin-user-email': session.user.email,
-              'x-admin-user-name': session.user.name,
-              'x-admin-user-role': session.user.role,
-            }
-          : {}),
+        'x-admin-session-id': session.sessionId,
       },
     });
 

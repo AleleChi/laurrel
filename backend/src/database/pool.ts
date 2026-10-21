@@ -30,12 +30,12 @@ export function getDbPool(): Pool | null {
     const isProduction = process.env.NODE_ENV === 'production';
     const isNeon = connectionString.includes('neon.tech');
     const isRender = connectionString.includes('render.com');
-    const hasSslMode = connectionString.includes('sslmode=require');
+    const hasSslMode = connectionString.includes('sslmode=');
     const useSsl = isProduction || isNeon || isRender || hasSslMode;
 
     poolInstance = new Pool({
       connectionString,
-      ssl: useSsl ? { rejectUnauthorized: false } : undefined,
+      ssl: useSsl ? { rejectUnauthorized: true } : undefined,
       max: 10,
       idleTimeoutMillis: 30000,
       connectionTimeoutMillis: 10000,

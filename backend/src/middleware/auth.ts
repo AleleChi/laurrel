@@ -7,6 +7,7 @@ export interface AuthenticatedAdminUser {
   name: string;
   role: AdminRole;
   sessionId?: string;
+  isSystem?: boolean;
 }
 
 declare global {
@@ -18,9 +19,12 @@ declare global {
 }
 
 /**
- * Validates either:
- * 1. Server-to-server gateway token (x-admin-token === ADMIN_API_SECRET), with optional session forwarding headers
- * 2. Direct session token in x-admin-session-id
+ * Validates administrator authentication:
+ * 1. For user-initiated requests: requires valid database session (x-admin-session-id)
+ *    and resolves all user identity and permissions strictly from PostgreSQL.
+ * 2. Forwarded role headers (e.g. x-admin-user-role) are never trusted as proof of permission.
+ * 3. Server-to-server calls with only ADMIN_API_SECRET are assigned a non-interactive 'system' role
+ *    and can never impersonate an interactive owner account.
  */
 export async function requireAdminAuth(req: Request, res: Response, next: NextFunction): Promise<void> {
   const secret = process.env.ADMIN_API_SECRET;
@@ -42,48 +46,44 @@ export async function requireAdminAuth(req: Request, res: Response, next: NextFu
     token = authHeader.slice(7).trim();
   }
 
-  // Check 1: Direct session token validation
-  if (typeof sessionHeader === 'string' && sessionHeader.startsWith('sess_')) {
-    const verified = await verifyAdminSession(sessionHeader);
-    if (verified) {
-      req.adminUser = {
-        id: verified.user.id,
-        email: verified.user.email,
-        name: verified.user.name,
-        role: verified.user.role,
-        sessionId: verified.session.id,
-      };
-      return next();
+  // Gateway secret verification (when provided, token must match configured secret)
+  const hasGatewaySecret = Boolean(token && token === secret);
+
+  // If a session ID is supplied, validate it against the database
+  if (typeof sessionHeader === 'string' && sessionHeader.trim().length > 0) {
+    const verified = await verifyAdminSession(sessionHeader.trim());
+
+    if (!verified) {
+      // Session is expired, revoked, or user account is deactivated
+      res.status(401).json({
+        error: 'Unauthorized: Administrator session is invalid, expired, or revoked.',
+      });
+      return;
     }
+
+    // Bind authenticated identity directly from verified database record
+    req.adminUser = {
+      id: verified.user.id,
+      email: verified.user.email,
+      name: verified.user.name,
+      role: verified.user.role,
+      sessionId: verified.session.id,
+      isSystem: false,
+    };
+
+    return next();
   }
 
-  // Check 2: Gateway token validation (from Next.js server-side API proxy)
-  if (token && token === secret) {
-    // If Next.js forwarded authenticated user identity headers, bind them
-    const forwardedId = req.headers['x-admin-user-id'] as string | undefined;
-    const forwardedEmail = req.headers['x-admin-user-email'] as string | undefined;
-    const forwardedName = req.headers['x-admin-user-name'] as string | undefined;
-    const forwardedRole = req.headers['x-admin-user-role'] as AdminRole | undefined;
-    const forwardedSessionId = req.headers['x-admin-session-id'] as string | undefined;
-
-    if (forwardedId && forwardedRole) {
-      req.adminUser = {
-        id: forwardedId,
-        email: forwardedEmail || '',
-        name: forwardedName || 'Administrator',
-        role: forwardedRole,
-        sessionId: forwardedSessionId,
-      };
-    } else {
-      // Default to owner/system for direct secret calls if no user forwarded
-      req.adminUser = {
-        id: 'system_gateway',
-        email: 'system@laurrelservices.ca',
-        name: 'System Gateway',
-        role: 'owner',
-      };
-    }
-
+  // Non-interactive system operation authentication (gateway token alone without session)
+  // Strictly scoped as 'system' - NEVER granted 'owner' or interactive admin identity
+  if (hasGatewaySecret) {
+    req.adminUser = {
+      id: 'system_service',
+      email: 'system@laurrelservices.ca',
+      name: 'System Service',
+      role: 'system' as any,
+      isSystem: true,
+    };
     return next();
   }
 
@@ -92,6 +92,7 @@ export async function requireAdminAuth(req: Request, res: Response, next: NextFu
 
 /**
  * Enforce RBAC permissions
+ * Rejects non-interactive system credentials from interactive administrator operations
  */
 export function requireRole(allowedRoles: AdminRole[]) {
   return (req: Request, res: Response, next: NextFunction): void => {
@@ -100,7 +101,20 @@ export function requireRole(allowedRoles: AdminRole[]) {
       return;
     }
 
-    if (!allowedRoles.includes(req.adminUser.role) && req.adminUser.role !== 'owner') {
+    // System credentials cannot perform interactive administrator operations
+    if (req.adminUser.isSystem || req.adminUser.role === ('system' as any)) {
+      res.status(403).json({
+        error: 'Forbidden: Non-interactive system credentials cannot perform interactive administrator operations.',
+      });
+      return;
+    }
+
+    // Owner role has universal access to administrator endpoints
+    if (req.adminUser.role === 'owner') {
+      return next();
+    }
+
+    if (!allowedRoles.includes(req.adminUser.role)) {
       res.status(403).json({
         error: `Forbidden: Role '${req.adminUser.role}' is not authorized for this operation.`,
         requiredRoles: allowedRoles,

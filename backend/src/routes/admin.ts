@@ -153,14 +153,19 @@ adminRouter.post('/api/admin/auth/logout', async (req: Request, res: Response) =
  * GET /api/admin/auth/me - Current user session info
  */
 adminRouter.get('/api/admin/auth/me', (req: Request, res: Response) => {
-  if (!req.adminUser) {
+  if (!req.adminUser || req.adminUser.isSystem) {
     res.status(401).json({ authenticated: false });
     return;
   }
 
   res.status(200).json({
     authenticated: true,
-    user: req.adminUser,
+    user: {
+      id: req.adminUser.id,
+      email: req.adminUser.email,
+      name: req.adminUser.name,
+      role: req.adminUser.role,
+    },
   });
 });
 

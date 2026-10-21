@@ -70,18 +70,28 @@ enquireRouter.post('/api/enquire', async (req: Request, res: Response) => {
     const cleanedServices = Array.isArray(services) && services.length > 0 ? services : ['general'];
 
     // 1. Durably persist enquiry
-    const record = await createEnquiry({
-      intent: intent || 'general_contact',
-      source: source || 'web_direct',
-      name,
-      email,
-      phone,
-      services: cleanedServices,
-      serviceLocation,
-      preferredDate,
-      details,
-      serviceDetails,
-    });
+    let record;
+    try {
+      record = await createEnquiry({
+        intent: intent || 'general_contact',
+        source: source || 'web_direct',
+        name,
+        email,
+        phone,
+        services: cleanedServices,
+        serviceLocation,
+        preferredDate,
+        details,
+        serviceDetails,
+      });
+    } catch (persistErr: any) {
+      console.error('[Enquiry Persistence Error]:', persistErr.message);
+      res.status(503).json({
+        error: 'Database service is temporarily unavailable. Your enquiry could not be saved. Please retry in a few moments.',
+        code: 'DATABASE_UNAVAILABLE',
+      });
+      return;
+    }
 
     // 2. Dispatch notification email
     const emailProvider = getEmailProvider();

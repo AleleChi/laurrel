@@ -2,6 +2,9 @@ import fs from 'fs';
 import path from 'path';
 import { getDbPool } from './pool';
 
+const MIGRATION_VERSION = '20261021_module_01_02_03_consolidated';
+const ADVISORY_LOCK_ID = 74239842;
+
 export async function runMigrations(): Promise<{ success: boolean; message: string }> {
   const pool = getDbPool();
   if (!pool) {
@@ -32,10 +35,46 @@ export async function runMigrations(): Promise<{ success: boolean; message: stri
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
+
+      // 1. Concurrency safeguard: PostgreSQL transaction-level advisory lock
+      // Ensures only one worker runs migrations at any given time during scale-up
+      await client.query('SELECT pg_advisory_xact_lock($1)', [ADVISORY_LOCK_ID]);
+
+      // 2. Migration tracking table
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS schema_migrations (
+          version VARCHAR(64) PRIMARY KEY,
+          applied_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        )
+      `);
+
+      // 3. Check if this consolidated migration has already been applied
+      const existing = await client.query(
+        'SELECT version, applied_at FROM schema_migrations WHERE version = $1',
+        [MIGRATION_VERSION]
+      );
+
+      if (existing.rows.length > 0) {
+        await client.query('COMMIT');
+        console.log(`[Migration] Version ${MIGRATION_VERSION} already applied at ${existing.rows[0].applied_at}. Skipping redundant DDL.`);
+        return {
+          success: true,
+          message: `Schema version ${MIGRATION_VERSION} is already current.`,
+        };
+      }
+
+      // 4. Execute non-destructive schema DDL
       await client.query(sql);
+
+      // 5. Record completed migration version
+      await client.query(
+        'INSERT INTO schema_migrations (version, applied_at) VALUES ($1, NOW())',
+        [MIGRATION_VERSION]
+      );
+
       await client.query('COMMIT');
-      console.log('[Migration] PostgreSQL schema migration executed successfully.');
-      return { success: true, message: 'All tables and indexes initialized.' };
+      console.log(`[Migration] PostgreSQL schema migration ${MIGRATION_VERSION} executed successfully.`);
+      return { success: true, message: `Migration ${MIGRATION_VERSION} initialized successfully.` };
     } catch (err: any) {
       await client.query('ROLLBACK');
       console.error('[Migration Error]:', err.message);
