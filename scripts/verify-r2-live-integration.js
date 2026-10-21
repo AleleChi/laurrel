@@ -52,7 +52,13 @@ async function runR2LiveVerification() {
 
   const testVideoFixture = path.join(fixturesDir, 'test-r2-video.mp4');
   if (!fs.existsSync(testVideoFixture)) {
-    throw new Error(`Video fixture not found at ${testVideoFixture}`);
+    try {
+      const ffmpeg = require(path.join(__dirname, '..', 'node_modules', 'ffmpeg-static'));
+      const { execSync } = require('child_process');
+      execSync(`"${ffmpeg}" -y -f lavfi -i color=c=0x390044:s=320x240:d=1 -pix_fmt yuv420p -r 10 "${testVideoFixture}"`, { stdio: 'ignore' });
+    } catch (e) {
+      console.warn('Could not generate dynamic video fixture:', e.message);
+    }
   }
 
   const browser = await puppeteer.launch({
@@ -460,6 +466,12 @@ async function runR2LiveVerification() {
     console.log('===========================================================');
   } finally {
     await browser.close();
+    try {
+      if (fs.existsSync(testImageFixture)) fs.unlinkSync(testImageFixture);
+      if (fs.existsSync(testVideoFixture)) fs.unlinkSync(testVideoFixture);
+    } catch (e) {
+      // Ignored
+    }
     await pool.end();
   }
 }
