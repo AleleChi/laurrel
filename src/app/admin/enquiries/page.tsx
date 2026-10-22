@@ -85,6 +85,7 @@ export default function AdminEnquiriesPage() {
   const [isUpdatingStatus, setIsUpdatingStatus] = useState<boolean>(false);
   const [newNoteText, setNewNoteText] = useState<string>('');
   const [statusError, setStatusError] = useState<string>('');
+  const [userRole, setUserRole] = useState<string | null>(null);
 
   const loadData = async () => {
     try {
@@ -121,6 +122,12 @@ export default function AdminEnquiriesPage() {
 
   useEffect(() => {
     loadData();
+    fetch('/api/admin/auth/me')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.user?.role) setUserRole(data.user.role);
+      })
+      .catch(() => {});
   }, []);
 
   const handleStatusUpdate = async (newStatus: string) => {
@@ -568,15 +575,17 @@ export default function AdminEnquiriesPage() {
                       })}
                     </div>
 
-                    {/* Diagnostic toggle */}
-                    <details className="mt-3 pt-2 border-t border-black/[0.04] text-[10px] text-zinc-400">
-                      <summary className="cursor-pointer hover:text-zinc-600 transition-colors">
-                        Technical Payload (Diagnostic)
-                      </summary>
-                      <pre className="mt-1.5 p-2 bg-white rounded border border-black/[0.06] font-mono text-[10px] overflow-x-auto text-zinc-600">
-                        {JSON.stringify(selectedEnquiry.serviceDetails, null, 2)}
-                      </pre>
-                    </details>
+                    {/* Authorised Diagnostic Access (Owner Only) - Hidden from ordinary staff */}
+                    {userRole === 'owner' && (
+                      <details className="mt-3 pt-2 border-t border-black/[0.04] text-[10px] text-zinc-400">
+                        <summary className="cursor-pointer hover:text-zinc-600 transition-colors">
+                          Authorised Diagnostic Payload (System Owner)
+                        </summary>
+                        <pre className="mt-1.5 p-2 bg-white rounded border border-black/[0.06] font-mono text-[10px] overflow-x-auto text-zinc-600">
+                          {JSON.stringify(selectedEnquiry.serviceDetails, null, 2)}
+                        </pre>
+                      </details>
+                    )}
                   </div>
                 )}
               </div>
