@@ -240,21 +240,27 @@ export class SmtpEmailProvider implements IEmailProvider {
       hour12: true,
     }).format(new Date(data.scheduledStart));
 
-    const subject = `Confirmed: Laurrel Consultation — ${data.title}`;
+    const isPending = data.status === 'pending';
+    const subject = isPending
+      ? `Pending Confirmation: Laurrel Consultation — ${data.title}`
+      : `Confirmed: Laurrel Consultation — ${data.title}`;
 
     const html = `
       <div style="font-family: Arial, sans-serif; max-width: 580px; margin: 0 auto; line-height: 1.6; color: #202024; background-color: #F8F7F4; padding: 24px;">
         <div style="background: #390044; padding: 26px 28px; border-radius: 12px 12px 0 0; color: #FFFFFF;">
           <h2 style="margin: 0; color: #FE6000; font-size: 20px; font-weight: bold;">LAURREL SERVICES</h2>
-          <p style="margin: 4px 0 0; font-size: 13px; color: #F8F7F4;">Ottawa Consultation Confirmation</p>
+          <p style="margin: 4px 0 0; font-size: 13px; color: #F8F7F4;">${isPending ? 'Ottawa Consultation Request Received' : 'Ottawa Consultation Confirmation'}</p>
         </div>
         <div style="background: #FFFFFF; padding: 32px 28px; border: 1px solid #E5E5E5; border-top: none; border-radius: 0 0 12px 12px;">
-          <h3 style="margin: 0 0 14px; font-size: 18px; color: #202024; font-weight: 600;">Your consultation is confirmed</h3>
+          <h3 style="margin: 0 0 14px; font-size: 18px; color: #202024; font-weight: 600;">${isPending ? 'Your consultation request has been received' : 'Your consultation is confirmed'}</h3>
           <p style="margin: 0 0 16px; font-size: 14px; color: #575757;">Hello ${safeName},</p>
           <p style="margin: 0 0 20px; font-size: 14px; color: #575757;">
-            We have scheduled your consultation with Laurrel Services:
+            ${isPending
+              ? 'We have received your consultation booking request for Laurrel Services. A member of our Ottawa operations team is reviewing your schedule request and will confirm shortly.'
+              : 'We have scheduled your consultation with Laurrel Services:'}
           </p>
           <div style="background: #F8F7F4; border-left: 4px solid #390044; border-radius: 6px; padding: 18px; margin: 20px 0;">
+            <p style="margin: 0 0 8px; font-size: 13px;"><strong>Status:</strong> ${isPending ? '<span style="color: #B45309; background: #FEF3C7; padding: 2px 8px; border-radius: 4px; font-weight: bold; font-size: 11px;">PENDING CONFIRMATION</span>' : '<span style="color: #047857; background: #D1FAE5; padding: 2px 8px; border-radius: 4px; font-weight: bold; font-size: 11px;">CONFIRMED</span>'}</p>
             <p style="margin: 0 0 8px; font-size: 13px;"><strong>Purpose:</strong> ${safeTitle}</p>
             <p style="margin: 0 0 8px; font-size: 13px;"><strong>Date & Time:</strong> ${formattedTime} (Ottawa Time)</p>
             <p style="margin: 0 0 8px; font-size: 13px;"><strong>Duration:</strong> ${data.durationMinutes} minutes</p>

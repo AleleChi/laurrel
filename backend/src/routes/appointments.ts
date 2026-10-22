@@ -128,6 +128,7 @@ appointmentsRouter.post(
         title,
         purpose,
         appointmentType,
+        status = 'pending',
         scheduledStart,
         durationMinutes = 30,
         customerName,
@@ -157,6 +158,10 @@ appointmentsRouter.post(
       const type: AppointmentType = VALID_APPOINTMENT_TYPES.includes(appointmentType)
         ? appointmentType
         : 'telephone';
+
+      const initialStatus: AppointmentStatus = VALID_STATUSES.includes(status)
+        ? status
+        : 'pending';
 
       const startDate = new Date(scheduledStart);
       if (isNaN(startDate.getTime())) {
@@ -188,12 +193,13 @@ appointmentsRouter.post(
 
       const performedBy = req.adminUser?.name || req.adminUser?.email || 'Operations Staff';
 
-      const appointment = await createAppointment(
+      const { appointment, isNew } = await createAppointment(
         {
           enquiryId,
           title,
           purpose,
           appointmentType: type,
+          status: initialStatus,
           scheduledStart: startDate,
           scheduledEnd: endDate,
           durationMinutes: duration,
@@ -211,6 +217,17 @@ appointmentsRouter.post(
         performedBy
       );
 
+      // Safe Idempotent Replay: If appointment already existed with this idempotency key, return it without duplicate notifications
+      if (!isNew) {
+        res.status(200).json({
+          appointment,
+          meetingDetails: meetingResult,
+          emailDispatch: { attempted: false, success: true, replay: true },
+          idempotentReplay: true,
+        });
+        return;
+      }
+
       // Handle customer notification if requested
       let emailDispatch = { attempted: false, success: false, error: undefined as string | undefined };
       if (notifyCustomer) {
@@ -226,6 +243,7 @@ appointmentsRouter.post(
             title: appointment.title,
             purpose: appointment.purpose,
             appointmentType: appointment.appointmentType,
+            status: appointment.status,
             scheduledStart: appointment.scheduledStart,
             scheduledEnd: appointment.scheduledEnd,
             durationMinutes: appointment.durationMinutes,
@@ -262,6 +280,14 @@ appointmentsRouter.post(
         emailDispatch,
       });
     } catch (err: any) {
+      if (err.code === 'STAFF_CONFLICT') {
+        res.status(409).json({
+          error: err.message,
+          code: 'STAFF_CONFLICT',
+          conflict: err.conflict,
+        });
+        return;
+      }
       console.error('[Appointment Creation Error]:', err.message);
       res.status(500).json({ error: err.message });
     }
@@ -301,7 +327,7 @@ appointmentsRouter.patch(
   async (req: Request, res: Response) => {
     try {
       const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
-      const { status, reason } = req.body;
+      const { status, reason, notifyCustomer = true } = req.body;
 
       if (!VALID_STATUSES.includes(status)) {
         res.status(400).json({
@@ -310,11 +336,61 @@ appointmentsRouter.patch(
         return;
       }
 
+      const existing = await getAppointmentById(id);
+      if (!existing) {
+        res.status(404).json({ error: 'Appointment not found.' });
+        return;
+      }
+
       const performedBy = req.adminUser?.name || req.adminUser?.email || 'Operations Staff';
       const updated = await updateAppointmentStatus(id, status, performedBy, reason);
 
-      res.status(200).json({ appointment: updated });
+      let emailDispatch = { attempted: false, success: false, error: undefined as string | undefined };
+      // When confirming a previously unconfirmed/pending appointment, dispatch confirmed customer email
+      if (status === 'confirmed' && existing.status !== 'confirmed' && notifyCustomer) {
+        emailDispatch.attempted = true;
+        const emailProvider = getEmailProvider();
+        if (emailProvider.isConfigured()) {
+          const dispatchRes = await emailProvider.sendAppointmentInvitation({
+            appointmentId: updated.id,
+            enquiryId: updated.enquiryId,
+            customerName: updated.customerName,
+            customerEmail: updated.customerEmail,
+            title: updated.title,
+            purpose: updated.purpose,
+            appointmentType: updated.appointmentType,
+            status: 'confirmed',
+            scheduledStart: updated.scheduledStart,
+            scheduledEnd: updated.scheduledEnd,
+            durationMinutes: updated.durationMinutes,
+            timezone: updated.timezone,
+            locationOrLink: updated.locationOrLink,
+            assignedStaffName: updated.assignedStaffName,
+          });
+
+          emailDispatch.success = dispatchRes.success;
+          emailDispatch.error = dispatchRes.error;
+
+          await recordAppointmentNotification(
+            updated.id,
+            updated.customerEmail,
+            'confirmation',
+            dispatchRes.success ? 'sent' : 'failed',
+            dispatchRes.error
+          );
+        }
+      }
+
+      res.status(200).json({ appointment: updated, emailDispatch });
     } catch (err: any) {
+      if (err.code === 'STAFF_CONFLICT') {
+        res.status(409).json({
+          error: err.message,
+          code: 'STAFF_CONFLICT',
+          conflict: err.conflict,
+        });
+        return;
+      }
       res.status(500).json({ error: err.message });
     }
   }
@@ -397,6 +473,14 @@ appointmentsRouter.post(
 
       res.status(200).json({ appointment: updated, emailDispatch });
     } catch (err: any) {
+      if (err.code === 'STAFF_CONFLICT') {
+        res.status(409).json({
+          error: err.message,
+          code: 'STAFF_CONFLICT',
+          conflict: err.conflict,
+        });
+        return;
+      }
       res.status(500).json({ error: err.message });
     }
   }

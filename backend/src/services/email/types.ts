@@ -15,6 +15,7 @@ export interface AppointmentEmailData {
   title: string;
   purpose?: string | null;
   appointmentType: string;
+  status?: string;
   scheduledStart: string | Date;
   scheduledEnd: string | Date;
   durationMinutes: number;

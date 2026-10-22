@@ -19,6 +19,10 @@ import {
   AppointmentType,
   APPOINTMENT_TYPE_LABELS,
   formatOttawaDateTime,
+  ottawaToUtcDate,
+  ottawaToUtcIso,
+  utcToOttawaDate,
+  utcToOttawaTime,
 } from '@/lib/utils/formatters';
 
 interface StaffUser {
@@ -74,23 +78,28 @@ export default function ScheduleMeetingModal({
     initialAppointment?.appointmentType || 'telephone'
   );
 
-  // Date and Time (default to tomorrow at 10:00 AM)
-  const tomorrow = new Date();
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  const defaultDateStr = tomorrow.toISOString().split('T')[0];
+  // Date and Time (default to tomorrow at 10:00 AM Ottawa time)
+  const tomorrowOttawa = (() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 1);
+    return utcToOttawaDate(d);
+  })();
 
   const [dateStr, setDateStr] = useState(
     initialAppointment?.scheduledStart
-      ? new Date(initialAppointment.scheduledStart).toISOString().split('T')[0]
-      : defaultDateStr
+      ? utcToOttawaDate(initialAppointment.scheduledStart)
+      : tomorrowOttawa
   );
   const [timeStr, setTimeStr] = useState(
     initialAppointment?.scheduledStart
-      ? new Date(initialAppointment.scheduledStart).toTimeString().slice(0, 5)
+      ? utcToOttawaTime(initialAppointment.scheduledStart)
       : '10:00'
   );
   const [durationMinutes, setDurationMinutes] = useState<number>(
     initialAppointment?.durationMinutes || 30
+  );
+  const [initialStatus, setInitialStatus] = useState<'confirmed' | 'pending'>(
+    initialAppointment?.status === 'pending' ? 'pending' : 'confirmed'
   );
 
   // Staff and Location
@@ -152,10 +161,9 @@ export default function ScheduleMeetingModal({
     if (!selectedStaffId || !dateStr || !timeStr) return;
 
     try {
-      const startIso = new Date(`${dateStr}T${timeStr}:00`).toISOString();
-      const endIso = new Date(
-        new Date(`${dateStr}T${timeStr}:00`).getTime() + durationMinutes * 60000
-      ).toISOString();
+      const startIso = ottawaToUtcIso(dateStr, timeStr);
+      const startUtcDate = ottawaToUtcDate(dateStr, timeStr);
+      const endIso = new Date(startUtcDate.getTime() + durationMinutes * 60000).toISOString();
 
       const query = new URLSearchParams({
         staffId: selectedStaffId,
@@ -195,9 +203,15 @@ export default function ScheduleMeetingModal({
       if (!title.trim()) throw new Error('Meeting title is required.');
       if (!dateStr || !timeStr) throw new Error('Valid date and time are required.');
 
-      // Construct scheduled start timestamp
-      const scheduledStart = new Date(`${dateStr}T${timeStr}:00`).toISOString();
+      // Construct scheduled start timestamp accurately in America/Toronto timezone
+      const scheduledStart = ottawaToUtcIso(dateStr, timeStr);
       const assignedStaff = staffList.find((s) => s.id === selectedStaffId);
+
+      if (conflictWarning) {
+        throw new Error(
+          'Please resolve the coordinator scheduling conflict before saving the appointment.'
+        );
+      }
 
       if (isReschedule && rescheduleAppointmentId) {
         // Call Reschedule API
@@ -241,6 +255,7 @@ export default function ScheduleMeetingModal({
             assignedStaffId: selectedStaffId || undefined,
             assignedStaffName: assignedStaff?.name || undefined,
             staffNotes: staffNotes.trim(),
+            status: initialStatus,
             notifyCustomer,
             idempotencyKey,
           }),
@@ -355,7 +370,51 @@ export default function ScheduleMeetingModal({
                 );
               })}
             </div>
+
+            {/* Video provider credentials notice */}
+            {(appointmentType === 'google_meet' ||
+              appointmentType === 'ms_teams' ||
+              appointmentType === 'zoom') && (
+              <p className="text-[11px] text-zinc-500 mt-2 bg-zinc-50 p-2.5 rounded-lg border border-black/[0.04]">
+                <strong>Provider Integration:</strong> Automated URL generation requires backend OAuth credentials. Enter your meeting link below, or leave blank for coordinator manual arrangement.
+              </p>
+            )}
           </div>
+
+          {/* Initial Status Selector (if not rescheduling) */}
+          {!isReschedule && (
+            <div>
+              <label className="block text-xs font-semibold text-zinc-700 mb-1.5">
+                Consultation Status
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setInitialStatus('confirmed')}
+                  className={`p-2.5 rounded-lg border text-xs text-left transition-all ${
+                    initialStatus === 'confirmed'
+                      ? 'border-emerald-500 bg-emerald-50/50 text-emerald-900 font-medium ring-1 ring-emerald-500/20'
+                      : 'border-black/[0.08] text-zinc-600 bg-white hover:border-zinc-300'
+                  }`}
+                >
+                  <div className="font-semibold text-emerald-800">Confirmed</div>
+                  <div className="text-[11px] text-emerald-700/80">Sends confirmation notice to customer</div>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setInitialStatus('pending')}
+                  className={`p-2.5 rounded-lg border text-xs text-left transition-all ${
+                    initialStatus === 'pending'
+                      ? 'border-amber-500 bg-amber-50/50 text-amber-900 font-medium ring-1 ring-amber-500/20'
+                      : 'border-black/[0.08] text-zinc-600 bg-white hover:border-zinc-300'
+                  }`}
+                >
+                  <div className="font-semibold text-amber-800">Pending Review</div>
+                  <div className="text-[11px] text-amber-700/80">Awaiting coordinator confirmation</div>
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Date, Time, Duration */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -518,7 +577,7 @@ export default function ScheduleMeetingModal({
             <button
               type="button"
               onClick={handleSubmit}
-              disabled={isSubmitting}
+              disabled={isSubmitting || Boolean(conflictWarning)}
               className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#49056B] text-white text-xs font-semibold hover:bg-[#5B0785] disabled:opacity-50 transition-all shadow-2xs"
             >
               {isSubmitting ? (

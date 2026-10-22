@@ -38,7 +38,7 @@ export function getDbPool(): Pool | null {
 
     poolInstance = new Pool({
       connectionString,
-      ssl: useSsl ? { rejectUnauthorized: false } : undefined,
+      ssl: useSsl ? { rejectUnauthorized: true } : undefined,
       max: 10,
       idleTimeoutMillis: 30000,
       connectionTimeoutMillis: 20000,

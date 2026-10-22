@@ -207,6 +207,96 @@ export function formatOttawaTimeRange(
   return `${dateStr} · ${startTime} – ${endTime} (Ottawa Time)`;
 }
 
+/**
+ * Converts a date (YYYY-MM-DD) and time (HH:mm) representing Ottawa local time (America/Toronto)
+ * into an absolute UTC Date / ISO string, regardless of the user's browser or system timezone.
+ */
+export function ottawaToUtcDate(dateStr: string, timeStr: string): Date {
+  const [year, month, day] = dateStr.split('-').map(Number);
+  const [hour, minute] = timeStr.split(':').map(Number);
+
+  let utcMillis = Date.UTC(year, month - 1, day, hour, minute, 0, 0);
+
+  const dtf = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/Toronto',
+    year: 'numeric',
+    month: 'numeric',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: 'numeric',
+    second: 'numeric',
+    hour12: false,
+  });
+
+  for (let i = 0; i < 3; i++) {
+    const parts = dtf.formatToParts(new Date(utcMillis));
+    const partObj: Record<string, number> = {};
+    for (const p of parts) {
+      if (p.type !== 'literal') {
+        partObj[p.type] = Number(p.value);
+      }
+    }
+    const torontoHour = partObj.hour === 24 ? 0 : partObj.hour;
+    const torontoMillis = Date.UTC(
+      partObj.year,
+      partObj.month - 1,
+      partObj.day,
+      torontoHour,
+      partObj.minute,
+      partObj.second || 0
+    );
+
+    const diff = Date.UTC(year, month - 1, day, hour, minute, 0) - torontoMillis;
+    if (diff === 0) break;
+    utcMillis += diff;
+  }
+
+  return new Date(utcMillis);
+}
+
+export function ottawaToUtcIso(dateStr: string, timeStr: string): string {
+  return ottawaToUtcDate(dateStr, timeStr).toISOString();
+}
+
+/**
+ * Extracts the Ottawa local date component (YYYY-MM-DD) from a UTC Date or ISO string
+ */
+export function utcToOttawaDate(dateValue: string | Date): string {
+  const d = typeof dateValue === 'string' ? new Date(dateValue) : dateValue;
+  if (isNaN(d.getTime())) return '';
+
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/Toronto',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(d);
+}
+
+/**
+ * Extracts the Ottawa local time component (HH:mm) from a UTC Date or ISO string in 24h format for input[type="time"]
+ */
+export function utcToOttawaTime(dateValue: string | Date): string {
+  const d = typeof dateValue === 'string' ? new Date(dateValue) : dateValue;
+  if (isNaN(d.getTime())) return '';
+
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/Toronto',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).formatToParts(d);
+
+  let hour = '00';
+  let minute = '00';
+  for (const p of parts) {
+    if (p.type === 'hour') hour = p.value === '24' ? '00' : p.value.padStart(2, '0');
+    if (p.type === 'minute') minute = p.value.padStart(2, '0');
+  }
+
+  return `${hour}:${minute}`;
+}
+
 export type AppointmentType =
   | 'telephone'
   | 'in_person'

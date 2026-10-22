@@ -2,7 +2,9 @@ import { IVideoMeetingProvider, MeetingDetails, MeetingRequest } from './types';
 
 /**
  * Adapter for Zoom (Server-to-Server OAuth API).
- * In Phase 1: Validates Zoom Account credentials. Falls back to verified manual URL entry.
+ * Requires ZOOM_ACCOUNT_ID, ZOOM_CLIENT_ID, ZOOM_CLIENT_SECRET.
+ * Without active live API execution, strictly sets isAutomated: false and relies on verified manual links.
+ * Never invents simulated meeting links or claims automated success when uncalled.
  */
 export class ZoomProvider implements IVideoMeetingProvider {
   readonly providerType = 'zoom' as const;
@@ -16,28 +18,27 @@ export class ZoomProvider implements IVideoMeetingProvider {
   }
 
   async createMeeting(request: MeetingRequest): Promise<MeetingDetails> {
-    if (!this.isConfigured()) {
-      const manualLink = request.locationOrLink?.trim();
-      const hasValidUrl = manualLink && /^https?:\/\//i.test(manualLink);
+    const manualLink = request.locationOrLink?.trim();
+    const hasValidUrl = manualLink ? /^https?:\/\//i.test(manualLink) : false;
 
+    if (!this.isConfigured()) {
       return {
         providerType: 'zoom',
         joinUrl: hasValidUrl ? manualLink : undefined,
         isAutomated: false,
         notes: hasValidUrl
           ? `Manual Zoom link recorded: ${manualLink}`
-          : 'Zoom integration pending Server-to-Server OAuth setup. Manual meeting link can be supplied.',
+          : 'Zoom automated integration is not active (pending Server-to-Server OAuth app). A manual meeting link can be supplied.',
       };
     }
 
-    // In production with Zoom Server-to-Server OAuth:
-    // 1. POST https://zoom.us/oauth/token?grant_type=account_credentials&account_id=...
-    // 2. POST https://api.zoom.us/v2/users/me/meetings
     return {
       providerType: 'zoom',
-      joinUrl: request.locationOrLink?.trim() || undefined,
-      isAutomated: true,
-      notes: 'Zoom automated meeting creation ready.',
+      joinUrl: hasValidUrl ? manualLink : undefined,
+      isAutomated: false,
+      notes: hasValidUrl
+        ? `Manual Zoom link recorded: ${manualLink}`
+        : 'Zoom credentials detected but live meeting creation requires account delegation. Using manual meeting arrangement.',
     };
   }
 }

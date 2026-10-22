@@ -63,6 +63,7 @@ export interface CreateAppointmentInput {
   title: string;
   purpose?: string;
   appointmentType: AppointmentType;
+  status?: AppointmentStatus;
   scheduledStart: string | Date;
   scheduledEnd: string | Date;
   durationMinutes: number;
@@ -76,6 +77,11 @@ export interface CreateAppointmentInput {
   staffNotes?: string;
   idempotencyKey?: string;
   createdBy?: string;
+}
+
+export interface CreateAppointmentResult {
+  appointment: AppointmentRecord;
+  isNew: boolean;
 }
 
 export interface AppointmentFilterOptions {
@@ -118,23 +124,23 @@ function mapRowToAppointment(row: any): AppointmentRecord {
 }
 
 /**
- * Creates an appointment with idempotency protection and atomic audit logging.
+ * Creates an appointment with idempotency protection, staff conflict checks, and atomic audit logging.
  */
 export async function createAppointment(
   data: CreateAppointmentInput,
   performedBy: string
-): Promise<AppointmentRecord> {
+): Promise<CreateAppointmentResult> {
   const pool = getDbPool();
   if (!pool) throw new Error('Database connection pool is not available.');
 
-  // Idempotency check: if an appointment with this key was already created, return it
+  // Idempotency check: if an appointment with this key was already created, return it safely
   if (data.idempotencyKey) {
     const existing = await pool.query(
       `SELECT * FROM appointments WHERE idempotency_key = $1`,
       [data.idempotencyKey]
     );
     if (existing.rows.length > 0) {
-      return mapRowToAppointment(existing.rows[0]);
+      return { appointment: mapRowToAppointment(existing.rows[0]), isNew: false };
     }
   }
 
@@ -144,15 +150,39 @@ export async function createAppointment(
     throw new Error(`Referenced enquiry '${data.enquiryId}' does not exist.`);
   }
 
+  const startDate = data.scheduledStart instanceof Date ? data.scheduledStart : new Date(data.scheduledStart);
+  const endDate = data.scheduledEnd instanceof Date ? data.scheduledEnd : new Date(data.scheduledEnd);
+  const initialStatus: AppointmentStatus = data.status || 'pending';
+
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
 
+    // Real staff double-booking prevention check within transaction
+    if (data.assignedStaffId) {
+      const conflictRes = await client.query(
+        `SELECT id, title, scheduled_start, scheduled_end, customer_name FROM appointments
+         WHERE assigned_staff_id = $1
+           AND status NOT IN ('cancelled', 'no_show')
+           AND (scheduled_start < $3 AND scheduled_end > $2)
+         LIMIT 1
+         FOR UPDATE`,
+        [data.assignedStaffId, startDate, endDate]
+      );
+
+      if (conflictRes.rows.length > 0) {
+        const c = conflictRes.rows[0];
+        const err: any = new Error(
+          `Staff member is already booked for "${c.title}" during this time window (${new Date(c.scheduled_start).toISOString()} - ${new Date(c.scheduled_end).toISOString()}).`
+        );
+        err.code = 'STAFF_CONFLICT';
+        err.conflict = mapRowToAppointment(c);
+        throw err;
+      }
+    }
+
     const appointmentId = `apt_${Date.now()}_${crypto.randomBytes(3).toString('hex')}`;
     const activityId = `act_${Date.now()}_${crypto.randomBytes(3).toString('hex')}`;
-
-    const startDate = data.scheduledStart instanceof Date ? data.scheduledStart : new Date(data.scheduledStart);
-    const endDate = data.scheduledEnd instanceof Date ? data.scheduledEnd : new Date(data.scheduledEnd);
 
     const insertSql = `
       INSERT INTO appointments (
@@ -162,45 +192,64 @@ export async function createAppointment(
         assigned_staff_id, assigned_staff_name, staff_notes, idempotency_key,
         created_by, created_at, updated_at
       ) VALUES (
-        $1, $2, $3, $4, $5, 'pending',
-        $6, $7, $8, $9,
-        $10, $11, $12, $13,
-        $14, $15, $16, $17,
-        $18, NOW(), NOW()
+        $1, $2, $3, $4, $5, $6,
+        $7, $8, $9, $10,
+        $11, $12, $13, $14,
+        $15, $16, $17, $18,
+        $19, NOW(), NOW()
       ) RETURNING *
     `;
 
-    const res = await client.query(insertSql, [
-      appointmentId,
-      data.enquiryId,
-      data.title,
-      data.purpose || null,
-      data.appointmentType,
-      startDate,
-      endDate,
-      data.durationMinutes,
-      data.timezone || 'America/Toronto',
-      data.customerName,
-      data.customerEmail,
-      data.customerPhone || null,
-      data.locationOrLink || null,
-      data.assignedStaffId || null,
-      data.assignedStaffName || null,
-      data.staffNotes || null,
-      data.idempotencyKey || null,
-      data.createdBy || null,
-    ]);
+    let res;
+    try {
+      res = await client.query(insertSql, [
+        appointmentId,
+        data.enquiryId,
+        data.title,
+        data.purpose || null,
+        data.appointmentType,
+        initialStatus,
+        startDate,
+        endDate,
+        data.durationMinutes,
+        data.timezone || 'America/Toronto',
+        data.customerName,
+        data.customerEmail,
+        data.customerPhone || null,
+        data.locationOrLink || null,
+        data.assignedStaffId || null,
+        data.assignedStaffName || null,
+        data.staffNotes || null,
+        data.idempotencyKey || null,
+        data.createdBy || null,
+      ]);
+    } catch (insertErr: any) {
+      // Safe concurrent idempotency protection: catch unique constraint race (23505)
+      if (insertErr.code === '23505' && data.idempotencyKey) {
+        await client.query('ROLLBACK');
+        const retryQuery = await pool.query(
+          `SELECT * FROM appointments WHERE idempotency_key = $1`,
+          [data.idempotencyKey]
+        );
+        if (retryQuery.rows.length > 0) {
+          return { appointment: mapRowToAppointment(retryQuery.rows[0]), isNew: false };
+        }
+      }
+      throw insertErr;
+    }
 
     // Record initial creation activity
     await client.query(
       `INSERT INTO appointment_activity (id, appointment_id, action, performed_by, details, metadata, created_at)
-       VALUES ($1, $2, 'created', $3, 'Appointment booked in calendar.', $4, NOW())`,
+       VALUES ($1, $2, 'created', $3, $4, $5, NOW())`,
       [
         activityId,
         appointmentId,
         performedBy,
+        `Appointment booked in calendar as ${initialStatus}.`,
         JSON.stringify({
           appointmentType: data.appointmentType,
+          status: initialStatus,
           scheduledStart: startDate.toISOString(),
           durationMinutes: data.durationMinutes,
         }),
@@ -216,12 +265,12 @@ export async function createAppointment(
         noteId,
         data.enquiryId,
         performedBy,
-        `Scheduled consultation: "${data.title}" (${data.appointmentType}) for ${startDate.toISOString()}`,
+        `Scheduled consultation: "${data.title}" (${data.appointmentType}) for ${startDate.toISOString()} [${initialStatus}]`,
       ]
     );
 
     await client.query('COMMIT');
-    return mapRowToAppointment(res.rows[0]);
+    return { appointment: mapRowToAppointment(res.rows[0]), isNew: true };
   } catch (err) {
     await client.query('ROLLBACK');
     throw err;
@@ -378,6 +427,40 @@ export async function rescheduleAppointment(
     const startDate = newStart instanceof Date ? newStart : new Date(newStart);
     const endDate = newEnd instanceof Date ? newEnd : new Date(newEnd);
 
+    // Lock existing record and verify assigned staff availability
+    const currentRes = await client.query(
+      `SELECT * FROM appointments WHERE id = $1 FOR UPDATE`,
+      [id]
+    );
+    if (currentRes.rows.length === 0) {
+      throw new Error(`Appointment '${id}' not found.`);
+    }
+    const current = currentRes.rows[0];
+
+    // Real staff double-booking prevention check on reschedule
+    if (current.assigned_staff_id) {
+      const conflictRes = await client.query(
+        `SELECT id, title, scheduled_start, scheduled_end, customer_name FROM appointments
+         WHERE assigned_staff_id = $1
+           AND id != $2
+           AND status NOT IN ('cancelled', 'no_show')
+           AND (scheduled_start < $4 AND scheduled_end > $3)
+         LIMIT 1
+         FOR UPDATE`,
+        [current.assigned_staff_id, id, startDate, endDate]
+      );
+
+      if (conflictRes.rows.length > 0) {
+        const c = conflictRes.rows[0];
+        const err: any = new Error(
+          `Cannot reschedule: Staff coordinator is already booked for "${c.title}" during the requested time window.`
+        );
+        err.code = 'STAFF_CONFLICT';
+        err.conflict = mapRowToAppointment(c);
+        throw err;
+      }
+    }
+
     const updateRes = await client.query(
       `UPDATE appointments
        SET scheduled_start = $1, scheduled_end = $2, duration_minutes = $3,
@@ -386,10 +469,6 @@ export async function rescheduleAppointment(
        RETURNING *`,
       [startDate, endDate, durationMinutes, id]
     );
-
-    if (updateRes.rows.length === 0) {
-      throw new Error(`Appointment '${id}' not found.`);
-    }
 
     const activityId = `act_${Date.now()}_${crypto.randomBytes(3).toString('hex')}`;
     await client.query(
