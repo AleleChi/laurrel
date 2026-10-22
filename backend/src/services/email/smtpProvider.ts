@@ -216,4 +216,138 @@ export class SmtpEmailProvider implements IEmailProvider {
       return { success: false, provider: 'smtp', error: err.message };
     }
   }
+
+  async sendAppointmentInvitation(data: import('./types').AppointmentEmailData): Promise<EmailDispatchResult> {
+    if (!this.transporter) {
+      return { success: false, provider: 'smtp', error: 'SMTP configuration incomplete' };
+    }
+
+    const safeName = escapeHtml(data.customerName);
+    const safeTitle = escapeHtml(data.title);
+    const safeType = escapeHtml(data.appointmentType.replace(/_/g, ' ').toUpperCase());
+    const safeLocation = escapeHtml(data.locationOrLink || 'Telephone / Location details to be confirmed');
+    const safeStaff = escapeHtml(data.assignedStaffName || 'Laurrel Operations Team');
+    const safeId = escapeHtml(data.appointmentId);
+
+    const formattedTime = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'America/Toronto',
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+    }).format(new Date(data.scheduledStart));
+
+    const isPending = data.status === 'pending';
+    const subject = isPending
+      ? `Pending Confirmation: Laurrel Consultation — ${data.title}`
+      : `Confirmed: Laurrel Consultation — ${data.title}`;
+
+    const html = `
+      <div style="font-family: Arial, sans-serif; max-width: 580px; margin: 0 auto; line-height: 1.6; color: #202024; background-color: #F8F7F4; padding: 24px;">
+        <div style="background: #390044; padding: 26px 28px; border-radius: 12px 12px 0 0; color: #FFFFFF;">
+          <h2 style="margin: 0; color: #FE6000; font-size: 20px; font-weight: bold;">LAURREL SERVICES</h2>
+          <p style="margin: 4px 0 0; font-size: 13px; color: #F8F7F4;">${isPending ? 'Ottawa Consultation Request Received' : 'Ottawa Consultation Confirmation'}</p>
+        </div>
+        <div style="background: #FFFFFF; padding: 32px 28px; border: 1px solid #E5E5E5; border-top: none; border-radius: 0 0 12px 12px;">
+          <h3 style="margin: 0 0 14px; font-size: 18px; color: #202024; font-weight: 600;">${isPending ? 'Your consultation request has been received' : 'Your consultation is confirmed'}</h3>
+          <p style="margin: 0 0 16px; font-size: 14px; color: #575757;">Hello ${safeName},</p>
+          <p style="margin: 0 0 20px; font-size: 14px; color: #575757;">
+            ${isPending
+              ? 'We have received your consultation booking request for Laurrel Services. A member of our Ottawa operations team is reviewing your schedule request and will confirm shortly.'
+              : 'We have scheduled your consultation with Laurrel Services:'}
+          </p>
+          <div style="background: #F8F7F4; border-left: 4px solid #390044; border-radius: 6px; padding: 18px; margin: 20px 0;">
+            <p style="margin: 0 0 8px; font-size: 13px;"><strong>Status:</strong> ${isPending ? '<span style="color: #B45309; background: #FEF3C7; padding: 2px 8px; border-radius: 4px; font-weight: bold; font-size: 11px;">PENDING CONFIRMATION</span>' : '<span style="color: #047857; background: #D1FAE5; padding: 2px 8px; border-radius: 4px; font-weight: bold; font-size: 11px;">CONFIRMED</span>'}</p>
+            <p style="margin: 0 0 8px; font-size: 13px;"><strong>Purpose:</strong> ${safeTitle}</p>
+            <p style="margin: 0 0 8px; font-size: 13px;"><strong>Date & Time:</strong> ${formattedTime} (Ottawa Time)</p>
+            <p style="margin: 0 0 8px; font-size: 13px;"><strong>Duration:</strong> ${data.durationMinutes} minutes</p>
+            <p style="margin: 0 0 8px; font-size: 13px;"><strong>Type:</strong> ${safeType}</p>
+            <p style="margin: 0 0 8px; font-size: 13px; word-break: break-all;"><strong>Location / Link:</strong> ${safeLocation}</p>
+            <p style="margin: 0; font-size: 13px;"><strong>Coordinator:</strong> ${safeStaff}</p>
+          </div>
+          <p style="font-size: 13px; color: #666666; margin-top: 24px;">
+            Questions or rescheduling? Contact us at <a href="mailto:info@laurrelservices.ca" style="color: #390044;">info@laurrelservices.ca</a> referencing ${safeId}.
+          </p>
+        </div>
+      </div>
+    `;
+
+    try {
+      const info = await this.transporter.sendMail({
+        from: this.fromAddress,
+        to: data.customerEmail,
+        subject,
+        html,
+      });
+      return { success: true, provider: 'smtp', messageId: info.messageId };
+    } catch (err: any) {
+      return { success: false, provider: 'smtp', error: err.message };
+    }
+  }
+
+  async sendAppointmentUpdate(
+    data: import('./types').AppointmentEmailData,
+    changeType: 'rescheduled' | 'cancelled'
+  ): Promise<EmailDispatchResult> {
+    if (!this.transporter) {
+      return { success: false, provider: 'smtp', error: 'SMTP configuration incomplete' };
+    }
+
+    const safeName = escapeHtml(data.customerName);
+    const safeTitle = escapeHtml(data.title);
+    const safeReason = escapeHtml(data.cancellationReason || 'Requested schedule update');
+    const isCancelled = changeType === 'cancelled';
+    const subject = isCancelled
+      ? `Cancelled: Laurrel Consultation — ${data.title}`
+      : `Rescheduled: Laurrel Consultation — ${data.title}`;
+
+    const formattedTime = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'America/Toronto',
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+    }).format(new Date(data.scheduledStart));
+
+    const html = `
+      <div style="font-family: Arial, sans-serif; max-width: 580px; margin: 0 auto; line-height: 1.6; color: #202024; background-color: #F8F7F4; padding: 24px;">
+        <div style="background: #390044; padding: 26px 28px; border-radius: 12px 12px 0 0; color: #FFFFFF;">
+          <h2 style="margin: 0; color: #FE6000; font-size: 20px; font-weight: bold;">LAURREL SERVICES</h2>
+          <p style="margin: 4px 0 0; font-size: 13px; color: #F8F7F4;">Appointment Update</p>
+        </div>
+        <div style="background: #FFFFFF; padding: 32px 28px; border: 1px solid #E5E5E5; border-top: none; border-radius: 0 0 12px 12px;">
+          <h3 style="margin: 0 0 14px; font-size: 18px; color: #202024; font-weight: 600;">
+            ${isCancelled ? 'Consultation Cancelled' : 'Consultation Rescheduled'}
+          </h3>
+          <p style="margin: 0 0 16px; font-size: 14px; color: #575757;">Hello ${safeName},</p>
+          <p style="margin: 0 0 20px; font-size: 14px; color: #575757;">
+            ${
+              isCancelled
+                ? `Your consultation for <strong>${safeTitle}</strong> has been cancelled.`
+                : `Your consultation for <strong>${safeTitle}</strong> has been rescheduled to <strong>${formattedTime}</strong>.`
+            }
+          </p>
+          <p style="margin: 0; font-size: 13px; color: #7A3500;"><strong>Reason:</strong> ${safeReason}</p>
+        </div>
+      </div>
+    `;
+
+    try {
+      const info = await this.transporter.sendMail({
+        from: this.fromAddress,
+        to: data.customerEmail,
+        subject,
+        html,
+      });
+      return { success: true, provider: 'smtp', messageId: info.messageId };
+    } catch (err: any) {
+      return { success: false, provider: 'smtp', error: err.message };
+    }
+  }
 }

@@ -10,8 +10,17 @@ import {
   Clock,
   PhoneCall,
   Inbox,
+  CalendarDays,
+  Calendar,
 } from 'lucide-react';
-import { formatCanadianDate, formatEnquirySource } from '@/lib/utils/formatters';
+import {
+  formatCanadianDate,
+  formatEnquirySource,
+  formatOttawaDate,
+  formatOttawaTime,
+  formatAppointmentType,
+  formatAppointmentStatus,
+} from '@/lib/utils/formatters';
 
 interface Stats {
   totalEnquiries: number;
@@ -20,6 +29,23 @@ interface Stats {
   scheduled: number;
   failedDeliveries: number;
   pendingHandoffs: number;
+  upcomingAppointments?: number;
+  todayAppointments?: number;
+}
+
+interface AppointmentItem {
+  id: string;
+  enquiryId: string;
+  title: string;
+  customerName: string;
+  customerEmail: string;
+  scheduledStart: string;
+  scheduledEnd: string;
+  durationMinutes: number;
+  appointmentType: string;
+  status: string;
+  assignedStaffName?: string | null;
+  locationOrLink?: string | null;
 }
 
 interface EnquiryItem {
@@ -42,6 +68,7 @@ interface EnquiryItem {
 export default function AdminOverviewPage() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [recentEnquiries, setRecentEnquiries] = useState<EnquiryItem[]>([]);
+  const [upcomingAppointments, setUpcomingAppointments] = useState<AppointmentItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [refreshing, setRefreshing] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
@@ -51,9 +78,10 @@ export default function AdminOverviewPage() {
       setRefreshing(true);
       setError('');
 
-      const [statsRes, enqRes] = await Promise.all([
+      const [statsRes, enqRes, aptRes] = await Promise.all([
         fetch('/api/admin/stats', { cache: 'no-store' }),
         fetch('/api/admin/enquiries?limit=8', { cache: 'no-store' }),
+        fetch('/api/admin/appointments?limit=5', { cache: 'no-store' }),
       ]);
 
       if (statsRes.ok) {
@@ -67,6 +95,11 @@ export default function AdminOverviewPage() {
       if (enqRes.ok) {
         const enqData = await enqRes.json();
         setRecentEnquiries(enqData.enquiries || []);
+      }
+
+      if (aptRes.ok) {
+        const aptData = await aptRes.json();
+        setUpcomingAppointments(aptData.appointments || []);
       }
     } catch (err: any) {
       console.error('[Overview Load Error]:', err);
@@ -280,6 +313,68 @@ export default function AdminOverviewPage() {
               Automated logging enabled
             </span>
           </div>
+        </div>
+      </div>
+
+      {/* Upcoming Customer Consultations */}
+      <div className="bg-white rounded-xl border border-black/[0.06] shadow-xs overflow-hidden">
+        <div className="px-6 py-4 border-b border-black/[0.06] flex items-center justify-between">
+          <div>
+            <h2 className="text-sm font-semibold text-zinc-900">Upcoming Customer Consultations</h2>
+            <p className="text-xs text-zinc-500 mt-0.5">
+              Scheduled calls, property assessments, and video meetings in Ottawa local time.
+            </p>
+          </div>
+          <Link
+            href="/admin/appointments"
+            className="text-xs font-semibold text-[#49056B] hover:text-[#5B0785] inline-flex items-center gap-1 transition-colors"
+          >
+            <span>View Calendar</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </Link>
+        </div>
+
+        <div className="p-6">
+          {upcomingAppointments.length === 0 ? (
+            <div className="py-6 text-center text-xs text-zinc-400">
+              No upcoming consultations scheduled. Consultations booked via customer enquiries will appear here.
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              {upcomingAppointments.map((apt) => {
+                const statusBadge = formatAppointmentStatus(apt.status);
+                return (
+                  <Link
+                    key={apt.id}
+                    href="/admin/appointments"
+                    className="p-3.5 rounded-xl border border-black/[0.06] bg-zinc-50/60 hover:bg-zinc-50 hover:border-[#49056B]/20 transition-all flex flex-col justify-between space-y-2.5"
+                  >
+                    <div>
+                      <div className="flex items-center justify-between gap-2 mb-1.5">
+                        <span
+                          className={`px-2 py-0.5 rounded text-[10px] font-bold border uppercase tracking-wider ${statusBadge.color} ${statusBadge.bg}`}
+                        >
+                          {statusBadge.label}
+                        </span>
+                        <span className="text-[11px] text-zinc-400 font-medium">
+                          {formatAppointmentType(apt.appointmentType)}
+                        </span>
+                      </div>
+                      <div className="text-xs font-bold text-zinc-900 truncate">{apt.title}</div>
+                      <div className="text-[11px] text-zinc-500">{apt.customerName}</div>
+                    </div>
+
+                    <div className="pt-2 border-t border-black/[0.04] text-[11px] text-zinc-600 flex items-center justify-between">
+                      <span className="font-medium text-[#49056B]">
+                        {formatOttawaDate(apt.scheduledStart)} · {formatOttawaTime(apt.scheduledStart)}
+                      </span>
+                      <span>{apt.durationMinutes}m</span>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
 

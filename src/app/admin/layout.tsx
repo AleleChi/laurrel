@@ -9,6 +9,7 @@ import {
   Inbox,
   FileEdit,
   Image as ImageIcon,
+  CalendarDays,
   LogOut,
   Menu,
   X,
@@ -33,6 +34,8 @@ function getBreadcrumbs(pathname: string): { label: string; href?: string }[] {
     crumbs.push({ label: 'Overview' });
   } else if (pathname === '/admin/enquiries') {
     crumbs.push({ label: 'Customer Enquiries' });
+  } else if (pathname.startsWith('/admin/appointments')) {
+    crumbs.push({ label: 'Appointments & Consultations' });
   } else if (pathname === '/admin/media') {
     crumbs.push({ label: 'Media Library' });
   } else if (pathname.startsWith('/admin/website')) {
@@ -150,6 +153,12 @@ export default function AdminLayout({
       href: '/admin/enquiries',
       icon: Inbox,
       active: pathname === '/admin/enquiries',
+    },
+    {
+      label: 'Appointments',
+      href: '/admin/appointments',
+      icon: CalendarDays,
+      active: pathname.startsWith('/admin/appointments'),
     },
     {
       label: 'Website Content',

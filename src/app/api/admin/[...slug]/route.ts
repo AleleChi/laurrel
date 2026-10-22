@@ -100,6 +100,11 @@ export async function POST(req: NextRequest, { params }: { params: { slug: strin
       'x-admin-session-id': session.sessionId,
     };
 
+    const idempKey = req.headers.get('idempotency-key') || req.headers.get('x-idempotency-key');
+    if (idempKey) {
+      forwardHeaders['Idempotency-Key'] = idempKey;
+    }
+
     let bodyData: any;
     if (isMultipart) {
       const arrayBuffer = await req.arrayBuffer();

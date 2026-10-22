@@ -18,6 +18,11 @@ import {
   CalendarPlus,
   ChevronDown,
   ChevronRight,
+  CalendarCheck,
+  RotateCcw,
+  Ban,
+  Check,
+  ExternalLink,
 } from 'lucide-react';
 import {
   formatEnquirySource,
@@ -28,7 +33,12 @@ import {
   formatNoteContent,
   formatServiceParamLabel,
   formatServiceParamValue,
+  formatOttawaDate,
+  formatOttawaTimeRange,
+  formatAppointmentType,
+  formatAppointmentStatus,
 } from '@/lib/utils/formatters';
+import ScheduleMeetingModal from '@/components/admin/ScheduleMeetingModal';
 
 interface EnquiryItem {
   id: string;
@@ -86,6 +96,92 @@ export default function AdminEnquiriesPage() {
   const [newNoteText, setNewNoteText] = useState<string>('');
   const [statusError, setStatusError] = useState<string>('');
   const [userRole, setUserRole] = useState<string | null>(null);
+
+  // Appointments state
+  const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
+  const [rescheduleAppointmentId, setRescheduleAppointmentId] = useState<string | null>(null);
+  const [enquiryAppointments, setEnquiryAppointments] = useState<any[]>([]);
+  const [loadingAppointments, setLoadingAppointments] = useState(false);
+  const [appointmentActionMsg, setAppointmentActionMsg] = useState<string | null>(null);
+
+  const loadEnquiryAppointments = async (enquiryId: string) => {
+    try {
+      setLoadingAppointments(true);
+      const res = await fetch(`/api/admin/appointments/enquiry/${enquiryId}`, { cache: 'no-store' });
+      if (res.ok) {
+        const data = await res.json();
+        setEnquiryAppointments(data.appointments || []);
+      }
+    } catch (err) {
+      console.error('Failed to load appointments for enquiry:', err);
+    } finally {
+      setLoadingAppointments(false);
+    }
+  };
+
+  useEffect(() => {
+    if (selectedEnquiry) {
+      loadEnquiryAppointments(selectedEnquiry.id);
+    } else {
+      setEnquiryAppointments([]);
+    }
+  }, [selectedEnquiry?.id]);
+
+  const handleUpdateAppointmentStatus = async (aptId: string, newStatus: string) => {
+    try {
+      const res = await fetch(`/api/admin/appointments/${aptId}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus }),
+      });
+      if (res.ok && selectedEnquiry) {
+        await loadEnquiryAppointments(selectedEnquiry.id);
+        setAppointmentActionMsg(`Consultation marked as ${newStatus}.`);
+        setTimeout(() => setAppointmentActionMsg(null), 3500);
+      }
+    } catch (err) {
+      console.error('Status update failed:', err);
+    }
+  };
+
+  const handleResendInvite = async (aptId: string) => {
+    try {
+      setAppointmentActionMsg('Sending invitation email...');
+      const res = await fetch(`/api/admin/appointments/${aptId}/resend-invite`, {
+        method: 'POST',
+      });
+      const data = await res.json();
+      if (data.success) {
+        setAppointmentActionMsg('Invitation email sent successfully.');
+      } else {
+        setAppointmentActionMsg(`Email delivery notice: ${data.error || 'Service unconfigured'}`);
+      }
+      setTimeout(() => setAppointmentActionMsg(null), 4000);
+    } catch (err: any) {
+      setAppointmentActionMsg(`Failed to resend invite: ${err.message}`);
+      setTimeout(() => setAppointmentActionMsg(null), 4000);
+    }
+  };
+
+  const handleCancelAppointment = async (aptId: string) => {
+    const reason = window.prompt('Please provide a reason for cancelling this appointment:');
+    if (!reason || !reason.trim()) return;
+
+    try {
+      const res = await fetch(`/api/admin/appointments/${aptId}/cancel`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reason: reason.trim(), notifyCustomer: true }),
+      });
+      if (res.ok && selectedEnquiry) {
+        await loadEnquiryAppointments(selectedEnquiry.id);
+        setAppointmentActionMsg('Consultation cancelled.');
+        setTimeout(() => setAppointmentActionMsg(null), 3500);
+      }
+    } catch (err) {
+      console.error('Cancellation failed:', err);
+    }
+  };
 
   const loadData = async () => {
     try {
@@ -619,7 +715,7 @@ export default function AdminEnquiriesPage() {
               </div>
 
               {/* 5. Appointments & Meeting Scheduling */}
-              <div className="space-y-2.5 pb-5 border-b border-black/[0.06]">
+              <div className="space-y-3 pb-5 border-b border-black/[0.06]">
                 <div className="flex items-center justify-between">
                   <div className="text-[10px] font-semibold uppercase tracking-widest text-zinc-400">
                     Appointments & Consultations
@@ -627,21 +723,171 @@ export default function AdminEnquiriesPage() {
                   <span className="text-[11px] text-zinc-400">Ottawa Local Time</span>
                 </div>
 
-                <div className="p-3.5 rounded-[10px] bg-zinc-50 border border-black/[0.06] flex items-center justify-between">
-                  <div className="flex items-center gap-2.5">
-                    <CalendarPlus className="w-4 h-4 text-zinc-400" />
-                    <span className="text-xs text-zinc-600">No appointment scheduled</span>
+                {appointmentActionMsg && (
+                  <div className="p-2.5 rounded-lg bg-zinc-100 border border-black/[0.06] text-xs text-zinc-800">
+                    {appointmentActionMsg}
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      alert('Phase B consultation scheduling will open the appointment booking interface.');
-                    }}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#49056B] text-white text-xs font-semibold hover:bg-[#5B0785] transition-all shadow-2xs"
-                  >
-                    <span>Schedule Meeting</span>
-                  </button>
-                </div>
+                )}
+
+                {loadingAppointments ? (
+                  <div className="p-4 rounded-xl bg-zinc-50 border border-black/[0.06] text-center text-xs text-zinc-400">
+                    Loading consultations...
+                  </div>
+                ) : enquiryAppointments.length > 0 ? (
+                  <div className="space-y-3">
+                    {enquiryAppointments.map((apt) => {
+                      const statusBadge = formatAppointmentStatus(apt.status);
+                      const isUpcoming = ['pending', 'confirmed', 'rescheduled'].includes(apt.status);
+                      const isJoinableUrl = apt.locationOrLink && /^https?:\/\//i.test(apt.locationOrLink);
+
+                      return (
+                        <div
+                          key={apt.id}
+                          className="p-4 rounded-xl bg-zinc-50 border border-black/[0.08] space-y-3 shadow-2xs"
+                        >
+                          {/* Card Header */}
+                          <div className="flex items-start justify-between gap-2">
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <span
+                                  className={`px-2 py-0.5 rounded-md text-[10px] font-bold border uppercase tracking-wider ${statusBadge.color} ${statusBadge.bg}`}
+                                >
+                                  {statusBadge.label}
+                                </span>
+                                <span className="text-xs font-semibold text-zinc-900">{apt.title}</span>
+                              </div>
+                              <p className="text-[11px] text-zinc-500 mt-1">
+                                {formatAppointmentType(apt.appointmentType)} · {apt.durationMinutes} mins
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* Time & Location Details */}
+                          <div className="grid grid-cols-1 gap-1.5 text-xs">
+                            <div className="inline-flex items-center gap-2 text-zinc-800 font-medium">
+                              <Calendar className="w-3.5 h-3.5 text-[#49056B] shrink-0" />
+                              <span>{formatOttawaTimeRange(apt.scheduledStart, apt.scheduledEnd)}</span>
+                            </div>
+
+                            {apt.locationOrLink && (
+                              <div className="inline-flex items-center gap-2 text-zinc-700">
+                                <MapPin className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
+                                {isJoinableUrl ? (
+                                  <a
+                                    href={apt.locationOrLink}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="text-[#49056B] hover:underline inline-flex items-center gap-1 font-medium"
+                                  >
+                                    <span>Join Meeting Link</span>
+                                    <ExternalLink className="w-3 h-3" />
+                                  </a>
+                                ) : (
+                                  <span className="truncate">{apt.locationOrLink}</span>
+                                )}
+                              </div>
+                            )}
+
+                            {apt.assignedStaffName && (
+                              <div className="inline-flex items-center gap-2 text-zinc-600">
+                                <User className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
+                                <span>Coordinator: {apt.assignedStaffName}</span>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Notification Indicator */}
+                          <div className="pt-2 border-t border-black/[0.04] flex items-center justify-between text-[11px]">
+                            <span className="text-zinc-500">
+                              {apt.notificationSent
+                                ? '✓ Customer invitation sent'
+                                : 'Invitation not delivered'}
+                            </span>
+                            {apt.cancellationReason && (
+                              <span className="text-red-600 italic">
+                                Reason: {apt.cancellationReason}
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Quick Actions (if active) */}
+                          {isUpcoming && (
+                            <div className="pt-2 border-t border-black/[0.06] flex flex-wrap gap-2">
+                              {apt.status === 'pending' && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleUpdateAppointmentStatus(apt.id, 'confirmed')}
+                                  className="px-2.5 py-1 rounded-md bg-emerald-50 text-emerald-700 hover:bg-emerald-100 text-[11px] font-semibold border border-emerald-200 transition-colors"
+                                >
+                                  Confirm
+                                </button>
+                              )}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setRescheduleAppointmentId(apt.id);
+                                  setIsScheduleModalOpen(true);
+                                }}
+                                className="px-2.5 py-1 rounded-md bg-white text-zinc-700 hover:bg-zinc-100 text-[11px] font-medium border border-black/[0.1] transition-colors"
+                              >
+                                Reschedule
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleResendInvite(apt.id)}
+                                className="px-2.5 py-1 rounded-md bg-white text-zinc-700 hover:bg-zinc-100 text-[11px] font-medium border border-black/[0.1] transition-colors"
+                              >
+                                Resend Invite
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleUpdateAppointmentStatus(apt.id, 'completed')}
+                                className="px-2.5 py-1 rounded-md bg-white text-zinc-700 hover:bg-zinc-100 text-[11px] font-medium border border-black/[0.1] transition-colors"
+                              >
+                                Complete
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleCancelAppointment(apt.id)}
+                                className="px-2.5 py-1 rounded-md bg-red-50 text-red-700 hover:bg-red-100 text-[11px] font-semibold border border-red-200 transition-colors"
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setRescheduleAppointmentId(null);
+                        setIsScheduleModalOpen(true);
+                      }}
+                      className="w-full py-2 rounded-lg border border-dashed border-black/[0.15] text-xs font-semibold text-[#49056B] hover:bg-[#49056B]/5 transition-colors"
+                    >
+                      + Schedule Another Consultation
+                    </button>
+                  </div>
+                ) : (
+                  <div className="p-3.5 rounded-[10px] bg-zinc-50 border border-black/[0.06] flex items-center justify-between">
+                    <div className="flex items-center gap-2.5">
+                      <CalendarPlus className="w-4 h-4 text-zinc-400" />
+                      <span className="text-xs text-zinc-600">No appointment scheduled</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setRescheduleAppointmentId(null);
+                        setIsScheduleModalOpen(true);
+                      }}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#49056B] text-white text-xs font-semibold hover:bg-[#5B0785] transition-all shadow-2xs"
+                    >
+                      <span>Schedule Meeting</span>
+                    </button>
+                  </div>
+                )}
               </div>
 
               {/* 6. Lead Status Pipeline Transition Control */}
@@ -730,6 +976,29 @@ export default function AdminEnquiriesPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Schedule Meeting Modal */}
+      {isScheduleModalOpen && selectedEnquiry && (
+        <ScheduleMeetingModal
+          isOpen={isScheduleModalOpen}
+          onClose={() => {
+            setIsScheduleModalOpen(false);
+            setRescheduleAppointmentId(null);
+          }}
+          onScheduled={async (apt) => {
+            await loadEnquiryAppointments(selectedEnquiry.id);
+            setAppointmentActionMsg(`Consultation "${apt.title}" booked successfully.`);
+            setTimeout(() => setAppointmentActionMsg(null), 4000);
+          }}
+          enquiry={selectedEnquiry}
+          rescheduleAppointmentId={rescheduleAppointmentId}
+          initialAppointment={
+            rescheduleAppointmentId
+              ? enquiryAppointments.find((a) => a.id === rescheduleAppointmentId)
+              : null
+          }
+        />
       )}
     </div>
   );

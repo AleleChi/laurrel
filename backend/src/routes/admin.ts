@@ -286,9 +286,22 @@ adminRouter.get(
         FROM ai_handoffs
       `);
 
-      const [enqRes, handoffRes] = await Promise.all([enqStatsPromise, handoffStatsPromise]);
+      const appointmentStatsPromise = pool.query(`
+        SELECT
+          COUNT(*)::int as "totalAppointments",
+          COUNT(*) FILTER (WHERE scheduled_start >= NOW() AND status IN ('pending', 'confirmed', 'rescheduled'))::int as "upcomingAppointments",
+          COUNT(*) FILTER (WHERE scheduled_start >= CURRENT_DATE AND scheduled_start < CURRENT_DATE + INTERVAL '1 day' AND status NOT IN ('cancelled', 'no_show'))::int as "todayAppointments"
+        FROM appointments
+      `);
+
+      const [enqRes, handoffRes, aptRes] = await Promise.all([
+        enqStatsPromise,
+        handoffStatsPromise,
+        appointmentStatsPromise,
+      ]);
       const enqRow = enqRes.rows[0] || {};
       const handoffRow = handoffRes.rows[0] || {};
+      const aptRow = aptRes.rows[0] || {};
 
       res.status(200).json({
         totalEnquiries: enqRow.totalEnquiries || 0,
@@ -297,6 +310,8 @@ adminRouter.get(
         scheduled: enqRow.scheduled || 0,
         failedDeliveries: enqRow.failedDeliveries || 0,
         pendingHandoffs: handoffRow.pendingHandoffs || 0,
+        upcomingAppointments: aptRow.upcomingAppointments || 0,
+        todayAppointments: aptRow.todayAppointments || 0,
       });
     } catch (err: any) {
       console.error('[Admin Stats SQL Error]:', err);
@@ -400,6 +415,33 @@ adminRouter.get(
       const status = req.query.status as string | undefined;
       const handoffs = await listAiHandoffs(status);
       res.status(200).json({ handoffs });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  }
+);
+
+/**
+ * GET /api/admin/staff - List active staff members for appointment assignment
+ */
+adminRouter.get(
+  '/api/admin/staff',
+  requireRole(['owner', 'admin', 'operations_staff', 'viewer', 'content_editor']),
+  async (_req: Request, res: Response) => {
+    const pool = getDbPool();
+    if (!pool) {
+      res.status(503).json({ error: 'Database service unavailable' });
+      return;
+    }
+
+    try {
+      const resStaff = await pool.query(`
+        SELECT id, name, email, role
+        FROM admin_users
+        WHERE is_active = TRUE
+        ORDER BY name ASC
+      `);
+      res.status(200).json({ staff: resStaff.rows });
     } catch (err: any) {
       res.status(500).json({ error: err.message });
     }

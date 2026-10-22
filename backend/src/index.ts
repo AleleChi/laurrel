@@ -8,6 +8,7 @@ import { assistantRouter } from './routes/assistant';
 import { adminRouter } from './routes/admin';
 import { cmsRouter } from './routes/cms';
 import { mediaRouter } from './routes/media';
+import { appointmentsRouter } from './routes/appointments';
 import { runMigrations } from './database/migrate';
 import { bootstrapOwnerAccount } from './database/adminRepo';
 import { syncHistoricalEnquiries } from './database/syncData';
@@ -72,6 +73,9 @@ app.use(
       'x-admin-user-email',
       'x-admin-user-name',
       'x-admin-user-role',
+      'Idempotency-Key',
+      'idempotency-key',
+      'x-idempotency-key',
     ],
   })
 );
@@ -88,6 +92,7 @@ app.use(assistantRouter);
 app.use(adminRouter);
 app.use(cmsRouter);
 app.use(mediaRouter);
+app.use(appointmentsRouter);
 
 // Root informational endpoint
 app.get('/', (_req, res) => {

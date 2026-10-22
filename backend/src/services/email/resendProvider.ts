@@ -272,4 +272,206 @@ export class ResendEmailProvider implements IEmailProvider {
       return { success: false, provider: 'resend', error: err.message };
     }
   }
+
+  async sendAppointmentInvitation(data: import('./types').AppointmentEmailData): Promise<EmailDispatchResult> {
+    if (!this.apiKey) {
+      return { success: false, provider: 'resend', error: 'RESEND_API_KEY is not configured' };
+    }
+
+    const safeName = escapeHtml(data.customerName);
+    const safeTitle = escapeHtml(data.title);
+    const safePurpose = escapeHtml(data.purpose || data.title);
+    const safeType = escapeHtml(data.appointmentType.replace(/_/g, ' ').toUpperCase());
+    const safeLocation = escapeHtml(data.locationOrLink || 'Telephone / Location details to be confirmed');
+    const safeStaff = escapeHtml(data.assignedStaffName || 'Laurrel Operations Team');
+    const safeId = escapeHtml(data.appointmentId);
+
+    const formattedTime = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'America/Toronto',
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+    }).format(new Date(data.scheduledStart));
+
+    const isPending = data.status === 'pending';
+    const subject = isPending
+      ? `Pending Confirmation: Laurrel Consultation — ${data.title}`
+      : `Confirmed: Laurrel Consultation — ${data.title}`;
+
+    const html = `
+      <div style="font-family: Arial, sans-serif; max-width: 580px; margin: 0 auto; line-height: 1.6; color: #202024; background-color: #F8F7F4; padding: 24px;">
+        <div style="background: #390044; padding: 26px 28px; border-radius: 12px 12px 0 0; color: #FFFFFF; text-align: left;">
+          <h2 style="margin: 0; color: #FE6000; font-size: 20px; font-weight: bold; letter-spacing: -0.02em;">LAURREL SERVICES</h2>
+          <p style="margin: 4px 0 0; font-size: 13px; color: #F8F7F4;">${isPending ? 'Ottawa Consultation Request Received' : 'Ottawa Consultation Confirmation'}</p>
+        </div>
+        <div style="background: #FFFFFF; padding: 32px 28px; border: 1px solid #E5E5E5; border-top: none; border-radius: 0 0 12px 12px;">
+          <h3 style="margin: 0 0 14px; font-size: 18px; color: #202024; font-weight: 600;">${isPending ? 'Your consultation request has been received' : 'Your consultation is confirmed'}</h3>
+          <p style="margin: 0 0 16px; font-size: 14px; color: #575757;">Hello ${safeName},</p>
+          <p style="margin: 0 0 20px; font-size: 14px; color: #575757; line-height: 1.6;">
+            ${isPending
+              ? 'We have received your consultation booking request for Laurrel Services. A member of our Ottawa operations team is reviewing your schedule request and will confirm shortly.'
+              : 'We have scheduled your consultation with Laurrel Services. Below are the confirmed appointment details:'}
+          </p>
+
+          <div style="background: #F8F7F4; border-left: 4px solid #390044; border-radius: 6px; padding: 18px; margin: 20px 0;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+              <tr>
+                <td style="padding: 5px 0; font-weight: bold; color: #575757; width: 130px;">Status:</td>
+                <td style="padding: 5px 0;">${isPending ? '<span style="color: #B45309; background: #FEF3C7; padding: 2px 8px; border-radius: 4px; font-weight: bold; font-size: 11px;">PENDING CONFIRMATION</span>' : '<span style="color: #047857; background: #D1FAE5; padding: 2px 8px; border-radius: 4px; font-weight: bold; font-size: 11px;">CONFIRMED</span>'}</td>
+              </tr>
+              <tr>
+                <td style="padding: 5px 0; font-weight: bold; color: #575757;">Purpose:</td>
+                <td style="padding: 5px 0; color: #202024; font-weight: 600;">${safeTitle}</td>
+              </tr>
+              <tr>
+                <td style="padding: 5px 0; font-weight: bold; color: #575757;">Date & Time:</td>
+                <td style="padding: 5px 0; color: #390044; font-weight: bold;">${formattedTime} (Ottawa Time)</td>
+              </tr>
+              <tr>
+                <td style="padding: 5px 0; font-weight: bold; color: #575757;">Duration:</td>
+                <td style="padding: 5px 0; color: #202024;">${data.durationMinutes} minutes</td>
+              </tr>
+              <tr>
+                <td style="padding: 5px 0; font-weight: bold; color: #575757;">Consultation Type:</td>
+                <td style="padding: 5px 0; color: #202024;">${safeType}</td>
+              </tr>
+              <tr>
+                <td style="padding: 5px 0; font-weight: bold; color: #575757;">Joining / Location:</td>
+                <td style="padding: 5px 0; color: #202024; word-break: break-all;">${safeLocation}</td>
+              </tr>
+              <tr>
+                <td style="padding: 5px 0; font-weight: bold; color: #575757;">Assigned Coordinator:</td>
+                <td style="padding: 5px 0; color: #202024;">${safeStaff}</td>
+              </tr>
+            </table>
+          </div>
+
+          <p style="font-size: 13px; color: #666666; margin-top: 24px;">
+            If you need to reschedule or have questions before our meeting, please contact our Ottawa dispatch team at <a href="mailto:info@laurrelservices.ca" style="color: #390044; font-weight: 600;">info@laurrelservices.ca</a> referencing appointment <strong>${safeId}</strong>.
+          </p>
+
+          <div style="font-size: 11px; color: #888888; border-top: 1px solid #EEEEEE; padding-top: 16px; margin-top: 28px;">
+            <p style="margin: 0;">Laurrel Services • Ottawa, Ontario</p>
+            <p style="margin: 4px 0 0;">Cleaning · Moving · Storage Operations</p>
+          </div>
+        </div>
+      </div>
+    `;
+
+    try {
+      const response = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${this.apiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          from: this.fromAddress,
+          to: data.customerEmail,
+          subject,
+          html,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        return { success: false, provider: 'resend', error: `HTTP ${response.status}: ${errorText}` };
+      }
+
+      const resData = (await response.json()) as any;
+      return { success: true, provider: 'resend', messageId: resData.id };
+    } catch (err: any) {
+      return { success: false, provider: 'resend', error: err.message };
+    }
+  }
+
+  async sendAppointmentUpdate(
+    data: import('./types').AppointmentEmailData,
+    changeType: 'rescheduled' | 'cancelled'
+  ): Promise<EmailDispatchResult> {
+    if (!this.apiKey) {
+      return { success: false, provider: 'resend', error: 'RESEND_API_KEY is not configured' };
+    }
+
+    const safeName = escapeHtml(data.customerName);
+    const safeTitle = escapeHtml(data.title);
+    const safeReason = escapeHtml(data.cancellationReason || 'Requested schedule update');
+    const isCancelled = changeType === 'cancelled';
+    const safeSubject = isCancelled
+      ? `Cancelled: Laurrel Consultation — ${data.title}`
+      : `Rescheduled: Laurrel Consultation — ${data.title}`;
+
+    const formattedTime = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'America/Toronto',
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+    }).format(new Date(data.scheduledStart));
+
+    const html = `
+      <div style="font-family: Arial, sans-serif; max-width: 580px; margin: 0 auto; line-height: 1.6; color: #202024; background-color: #F8F7F4; padding: 24px;">
+        <div style="background: #390044; padding: 26px 28px; border-radius: 12px 12px 0 0; color: #FFFFFF; text-align: left;">
+          <h2 style="margin: 0; color: #FE6000; font-size: 20px; font-weight: bold;">LAURREL SERVICES</h2>
+          <p style="margin: 4px 0 0; font-size: 13px; color: #F8F7F4;">Appointment Update</p>
+        </div>
+        <div style="background: #FFFFFF; padding: 32px 28px; border: 1px solid #E5E5E5; border-top: none; border-radius: 0 0 12px 12px;">
+          <h3 style="margin: 0 0 14px; font-size: 18px; color: #202024; font-weight: 600;">
+            ${isCancelled ? 'Consultation Cancelled' : 'Consultation Rescheduled'}
+          </h3>
+          <p style="margin: 0 0 16px; font-size: 14px; color: #575757;">Hello ${safeName},</p>
+          <p style="margin: 0 0 20px; font-size: 14px; color: #575757; line-height: 1.6;">
+            ${
+              isCancelled
+                ? `Your consultation for <strong>${safeTitle}</strong> has been cancelled.`
+                : `Your consultation for <strong>${safeTitle}</strong> has been updated to <strong>${formattedTime}</strong>.`
+            }
+          </p>
+
+          <div style="background: #FFF8F0; border-left: 4px solid #FE6000; border-radius: 6px; padding: 14px; margin: 20px 0;">
+            <p style="margin: 0; font-size: 13px; color: #7A3500;">
+              <strong>Note:</strong> ${safeReason}
+            </p>
+          </div>
+
+          <p style="font-size: 13px; color: #666666; margin-top: 24px;">
+            Please contact our dispatch team at <a href="mailto:info@laurrelservices.ca" style="color: #390044; font-weight: 600;">info@laurrelservices.ca</a> if you would like to book a new appointment or modify your request.
+          </p>
+        </div>
+      </div>
+    `;
+
+    try {
+      const response = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${this.apiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          from: this.fromAddress,
+          to: data.customerEmail,
+          subject: safeSubject,
+          html,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        return { success: false, provider: 'resend', error: `HTTP ${response.status}: ${errorText}` };
+      }
+
+      const resData = (await response.json()) as any;
+      return { success: true, provider: 'resend', messageId: resData.id };
+    } catch (err: any) {
+      return { success: false, provider: 'resend', error: err.message };
+    }
+  }
 }

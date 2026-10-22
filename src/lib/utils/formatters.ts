@@ -144,3 +144,222 @@ export function formatServiceParamValue(val: any): string {
   }
   return String(val);
 }
+
+/**
+ * Ottawa Local Time (America/Toronto) Formatter
+ * Accurately handles Eastern Standard Time (EST) and Eastern Daylight Time (EDT)
+ */
+export function formatOttawaDate(dateValue: string | Date | null | undefined): string {
+  if (!dateValue) return '—';
+  const d = typeof dateValue === 'string' ? new Date(dateValue) : dateValue;
+  if (isNaN(d.getTime())) return String(dateValue);
+
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/Toronto',
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  }).format(d);
+}
+
+export function formatOttawaTime(dateValue: string | Date | null | undefined): string {
+  if (!dateValue) return '—';
+  const d = typeof dateValue === 'string' ? new Date(dateValue) : dateValue;
+  if (isNaN(d.getTime())) return String(dateValue);
+
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/Toronto',
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+  }).format(d);
+}
+
+export function formatOttawaDateTime(dateValue: string | Date | null | undefined): string {
+  if (!dateValue) return '—';
+  const d = typeof dateValue === 'string' ? new Date(dateValue) : dateValue;
+  if (isNaN(d.getTime())) return String(dateValue);
+
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/Toronto',
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+  }).format(d);
+}
+
+export function formatOttawaTimeRange(
+  startValue: string | Date,
+  endValue: string | Date
+): string {
+  const start = typeof startValue === 'string' ? new Date(startValue) : startValue;
+  const end = typeof endValue === 'string' ? new Date(endValue) : endValue;
+  if (isNaN(start.getTime()) || isNaN(end.getTime())) return '—';
+
+  const dateStr = formatOttawaDate(start);
+  const startTime = formatOttawaTime(start);
+  const endTime = formatOttawaTime(end);
+
+  return `${dateStr} · ${startTime} – ${endTime} (Ottawa Time)`;
+}
+
+/**
+ * Converts a date (YYYY-MM-DD) and time (HH:mm) representing Ottawa local time (America/Toronto)
+ * into an absolute UTC Date / ISO string, regardless of the user's browser or system timezone.
+ *
+ * Daylight Saving Policy:
+ * 1. Spring-Forward Gaps: Times between 02:00 and 02:59:59 on the 2nd Sunday of March do not exist
+ *    in Ottawa local time. Rather than silently shifting to another time, this function throws
+ *    a descriptive validation Error explaining the gap and instructing the caller to choose >= 03:00.
+ * 2. Autumn Repeated Hours (Fall-Back): On the 1st Sunday of November, the local hour from 01:00 to 01:59:59
+ *    occurs twice (first in EDT UTC-4, then in EST UTC-5). Laurrel Services' documented business policy
+ *    defaults to the earlier occurrence (EDT, UTC-4), representing the first arrival of that business time.
+ */
+export function ottawaToUtcDate(dateStr: string, timeStr: string): Date {
+  const [year, month, day] = dateStr.split('-').map(Number);
+  const [hour, minute] = timeStr.split(':').map(Number);
+
+  if (isNaN(year) || isNaN(month) || isNaN(day) || isNaN(hour) || isNaN(minute)) {
+    throw new Error(`Invalid date or time format provided: ${dateStr} ${timeStr}`);
+  }
+
+  const dtf = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/Toronto',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  });
+
+  function verifyOttawaMatch(candidateDate: Date): boolean {
+    const parts = dtf.formatToParts(candidateDate);
+    let pYear = 0, pMonth = 0, pDay = 0, pHour = 0, pMinute = 0;
+    for (const p of parts) {
+      if (p.type === 'year') pYear = Number(p.value);
+      if (p.type === 'month') pMonth = Number(p.value);
+      if (p.type === 'day') pDay = Number(p.value);
+      if (p.type === 'hour') pHour = p.value === '24' ? 0 : Number(p.value);
+      if (p.type === 'minute') pMinute = Number(p.value);
+    }
+    return (
+      pYear === year &&
+      pMonth === month &&
+      pDay === day &&
+      pHour === hour &&
+      pMinute === minute
+    );
+  }
+
+  // In Ottawa (America/Toronto), the UTC offset is strictly either -4h (EDT) or -5h (EST).
+  const candidateEdt = new Date(Date.UTC(year, month - 1, day, hour + 4, minute, 0));
+  const candidateEst = new Date(Date.UTC(year, month - 1, day, hour + 5, minute, 0));
+
+  const edtMatches = verifyOttawaMatch(candidateEdt);
+  const estMatches = verifyOttawaMatch(candidateEst);
+
+  // Spring-Forward Gap: Nonexistent local time (neither EDT nor EST represents this time in Ottawa)
+  if (!edtMatches && !estMatches) {
+    throw new Error(
+      `The time ${timeStr} on ${dateStr} does not exist in Ottawa (America/Toronto) due to the Spring-Forward Daylight Saving transition (clocks advance from 02:00 to 03:00). Please select an alternative time at or after 03:00.`
+    );
+  }
+
+  // Autumn Repeated Hour (Fall-Back Transition):
+  // Both offsets match. Policy: Default to earlier occurrence (first calendar arrival, EDT UTC-4).
+  if (edtMatches && estMatches) {
+    return candidateEdt;
+  }
+
+  return edtMatches ? candidateEdt : candidateEst;
+}
+
+export function ottawaToUtcIso(dateStr: string, timeStr: string): string {
+  return ottawaToUtcDate(dateStr, timeStr).toISOString();
+}
+
+/**
+ * Extracts the Ottawa local date component (YYYY-MM-DD) from a UTC Date or ISO string
+ */
+export function utcToOttawaDate(dateValue: string | Date): string {
+  const d = typeof dateValue === 'string' ? new Date(dateValue) : dateValue;
+  if (isNaN(d.getTime())) return '';
+
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/Toronto',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(d);
+}
+
+/**
+ * Extracts the Ottawa local time component (HH:mm) from a UTC Date or ISO string in 24h format for input[type="time"]
+ */
+export function utcToOttawaTime(dateValue: string | Date): string {
+  const d = typeof dateValue === 'string' ? new Date(dateValue) : dateValue;
+  if (isNaN(d.getTime())) return '';
+
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/Toronto',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).formatToParts(d);
+
+  let hour = '00';
+  let minute = '00';
+  for (const p of parts) {
+    if (p.type === 'hour') hour = p.value === '24' ? '00' : p.value.padStart(2, '0');
+    if (p.type === 'minute') minute = p.value.padStart(2, '0');
+  }
+
+  return `${hour}:${minute}`;
+}
+
+export type AppointmentType =
+  | 'telephone'
+  | 'in_person'
+  | 'on_site'
+  | 'google_meet'
+  | 'ms_teams'
+  | 'zoom';
+
+export const APPOINTMENT_TYPE_LABELS: Record<string, string> = {
+  telephone: 'Telephone Consultation',
+  in_person: 'In-Person Consultation',
+  on_site: 'On-Site Property Assessment',
+  google_meet: 'Google Meet',
+  ms_teams: 'Microsoft Teams',
+  zoom: 'Zoom',
+};
+
+export function formatAppointmentType(type: string | null | undefined): string {
+  if (!type) return 'Consultation';
+  return APPOINTMENT_TYPE_LABELS[type] || type.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+export const APPOINTMENT_STATUS_LABELS: Record<string, { label: string; color: string; bg: string }> = {
+  pending: { label: 'Pending', color: 'text-amber-700', bg: 'bg-amber-50 border-amber-200' },
+  confirmed: { label: 'Confirmed', color: 'text-emerald-700', bg: 'bg-emerald-50 border-emerald-200' },
+  completed: { label: 'Completed', color: 'text-zinc-700', bg: 'bg-zinc-100 border-zinc-200' },
+  rescheduled: { label: 'Rescheduled', color: 'text-[#49056B]', bg: 'bg-purple-50 border-purple-200' },
+  cancelled: { label: 'Cancelled', color: 'text-red-700', bg: 'bg-red-50 border-red-200' },
+  no_show: { label: 'No-show', color: 'text-zinc-500', bg: 'bg-zinc-50 border-zinc-200' },
+};
+
+export function formatAppointmentStatus(status: string | null | undefined): { label: string; color: string; bg: string } {
+  if (!status) return { label: 'Pending', color: 'text-amber-700', bg: 'bg-amber-50 border-amber-200' };
+  return (
+    APPOINTMENT_STATUS_LABELS[status] || {
+      label: status.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()),
+      color: 'text-zinc-700',
+      bg: 'bg-zinc-100 border-zinc-200',
+    }
+  );
+}

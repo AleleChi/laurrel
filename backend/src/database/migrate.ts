@@ -42,6 +42,75 @@ const MIGRATION_PIPELINE: MigrationStep[] = [
       console.log(`[Migration] Associated ${updateRes.rowCount} confirmed staging R2 asset(s) with laurrel-media-staging.`);
     },
   },
+  {
+    version: '20261022_module_04_appointments',
+    description: 'Add appointments, appointment_activity, and appointment_notifications tables for consultation scheduling',
+    run: async (client) => {
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS appointments (
+            id VARCHAR(32) PRIMARY KEY,
+            enquiry_id VARCHAR(32) NOT NULL REFERENCES enquiries(id) ON DELETE CASCADE,
+            title VARCHAR(255) NOT NULL,
+            purpose TEXT,
+            appointment_type VARCHAR(64) NOT NULL DEFAULT 'telephone',
+            status VARCHAR(32) NOT NULL DEFAULT 'pending',
+            scheduled_start TIMESTAMPTZ NOT NULL,
+            scheduled_end TIMESTAMPTZ NOT NULL,
+            duration_minutes INT NOT NULL DEFAULT 30,
+            timezone VARCHAR(64) NOT NULL DEFAULT 'America/Toronto',
+            customer_name VARCHAR(255) NOT NULL,
+            customer_email VARCHAR(255) NOT NULL,
+            customer_phone VARCHAR(64),
+            location_or_link TEXT,
+            assigned_staff_id VARCHAR(64) REFERENCES admin_users(id) ON DELETE SET NULL,
+            assigned_staff_name VARCHAR(255),
+            staff_notes TEXT,
+            notification_sent BOOLEAN NOT NULL DEFAULT FALSE,
+            notification_sent_at TIMESTAMPTZ,
+            idempotency_key VARCHAR(128) UNIQUE,
+            cancellation_reason TEXT,
+            rescheduled_from_id VARCHAR(32) REFERENCES appointments(id) ON DELETE SET NULL,
+            created_by VARCHAR(64) REFERENCES admin_users(id) ON DELETE SET NULL,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_appointments_enquiry_id ON appointments(enquiry_id);
+        CREATE INDEX IF NOT EXISTS idx_appointments_scheduled_start ON appointments(scheduled_start);
+        CREATE INDEX IF NOT EXISTS idx_appointments_status ON appointments(status);
+        CREATE INDEX IF NOT EXISTS idx_appointments_assigned_staff_id ON appointments(assigned_staff_id);
+        CREATE INDEX IF NOT EXISTS idx_appointments_idempotency_key ON appointments(idempotency_key);
+        CREATE INDEX IF NOT EXISTS idx_appointments_created_at ON appointments(created_at DESC);
+
+        CREATE TABLE IF NOT EXISTS appointment_activity (
+            id VARCHAR(64) PRIMARY KEY,
+            appointment_id VARCHAR(32) NOT NULL REFERENCES appointments(id) ON DELETE CASCADE,
+            action VARCHAR(64) NOT NULL,
+            performed_by VARCHAR(128) NOT NULL,
+            details TEXT,
+            metadata JSONB,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_appointment_activity_appointment_id ON appointment_activity(appointment_id);
+        CREATE INDEX IF NOT EXISTS idx_appointment_activity_created_at ON appointment_activity(created_at DESC);
+
+        CREATE TABLE IF NOT EXISTS appointment_notifications (
+            id VARCHAR(64) PRIMARY KEY,
+            appointment_id VARCHAR(32) NOT NULL REFERENCES appointments(id) ON DELETE CASCADE,
+            recipient_email VARCHAR(255) NOT NULL,
+            notification_type VARCHAR(64) NOT NULL,
+            status VARCHAR(32) NOT NULL,
+            error_message TEXT,
+            sent_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_appointment_notifications_appointment_id ON appointment_notifications(appointment_id);
+        CREATE INDEX IF NOT EXISTS idx_appointment_notifications_sent_at ON appointment_notifications(sent_at DESC);
+      `);
+      console.log('[Migration] Appointments tables and indexes created successfully.');
+    },
+  },
 ];
 
 export async function runMigrations(): Promise<{ success: boolean; message: string; appliedCount?: number }> {
