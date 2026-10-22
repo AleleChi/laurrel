@@ -6,8 +6,11 @@ import fs from 'fs';
 // Attempt loading environment variables from common location candidates
 const envCandidates = [
   path.resolve(process.cwd(), 'backend', '.env'),
+  path.resolve(process.cwd(), '.env.local'),
   path.resolve(process.cwd(), '.env'),
+  path.resolve(__dirname, '..', '..', '.env.local'),
   path.resolve(__dirname, '..', '..', '.env'),
+  path.resolve(__dirname, '..', '..', '..', '.env.local'),
   path.resolve(__dirname, '..', '..', '..', '.env'),
 ];
 
@@ -35,10 +38,10 @@ export function getDbPool(): Pool | null {
 
     poolInstance = new Pool({
       connectionString,
-      ssl: useSsl ? { rejectUnauthorized: true } : undefined,
+      ssl: useSsl ? { rejectUnauthorized: false } : undefined,
       max: 10,
       idleTimeoutMillis: 30000,
-      connectionTimeoutMillis: 10000,
+      connectionTimeoutMillis: 20000,
     });
 
     poolInstance.on('error', (err) => {

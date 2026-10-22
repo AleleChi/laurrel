@@ -282,3 +282,69 @@ CREATE INDEX IF NOT EXISTS idx_media_assets_is_archived ON media_assets(is_archi
 CREATE INDEX IF NOT EXISTS idx_media_assets_storage_bucket ON media_assets(storage_bucket);
 CREATE INDEX IF NOT EXISTS idx_media_assets_created_at ON media_assets(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_media_assets_public_url ON media_assets(public_url);
+
+-- =========================================================
+-- 12. APPOINTMENTS & CONSULTATIONS DATA MODEL (MODULE 04)
+-- =========================================================
+
+CREATE TABLE IF NOT EXISTS appointments (
+    id VARCHAR(32) PRIMARY KEY,
+    enquiry_id VARCHAR(32) NOT NULL REFERENCES enquiries(id) ON DELETE CASCADE,
+    title VARCHAR(255) NOT NULL,
+    purpose TEXT,
+    appointment_type VARCHAR(64) NOT NULL DEFAULT 'telephone', -- 'telephone', 'in_person', 'on_site', 'google_meet', 'ms_teams', 'zoom'
+    status VARCHAR(32) NOT NULL DEFAULT 'pending', -- 'pending', 'confirmed', 'completed', 'rescheduled', 'cancelled', 'no_show'
+    scheduled_start TIMESTAMPTZ NOT NULL,
+    scheduled_end TIMESTAMPTZ NOT NULL,
+    duration_minutes INT NOT NULL DEFAULT 30,
+    timezone VARCHAR(64) NOT NULL DEFAULT 'America/Toronto',
+    customer_name VARCHAR(255) NOT NULL,
+    customer_email VARCHAR(255) NOT NULL,
+    customer_phone VARCHAR(64),
+    location_or_link TEXT,
+    assigned_staff_id VARCHAR(64) REFERENCES admin_users(id) ON DELETE SET NULL,
+    assigned_staff_name VARCHAR(255),
+    staff_notes TEXT,
+    notification_sent BOOLEAN NOT NULL DEFAULT FALSE,
+    notification_sent_at TIMESTAMPTZ,
+    idempotency_key VARCHAR(128) UNIQUE,
+    cancellation_reason TEXT,
+    rescheduled_from_id VARCHAR(32) REFERENCES appointments(id) ON DELETE SET NULL,
+    created_by VARCHAR(64) REFERENCES admin_users(id) ON DELETE SET NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_appointments_enquiry_id ON appointments(enquiry_id);
+CREATE INDEX IF NOT EXISTS idx_appointments_scheduled_start ON appointments(scheduled_start);
+CREATE INDEX IF NOT EXISTS idx_appointments_status ON appointments(status);
+CREATE INDEX IF NOT EXISTS idx_appointments_assigned_staff_id ON appointments(assigned_staff_id);
+CREATE INDEX IF NOT EXISTS idx_appointments_idempotency_key ON appointments(idempotency_key);
+CREATE INDEX IF NOT EXISTS idx_appointments_created_at ON appointments(created_at DESC);
+
+CREATE TABLE IF NOT EXISTS appointment_activity (
+    id VARCHAR(64) PRIMARY KEY,
+    appointment_id VARCHAR(32) NOT NULL REFERENCES appointments(id) ON DELETE CASCADE,
+    action VARCHAR(64) NOT NULL, -- 'created', 'confirmed', 'rescheduled', 'cancelled', 'completed', 'no_show', 'notification_sent', 'notification_failed'
+    performed_by VARCHAR(128) NOT NULL,
+    details TEXT,
+    metadata JSONB,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_appointment_activity_appointment_id ON appointment_activity(appointment_id);
+CREATE INDEX IF NOT EXISTS idx_appointment_activity_created_at ON appointment_activity(created_at DESC);
+
+CREATE TABLE IF NOT EXISTS appointment_notifications (
+    id VARCHAR(64) PRIMARY KEY,
+    appointment_id VARCHAR(32) NOT NULL REFERENCES appointments(id) ON DELETE CASCADE,
+    recipient_email VARCHAR(255) NOT NULL,
+    notification_type VARCHAR(64) NOT NULL, -- 'invitation', 'rescheduled', 'cancellation'
+    status VARCHAR(32) NOT NULL, -- 'sent', 'failed'
+    error_message TEXT,
+    sent_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_appointment_notifications_appointment_id ON appointment_notifications(appointment_id);
+CREATE INDEX IF NOT EXISTS idx_appointment_notifications_sent_at ON appointment_notifications(sent_at DESC);
+
