@@ -160,6 +160,13 @@ export async function createAppointment(
 
     // Real staff double-booking prevention check within transaction
     if (data.assignedStaffId) {
+      // 1. Lock the staff member row to serialize concurrent bookings for the same coordinator
+      await client.query(
+        `SELECT id FROM admin_users WHERE id = $1 FOR UPDATE`,
+        [data.assignedStaffId]
+      );
+
+      // 2. Check for overlapping active appointments
       const conflictRes = await client.query(
         `SELECT id, title, scheduled_start, scheduled_end, customer_name FROM appointments
          WHERE assigned_staff_id = $1
@@ -439,6 +446,13 @@ export async function rescheduleAppointment(
 
     // Real staff double-booking prevention check on reschedule
     if (current.assigned_staff_id) {
+      // 1. Lock the staff member row to serialize concurrent rescheduling for the same coordinator
+      await client.query(
+        `SELECT id FROM admin_users WHERE id = $1 FOR UPDATE`,
+        [current.assigned_staff_id]
+      );
+
+      // 2. Check for overlapping appointments excluding current appointment
       const conflictRes = await client.query(
         `SELECT id, title, scheduled_start, scheduled_end, customer_name FROM appointments
          WHERE assigned_staff_id = $1

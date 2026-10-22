@@ -15,6 +15,7 @@ import {
 } from '../database/appointmentRepo';
 import { getVideoMeetingProvider, AppointmentType } from '../services/video';
 import { getEmailProvider } from '../services/email';
+import { getDbPool } from '../database/pool';
 
 export const appointmentsRouter = Router();
 
@@ -219,10 +220,35 @@ appointmentsRouter.post(
 
       // Safe Idempotent Replay: If appointment already existed with this idempotency key, return it without duplicate notifications
       if (!isNew) {
+        const pool = getDbPool();
+        let lastNotif: any = null;
+        if (pool) {
+          const notifRes = await pool.query(
+            `SELECT status, sent_at, error_message FROM appointment_notifications
+             WHERE appointment_id = $1
+             ORDER BY sent_at DESC
+             LIMIT 1`,
+            [appointment.id]
+          );
+          if (notifRes.rows.length > 0) {
+            lastNotif = notifRes.rows[0];
+          }
+        }
+
+        const wasAttempted = Boolean(lastNotif || appointment.notificationSentAt);
+        const wasSent = lastNotif ? lastNotif.status === 'sent' : Boolean(appointment.notificationSent);
+
         res.status(200).json({
           appointment,
           meetingDetails: meetingResult,
-          emailDispatch: { attempted: false, success: true, replay: true },
+          emailDispatch: {
+            attempted: wasAttempted,
+            success: wasSent,
+            status: lastNotif?.status || (wasSent ? 'sent' : wasAttempted ? 'failed' : 'none'),
+            error: lastNotif?.error_message || undefined,
+            sentAt: lastNotif?.sent_at || appointment.notificationSentAt || undefined,
+            replay: true,
+          },
           idempotentReplay: true,
         });
         return;

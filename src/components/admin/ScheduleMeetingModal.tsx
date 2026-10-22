@@ -116,6 +116,18 @@ export default function ScheduleMeetingModal({
   const [rescheduleReason, setRescheduleReason] = useState<string>('');
   const [notifyCustomer, setNotifyCustomer] = useState<boolean>(true);
 
+  // Stable idempotency key for this logical booking attempt across retries
+  const [bookingIdempotencyKey, setBookingIdempotencyKey] = useState<string>(() =>
+    `idemp_${enquiry.id}_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`
+  );
+
+  // Generate a new stable idempotency key only when starting a new booking attempt
+  useEffect(() => {
+    if (isOpen && !isReschedule) {
+      setBookingIdempotencyKey(`idemp_${enquiry.id}_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`);
+    }
+  }, [isOpen, enquiry.id, isReschedule]);
+
   // Conflict & submission states
   const [loadingStaff, setLoadingStaff] = useState(false);
   const [conflictWarning, setConflictWarning] = useState<string | null>(null);
@@ -232,8 +244,8 @@ export default function ScheduleMeetingModal({
         onScheduled(data.appointment);
         onClose();
       } else {
-        // Call Create Appointment API with Idempotency Key
-        const idempotencyKey = `idemp_${enquiry.id}_${Date.now()}`;
+        // Call Create Appointment API with stable Idempotency Key across retries
+        const idempotencyKey = bookingIdempotencyKey;
 
         const res = await fetch('/api/admin/appointments', {
           method: 'POST',

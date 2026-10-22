@@ -210,48 +210,73 @@ export function formatOttawaTimeRange(
 /**
  * Converts a date (YYYY-MM-DD) and time (HH:mm) representing Ottawa local time (America/Toronto)
  * into an absolute UTC Date / ISO string, regardless of the user's browser or system timezone.
+ *
+ * Daylight Saving Policy:
+ * 1. Spring-Forward Gaps: Times between 02:00 and 02:59:59 on the 2nd Sunday of March do not exist
+ *    in Ottawa local time. Rather than silently shifting to another time, this function throws
+ *    a descriptive validation Error explaining the gap and instructing the caller to choose >= 03:00.
+ * 2. Autumn Repeated Hours (Fall-Back): On the 1st Sunday of November, the local hour from 01:00 to 01:59:59
+ *    occurs twice (first in EDT UTC-4, then in EST UTC-5). Laurrel Services' documented business policy
+ *    defaults to the earlier occurrence (EDT, UTC-4), representing the first arrival of that business time.
  */
 export function ottawaToUtcDate(dateStr: string, timeStr: string): Date {
   const [year, month, day] = dateStr.split('-').map(Number);
   const [hour, minute] = timeStr.split(':').map(Number);
 
-  let utcMillis = Date.UTC(year, month - 1, day, hour, minute, 0, 0);
+  if (isNaN(year) || isNaN(month) || isNaN(day) || isNaN(hour) || isNaN(minute)) {
+    throw new Error(`Invalid date or time format provided: ${dateStr} ${timeStr}`);
+  }
 
-  const dtf = new Intl.DateTimeFormat('en-US', {
+  const dtf = new Intl.DateTimeFormat('en-CA', {
     timeZone: 'America/Toronto',
     year: 'numeric',
-    month: 'numeric',
-    day: 'numeric',
-    hour: 'numeric',
-    minute: 'numeric',
-    second: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
     hour12: false,
   });
 
-  for (let i = 0; i < 3; i++) {
-    const parts = dtf.formatToParts(new Date(utcMillis));
-    const partObj: Record<string, number> = {};
+  function verifyOttawaMatch(candidateDate: Date): boolean {
+    const parts = dtf.formatToParts(candidateDate);
+    let pYear = 0, pMonth = 0, pDay = 0, pHour = 0, pMinute = 0;
     for (const p of parts) {
-      if (p.type !== 'literal') {
-        partObj[p.type] = Number(p.value);
-      }
+      if (p.type === 'year') pYear = Number(p.value);
+      if (p.type === 'month') pMonth = Number(p.value);
+      if (p.type === 'day') pDay = Number(p.value);
+      if (p.type === 'hour') pHour = p.value === '24' ? 0 : Number(p.value);
+      if (p.type === 'minute') pMinute = Number(p.value);
     }
-    const torontoHour = partObj.hour === 24 ? 0 : partObj.hour;
-    const torontoMillis = Date.UTC(
-      partObj.year,
-      partObj.month - 1,
-      partObj.day,
-      torontoHour,
-      partObj.minute,
-      partObj.second || 0
+    return (
+      pYear === year &&
+      pMonth === month &&
+      pDay === day &&
+      pHour === hour &&
+      pMinute === minute
     );
-
-    const diff = Date.UTC(year, month - 1, day, hour, minute, 0) - torontoMillis;
-    if (diff === 0) break;
-    utcMillis += diff;
   }
 
-  return new Date(utcMillis);
+  // In Ottawa (America/Toronto), the UTC offset is strictly either -4h (EDT) or -5h (EST).
+  const candidateEdt = new Date(Date.UTC(year, month - 1, day, hour + 4, minute, 0));
+  const candidateEst = new Date(Date.UTC(year, month - 1, day, hour + 5, minute, 0));
+
+  const edtMatches = verifyOttawaMatch(candidateEdt);
+  const estMatches = verifyOttawaMatch(candidateEst);
+
+  // Spring-Forward Gap: Nonexistent local time (neither EDT nor EST represents this time in Ottawa)
+  if (!edtMatches && !estMatches) {
+    throw new Error(
+      `The time ${timeStr} on ${dateStr} does not exist in Ottawa (America/Toronto) due to the Spring-Forward Daylight Saving transition (clocks advance from 02:00 to 03:00). Please select an alternative time at or after 03:00.`
+    );
+  }
+
+  // Autumn Repeated Hour (Fall-Back Transition):
+  // Both offsets match. Policy: Default to earlier occurrence (first calendar arrival, EDT UTC-4).
+  if (edtMatches && estMatches) {
+    return candidateEdt;
+  }
+
+  return edtMatches ? candidateEdt : candidateEst;
 }
 
 export function ottawaToUtcIso(dateStr: string, timeStr: string): string {
