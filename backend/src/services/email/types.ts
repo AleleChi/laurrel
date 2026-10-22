@@ -8,8 +8,10 @@ export interface EmailDispatchResult {
 }
 
 export interface IEmailProvider {
+  isConfigured(): boolean;
   sendEnquiryNotification(record: EnquiryRecord): Promise<EmailDispatchResult>;
   sendCustomerAcknowledgement(record: EnquiryRecord): Promise<EmailDispatchResult>;
+  sendPasswordResetEmail(email: string, resetLink: string, userName?: string): Promise<EmailDispatchResult>;
 }
 
 /**

@@ -375,40 +375,74 @@ export async function recordAuthEvent(
 /**
  * Create password reset token.
  * Stores SHA-256 hash in database; never stores or logs the raw token.
+ * Token expires in 30 minutes (short-lived, single-use).
  */
-export async function createPasswordResetToken(email: string): Promise<string | null> {
+export async function createPasswordResetToken(
+  email: string
+): Promise<{ rawToken: string; user: { id: string; email: string; name: string } } | null> {
   const pool = getDbPool();
   if (!pool) return null;
 
   const rawToken = crypto.randomBytes(32).toString('hex');
   const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
-  const expires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+  const expires = new Date(Date.now() + 30 * 60 * 1000); // 30 minutes
 
   try {
     const res = await pool.query(
       `UPDATE admin_users
        SET password_reset_token = $1, password_reset_expires = $2, updated_at = NOW()
        WHERE LOWER(email) = LOWER($3) AND is_active = TRUE
-       RETURNING id`,
+       RETURNING id, email, name`,
       [tokenHash, expires.toISOString(), email.trim()]
     );
 
     if (res.rows.length === 0) return null;
-    return rawToken; // Returned only to mailer, never logged
+    return {
+      rawToken, // Returned only to mailer, never logged
+      user: res.rows[0],
+    };
   } catch (err) {
     console.error('[AdminRepo] createPasswordResetToken failed:', err);
     return null;
   }
 }
 
-/**
- * Reset password using token
- */
-export async function resetAdminPasswordWithToken(rawToken: string, newPassword: string): Promise<boolean> {
-  const pool = getDbPool();
-  if (!pool) return false;
+export interface PasswordResetResult {
+  success: boolean;
+  error?: string;
+  user?: {
+    id: string;
+    email: string;
+    name: string;
+  };
+}
 
-  const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
+/**
+ * Reset password using single-use token atomically.
+ * Validates password policy, updates Argon2id hash, clears token and unlocks account,
+ * and revokes all active sessions.
+ */
+export async function resetAdminPasswordWithToken(
+  rawToken: string,
+  newPassword: string
+): Promise<PasswordResetResult> {
+  const pool = getDbPool();
+  if (!pool) return { success: false, error: 'Database service is currently unavailable.' };
+
+  const trimmedToken = String(rawToken || '').trim();
+  if (!trimmedToken) {
+    return { success: false, error: 'Reset token is missing or malformed.' };
+  }
+
+  // Password policy validation: minimum 10 characters
+  if (!newPassword || typeof newPassword !== 'string' || newPassword.length < 10) {
+    return {
+      success: false,
+      error: 'Password must be at least 10 characters in length.',
+    };
+  }
+
+  const tokenHash = crypto.createHash('sha256').update(trimmedToken).digest('hex');
   const passwordHash = await hashPassword(newPassword);
 
   try {
@@ -420,20 +454,27 @@ export async function resetAdminPasswordWithToken(rawToken: string, newPassword:
            failed_login_attempts = 0,
            locked_until = NULL,
            updated_at = NOW()
-       WHERE password_reset_token = $2 AND password_reset_expires > NOW() AND is_active = TRUE
-       RETURNING id`,
+       WHERE password_reset_token = $2
+         AND password_reset_expires > NOW()
+         AND is_active = TRUE
+       RETURNING id, email, name`,
       [passwordHash, tokenHash]
     );
 
     if (res.rowCount && res.rowCount > 0) {
+      const user = res.rows[0];
       // Invalidate all active sessions for this user upon password reset
-      await revokeAllUserSessions(res.rows[0].id);
-      return true;
+      await revokeAllUserSessions(user.id);
+      return { success: true, user };
     }
-    return false;
-  } catch (err) {
-    console.error('[AdminRepo] resetAdminPasswordWithToken failed:', err);
-    return false;
+
+    return {
+      success: false,
+      error: 'Password reset link is invalid or has expired. Please request a new reset link.',
+    };
+  } catch (err: any) {
+    console.error('[AdminRepo] resetAdminPasswordWithToken failed:', err.message);
+    return { success: false, error: 'An unexpected error occurred while resetting your password.' };
   }
 }
 

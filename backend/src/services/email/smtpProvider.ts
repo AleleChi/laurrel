@@ -31,6 +31,10 @@ export class SmtpEmailProvider implements IEmailProvider {
     }
   }
 
+  isConfigured(): boolean {
+    return Boolean(this.transporter);
+  }
+
   async sendEnquiryNotification(record: EnquiryRecord): Promise<EmailDispatchResult> {
     if (!this.transporter) {
       console.warn('[SMTP Provider] SMTP credentials not fully configured. Skipping dispatch.');
@@ -146,6 +150,69 @@ export class SmtpEmailProvider implements IEmailProvider {
 
       return { success: true, provider: 'smtp', messageId: info.messageId };
     } catch (err: any) {
+      return { success: false, provider: 'smtp', error: err.message };
+    }
+  }
+
+  async sendPasswordResetEmail(email: string, resetLink: string, userName?: string): Promise<EmailDispatchResult> {
+    if (!this.transporter) {
+      return { success: false, provider: 'smtp', error: 'SMTP credentials not configured' };
+    }
+
+    const safeName = escapeHtml(userName || 'Administrator');
+    const safeEmail = escapeHtml(email);
+    const safeLink = escapeHtml(resetLink);
+    const subject = 'Reset your Laurrel Operations Administrator Password';
+
+    const html = `
+      <div style="font-family: Arial, sans-serif; max-width: 580px; margin: 0 auto; line-height: 1.6; color: #202024; background-color: #F8F7F4; padding: 24px;">
+        <div style="background: #390044; padding: 26px 28px; border-radius: 12px 12px 0 0; color: #FFFFFF; text-align: left;">
+          <h2 style="margin: 0; color: #FE6000; font-size: 20px; font-weight: bold; letter-spacing: -0.02em;">LAURREL SERVICES</h2>
+          <p style="margin: 4px 0 0; font-size: 13px; color: #F8F7F4;">Operations & Administration Portal</p>
+        </div>
+        <div style="background: #FFFFFF; padding: 32px 28px; border: 1px solid #E5E5E5; border-top: none; border-radius: 0 0 12px 12px;">
+          <h3 style="margin: 0 0 16px; font-size: 17px; color: #202024; font-weight: 600;">Password Reset Request</h3>
+          <p style="margin: 0 0 14px; font-size: 14px; color: #575757;">Hello ${safeName},</p>
+          <p style="margin: 0 0 20px; font-size: 14px; color: #575757; line-height: 1.6;">
+            We received a request to reset the password for your Laurrel administrator account (<strong style="color: #202024;">${safeEmail}</strong>).
+          </p>
+
+          <div style="margin: 28px 0; text-align: left;">
+            <a href="${safeLink}" style="display: inline-block; background: #390044; color: #FFFFFF; font-size: 14px; font-weight: bold; text-decoration: none; padding: 13px 26px; border-radius: 8px; border: 1px solid #280030;">
+              Reset Administrator Password
+            </a>
+          </div>
+
+          <div style="background: #FFF8F0; border-left: 4px solid #FE6000; border-radius: 4px; padding: 14px; margin: 24px 0;">
+            <p style="margin: 0; font-size: 12px; color: #7A3500; line-height: 1.5;">
+              <strong>Security Notice:</strong> This link is single-use and will expire in <strong>30 minutes</strong>. If you did not initiate this request, you can safely ignore this email. Your password will remain unchanged.
+            </p>
+          </div>
+
+          <p style="margin: 20px 0 0; font-size: 12px; color: #888888; word-break: break-all;">
+            If the button above does not work, copy and paste this link into your browser:<br />
+            <a href="${safeLink}" style="color: #390044; text-decoration: underline;">${safeLink}</a>
+          </p>
+
+          <div style="font-size: 11px; color: #888888; border-top: 1px solid #EEEEEE; padding-top: 16px; margin-top: 28px;">
+            <p style="margin: 0;">Laurrel Services • Ottawa Operations</p>
+            <p style="margin: 4px 0 0;">This is an automated operational notification. Please do not reply directly to this email.</p>
+          </div>
+        </div>
+      </div>
+    `;
+
+    try {
+      const info = await this.transporter.sendMail({
+        from: this.fromAddress,
+        to: email,
+        subject,
+        html,
+      });
+
+      return { success: true, provider: 'smtp', messageId: info.messageId };
+    } catch (err: any) {
+      console.error('[SMTP Error]: Failed to send reset email', err.message);
       return { success: false, provider: 'smtp', error: err.message };
     }
   }

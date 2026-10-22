@@ -5,7 +5,7 @@ export async function POST(req: NextRequest) {
     const { email } = await req.json();
 
     if (!email) {
-      return NextResponse.json({ error: 'Email is required.' }, { status: 400 });
+      return NextResponse.json({ success: false, error: 'Email is required.' }, { status: 400 });
     }
 
     const trimmedEmail = String(email).trim().toLowerCase();
@@ -18,28 +18,46 @@ export async function POST(req: NextRequest) {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'x-forwarded-for': req.headers.get('x-forwarded-for') || '',
+          'user-agent': req.headers.get('user-agent') || '',
           ...(backendSecret ? { 'x-admin-token': backendSecret } : {}),
         },
         body: JSON.stringify({ email: trimmedEmail }),
       });
 
-      if (res.ok) {
-        return NextResponse.json({
-          success: true,
-          message:
-            'If an authorized administrator account exists for this address, password recovery instructions have been prepared.',
-        });
-      }
-    } catch (err) {
-      console.warn('[Admin Recovery Forward Failed]:', err);
-    }
+      const data = await res.json().catch(() => ({}));
 
-    return NextResponse.json({
-      success: true,
-      message:
-        'If an authorized administrator account exists for this address, password recovery instructions have been prepared.',
-    });
+      if (!res.ok) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: data.error || 'Password recovery service is temporarily unavailable.',
+            code: data.code,
+          },
+          { status: res.status }
+        );
+      }
+
+      return NextResponse.json({
+        success: true,
+        message:
+          data.message ||
+          'If an authorized administrator account exists for this email address, password recovery instructions have been sent.',
+      });
+    } catch (err: any) {
+      console.error('[Admin Recovery Forward Failed]:', err);
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Authentication service temporarily unreachable. Please verify your connection.',
+        },
+        { status: 503 }
+      );
+    }
   } catch (err: any) {
-    return NextResponse.json({ error: 'Failed to process recovery request.' }, { status: 500 });
+    return NextResponse.json(
+      { success: false, error: 'Failed to process recovery request.' },
+      { status: 500 }
+    );
   }
 }

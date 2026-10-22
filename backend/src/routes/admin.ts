@@ -14,7 +14,10 @@ import {
   createAdminSession,
   revokeAdminSession,
   createPasswordResetToken,
+  resetAdminPasswordWithToken,
+  recordAuthEvent,
 } from '../database/adminRepo';
+import { getEmailProvider } from '../services/email';
 import { getDbPool } from '../database/pool';
 
 export const adminRouter = Router();
@@ -99,28 +102,112 @@ adminRouter.post('/api/admin/auth/login', async (req: Request, res: Response) =>
 adminRouter.post('/api/admin/auth/recover', async (req: Request, res: Response) => {
   try {
     const { email } = req.body;
+    const ip = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || req.socket.remoteAddress;
+    const ua = req.headers['user-agent'] || 'unknown';
+
     if (!email) {
       res.status(400).json({ error: 'Email is required.' });
       return;
     }
 
     const trimmedEmail = String(email).trim().toLowerCase();
-    const token = await createPasswordResetToken(trimmedEmail);
 
-    // If SMTP mailer is configured, send email safely.
-    // Notice: We NEVER log the token to stdout or console.
-    if (token && process.env.SMTP_HOST && process.env.SMTP_USER) {
-      // Optional mailer trigger without exposing token in response
+    // Check if transactional email provider is configured
+    const emailProvider = getEmailProvider();
+    if (!emailProvider.isConfigured()) {
+      res.status(503).json({
+        success: false,
+        error: 'Password recovery email service is not currently configured. Please contact dispatch leadership or the system administrator directly.',
+        code: 'EMAIL_SERVICE_UNCONFIGURED',
+      });
+      return;
+    }
+
+    // Generate reset token safely (never logged, hashed before storage in Neon)
+    const tokenResult = await createPasswordResetToken(trimmedEmail);
+
+    if (tokenResult) {
+      // Use verified configured frontend origin; NEVER trust client request Host headers
+      const configuredOrigin = (
+        process.env.FRONTEND_ORIGIN ||
+        (process.env.NODE_ENV === 'production' ? 'https://laurrel.netlify.app' : 'http://localhost:3000')
+      ).replace(/\/$/, '');
+
+      const resetLink = `${configuredOrigin}/admin/reset-password?token=${tokenResult.rawToken}`;
+
+      // Dispatch reset email via verified email service
+      const dispatch = await emailProvider.sendPasswordResetEmail(
+        tokenResult.user.email,
+        resetLink,
+        tokenResult.user.name
+      );
+
+      if (dispatch.success) {
+        await recordAuthEvent(trimmedEmail, 'password_reset_dispatched', ip, ua);
+      } else {
+        await recordAuthEvent(trimmedEmail, 'password_reset_dispatch_failed', ip, ua);
+        console.error('[Admin Recovery] Failed to deliver recovery email:', dispatch.error);
+      }
+    } else {
+      // Record unknown attempt without leaking account non-existence
+      await recordAuthEvent(trimmedEmail, 'password_reset_unknown_email', ip, ua);
     }
 
     // Neutral response to prevent email enumeration
     res.status(200).json({
       success: true,
-      message: 'If an authorized administrator account exists for this email address, password recovery instructions have been prepared.',
+      message: 'If an authorized administrator account exists for this email address, password recovery instructions have been sent. The link will expire in 30 minutes.',
     });
   } catch (err: any) {
     console.error('[Admin Recovery Error]:', err);
     res.status(500).json({ error: 'Could not process password recovery request.' });
+  }
+});
+
+/**
+ * POST /api/admin/auth/reset-password - Complete password reset using single-use token
+ */
+adminRouter.post('/api/admin/auth/reset-password', async (req: Request, res: Response) => {
+  try {
+    const { token, newPassword } = req.body;
+    const ip = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || req.socket.remoteAddress;
+    const ua = req.headers['user-agent'] || 'unknown';
+
+    if (!token || typeof token !== 'string') {
+      res.status(400).json({ success: false, error: 'Password reset token is required.' });
+      return;
+    }
+
+    if (!newPassword || typeof newPassword !== 'string') {
+      res.status(400).json({ success: false, error: 'New password is required.' });
+      return;
+    }
+
+    if (newPassword.length < 10) {
+      res.status(400).json({ success: false, error: 'Password must be at least 10 characters in length.' });
+      return;
+    }
+
+    const resetResult = await resetAdminPasswordWithToken(token.trim(), newPassword);
+
+    if (!resetResult.success) {
+      await recordAuthEvent(token.slice(0, 8), 'password_reset_failed', ip, ua);
+      res.status(400).json({
+        success: false,
+        error: resetResult.error || 'Password reset link is invalid or has expired.',
+      });
+      return;
+    }
+
+    await recordAuthEvent(resetResult.user!.email, 'password_reset_completed', ip, ua);
+
+    res.status(200).json({
+      success: true,
+      message: 'Your password has been successfully reset. You may now sign in with your new credentials.',
+    });
+  } catch (err: any) {
+    console.error('[Admin Password Reset Error]:', err);
+    res.status(500).json({ success: false, error: 'An unexpected error occurred while resetting your password.' });
   }
 });
 

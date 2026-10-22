@@ -14,7 +14,6 @@ export default function AdminLoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
-  const [showRecoveryInfo, setShowRecoveryInfo] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,11 +35,25 @@ export default function AdminLoginPage() {
         }),
       });
 
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
 
       if (!res.ok || !data.success) {
-        setErrorMessage(data.error || 'Invalid administrator email or password.');
         setIsLoading(false);
+        if (res.status === 423) {
+          // Account locked
+          setErrorMessage(
+            data.error ||
+              'Account is temporarily locked due to multiple failed login attempts. Please try again later or reset your password.'
+          );
+        } else if (res.status === 503) {
+          // Service temporarily unavailable
+          setErrorMessage('Sign-in is temporarily unavailable. Please try again shortly.');
+        } else if (res.status === 401 || res.status === 400) {
+          // Invalid credentials
+          setErrorMessage('Unable to sign in. Check your email and password.');
+        } else {
+          setErrorMessage('Unable to sign in. Check your email and password.');
+        }
         return;
       }
 
@@ -48,7 +61,7 @@ export default function AdminLoginPage() {
       router.push('/admin');
       router.refresh();
     } catch (err) {
-      setErrorMessage('Unable to reach the authentication service. Please verify your connection.');
+      setErrorMessage('Sign-in is temporarily unavailable. Please try again shortly.');
       setIsLoading(false);
     }
   };
@@ -133,13 +146,12 @@ export default function AdminLoginPage() {
                 >
                   Password
                 </label>
-                <button
-                  type="button"
-                  onClick={() => setShowRecoveryInfo(!showRecoveryInfo)}
+                <Link
+                  href="/admin/forgot-password"
                   className="text-xs text-[#49056B] hover:text-[#5B0785] font-medium transition-colors"
                 >
-                  Need help?
-                </button>
+                  Forgot password?
+                </Link>
               </div>
               <div className="relative">
                 <input
@@ -162,16 +174,6 @@ export default function AdminLoginPage() {
                 </button>
               </div>
             </div>
-
-            {/* Assistance Information Box */}
-            {showRecoveryInfo && (
-              <div className="p-3 bg-zinc-50 border border-black/[0.06] rounded-lg text-xs text-zinc-600 leading-relaxed">
-                <p className="font-semibold text-zinc-800 mb-0.5">Account Credentials</p>
-                <p>
-                  To rotate your password or provision new team credentials, use the secure server CLI tool (<code className="font-mono text-[11px] text-zinc-800">npm run admin:reset-password</code>) or contact dispatch leadership.
-                </p>
-              </div>
-            )}
 
             {/* Submit Button */}
             <button
