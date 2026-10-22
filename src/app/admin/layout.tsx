@@ -9,9 +9,6 @@ import {
   Inbox,
   FileEdit,
   Image as ImageIcon,
-  Receipt,
-  Users,
-  Settings,
   LogOut,
   Menu,
   X,
@@ -168,12 +165,6 @@ export default function AdminLayout({
     },
   ];
 
-  const plannedModules = [
-    { label: 'Quotes & Billing', icon: Receipt },
-    { label: 'Staff & Dispatch', icon: Users },
-    { label: 'System Settings', icon: Settings },
-  ];
-
   return (
     <div className="min-h-screen bg-[#F8F7F4] flex text-[#202024] font-sans antialiased">
       {/* Desktop Sidebar (256px) - Calm, clean, structured */}
@@ -225,26 +216,6 @@ export default function AdminLayout({
               })}
             </nav>
           </div>
-
-          <div>
-            <div className="px-3 mb-2 text-[10px] font-semibold uppercase tracking-widest text-zinc-400">
-              Roadmap
-            </div>
-            <div className="space-y-1">
-              {plannedModules.map((m) => {
-                const Icon = m.icon;
-                return (
-                  <div
-                    key={m.label}
-                    className="flex items-center gap-3 px-3 py-2 rounded-[10px] text-xs text-zinc-400 select-none cursor-default"
-                  >
-                    <Icon className="w-4 h-4 text-zinc-300" />
-                    <span>{m.label}</span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
         </div>
 
         {/* User Card & Logout Footer */}
@@ -266,17 +237,14 @@ export default function AdminLayout({
             </button>
           </div>
 
-          <div className="flex items-center justify-between px-1 text-[11px] text-zinc-400">
-            <span className="flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-              <span>System Online</span>
-            </span>
+          <div className="flex items-center justify-between px-1 text-[11px] text-zinc-500">
+            <span className="text-zinc-400 font-medium">Laurrel Ottawa</span>
             <Link
               href="/"
               target="_blank"
-              className="hover:text-zinc-800 inline-flex items-center gap-1 transition-colors"
+              className="hover:text-zinc-900 inline-flex items-center gap-1 font-medium transition-colors"
             >
-              <span>Live Site</span>
+              <span>View Website</span>
               <ExternalLink className="w-3 h-3" />
             </Link>
           </div>
@@ -330,20 +298,6 @@ export default function AdminLayout({
                   );
                 })}
               </nav>
-
-              <div className="pt-2 border-t border-black/[0.06]">
-                <div className="px-3 mb-2 text-[10px] font-semibold uppercase tracking-widest text-zinc-400">
-                  Roadmap
-                </div>
-                {plannedModules.map((m) => (
-                  <div
-                    key={m.label}
-                    className="flex items-center gap-3 px-3 py-2 text-xs text-zinc-400"
-                  >
-                    <span>{m.label}</span>
-                  </div>
-                ))}
-              </div>
             </div>
 
             <div className="p-4 border-t border-black/[0.06]">
@@ -360,6 +314,17 @@ export default function AdminLayout({
                 >
                   <LogOut className="w-4 h-4" />
                 </button>
+              </div>
+
+              <div className="px-1 text-center">
+                <Link
+                  href="/"
+                  target="_blank"
+                  className="text-xs text-zinc-500 hover:text-zinc-900 inline-flex items-center gap-1 font-medium transition-colors"
+                >
+                  <span>View Website</span>
+                  <ExternalLink className="w-3.5 h-3.5" />
+                </Link>
               </div>
             </div>
           </div>
@@ -400,16 +365,12 @@ export default function AdminLayout({
           </div>
 
           <div className="flex items-center gap-4">
-            <div className="hidden sm:flex items-center gap-2 text-xs text-zinc-500">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-              <span>Database Connected</span>
-            </div>
             <Link
               href="/"
               target="_blank"
-              className="hidden sm:inline-flex items-center gap-1.5 text-xs text-zinc-500 hover:text-[#49056B] font-medium transition-colors"
+              className="inline-flex items-center gap-1.5 text-xs text-zinc-600 hover:text-[#49056B] font-medium transition-colors"
             >
-              <span>View Site</span>
+              <span>View Website</span>
               <ExternalLink className="w-3.5 h-3.5" />
             </Link>
           </div>

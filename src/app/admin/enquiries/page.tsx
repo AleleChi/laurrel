@@ -15,7 +15,20 @@ import {
   ArrowRight,
   User,
   Clock,
+  CalendarPlus,
+  ChevronDown,
+  ChevronRight,
 } from 'lucide-react';
+import {
+  formatEnquirySource,
+  formatCanadianDate,
+  formatCanadianDateTime,
+  formatEnquiryReceivedHeader,
+  formatNoteAuthor,
+  formatNoteContent,
+  formatServiceParamLabel,
+  formatServiceParamValue,
+} from '@/lib/utils/formatters';
 
 interface EnquiryItem {
   id: string;
@@ -220,7 +233,7 @@ export default function AdminEnquiriesPage() {
                 : 'text-zinc-600 hover:text-zinc-900'
             }`}
           >
-            Assistant Escalations ({handoffs.length})
+            Callback Requests ({handoffs.length})
           </button>
         </div>
       </div>
@@ -337,8 +350,8 @@ export default function AdminEnquiriesPage() {
                       >
                         <td className="py-3.5 px-6 text-[11px] text-zinc-500">
                           <div className="font-semibold text-zinc-900 tracking-tight">{enq.id}</div>
-                          <div className="text-zinc-400 text-[10px]">
-                            {new Date(enq.createdAt).toLocaleDateString()}
+                          <div className="text-zinc-500 text-[10px]">
+                            {formatCanadianDate(enq.createdAt)} · {formatEnquirySource(enq.source)}
                           </div>
                         </td>
                         <td className="py-3.5 px-6">
@@ -382,7 +395,7 @@ export default function AdminEnquiriesPage() {
           </div>
         </div>
       ) : (
-        /* AI Assistant Escalations Tab */
+        /* Customer Callback Requests Tab */
         <div className="bg-white rounded-xl border border-black/[0.06] shadow-xs overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse text-xs">
@@ -390,7 +403,7 @@ export default function AdminEnquiriesPage() {
                 <tr className="bg-zinc-50/60 border-b border-black/[0.06] text-zinc-400 font-semibold uppercase tracking-wider text-[10px]">
                   <th className="py-3 px-6">Reference</th>
                   <th className="py-3 px-6">Customer Contact</th>
-                  <th className="py-3 px-6">Escalation Reason</th>
+                  <th className="py-3 px-6">Callback Details</th>
                   <th className="py-3 px-6">Services</th>
                   <th className="py-3 px-6">Status</th>
                 </tr>
@@ -399,7 +412,7 @@ export default function AdminEnquiriesPage() {
                 {handoffs.length === 0 ? (
                   <tr>
                     <td colSpan={5} className="py-12 text-center text-zinc-400">
-                      No customer chat escalations on record.
+                      No customer callback requests on record.
                     </td>
                   </tr>
                 ) : (
@@ -407,8 +420,8 @@ export default function AdminEnquiriesPage() {
                     <tr key={h.id} className="hover:bg-zinc-50/60 transition-colors">
                       <td className="py-3.5 px-6 text-[11px] text-zinc-500">
                         <div className="font-semibold text-zinc-900 tracking-tight">{h.id}</div>
-                        <div className="text-zinc-400 text-[10px]">
-                          {new Date(h.createdAt).toLocaleDateString()}
+                        <div className="text-zinc-500 text-[10px]">
+                          {formatCanadianDate(h.createdAt)}
                         </div>
                       </td>
                       <td className="py-3.5 px-6">
@@ -455,9 +468,8 @@ export default function AdminEnquiriesPage() {
                   </span>
                   {renderStatus(selectedEnquiry.status)}
                 </div>
-                <p className="text-[11px] text-zinc-400 mt-0.5">
-                  Received {new Date(selectedEnquiry.createdAt).toLocaleDateString()} via{' '}
-                  <span className="font-medium text-zinc-600 capitalize">{selectedEnquiry.source}</span>
+                <p className="text-[11px] text-zinc-500 mt-0.5">
+                  {formatEnquiryReceivedHeader(selectedEnquiry.createdAt, selectedEnquiry.source)}
                 </p>
               </div>
               <button
@@ -470,7 +482,7 @@ export default function AdminEnquiriesPage() {
 
             {/* Drawer Content Body */}
             <div className="flex-1 overflow-y-auto px-6 py-5 space-y-6">
-              {/* Customer Profile Section - Clean, open, editorial */}
+              {/* 1. Customer Name and Contact */}
               <div className="space-y-3 pb-5 border-b border-black/[0.06]">
                 <div className="text-[10px] font-semibold uppercase tracking-widest text-zinc-400">
                   Customer Contact
@@ -499,43 +511,131 @@ export default function AdminEnquiriesPage() {
                       <span>{selectedEnquiry.customer.phone}</span>
                     </a>
                   )}
-
-                  {selectedEnquiry.serviceLocation && (
-                    <div className="inline-flex items-center gap-2 text-zinc-600">
-                      <MapPin className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
-                      <span>{selectedEnquiry.serviceLocation}</span>
-                    </div>
-                  )}
-
-                  {selectedEnquiry.preferredTiming && (
-                    <div className="inline-flex items-center gap-2 text-zinc-600">
-                      <Calendar className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
-                      <span>{selectedEnquiry.preferredTiming}</span>
-                    </div>
-                  )}
                 </div>
               </div>
 
-              {/* Service Request Text */}
-              <div className="space-y-2 pb-5 border-b border-black/[0.06]">
+              {/* 2. Requested Services */}
+              <div className="space-y-3 pb-5 border-b border-black/[0.06]">
                 <div className="text-[10px] font-semibold uppercase tracking-widest text-zinc-400">
-                  Inquiry Details
+                  Requested Services
                 </div>
-                <div className="border-l-2 border-[#49056B]/40 pl-3.5 py-0.5 text-xs text-zinc-700 leading-relaxed">
-                  {selectedEnquiry.details}
+                <div className="flex flex-wrap gap-1.5">
+                  {selectedEnquiry.services.map((svc) => (
+                    <span
+                      key={svc}
+                      className="px-2.5 py-1 rounded-md bg-zinc-100 text-zinc-800 text-xs font-semibold capitalize"
+                    >
+                      {svc}
+                    </span>
+                  ))}
                 </div>
 
-                {/* Structured parameters if present */}
+                {/* Service-Specific Parameters (Human Readable) */}
                 {selectedEnquiry.serviceDetails && Object.keys(selectedEnquiry.serviceDetails).length > 0 && (
-                  <div className="pt-2">
-                    <pre className="p-3 rounded-lg bg-zinc-50 border border-black/[0.06] text-[11px] font-mono text-zinc-600 overflow-x-auto">
-                      {JSON.stringify(selectedEnquiry.serviceDetails, null, 2)}
-                    </pre>
+                  <div className="mt-3 p-3.5 bg-zinc-50/80 rounded-[10px] border border-black/[0.06] space-y-2">
+                    <div className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
+                      Service Scope & Details
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
+                      {Object.entries(selectedEnquiry.serviceDetails).flatMap(([cat, catVal]) => {
+                        if (catVal && typeof catVal === 'object' && !Array.isArray(catVal)) {
+                          return Object.entries(catVal)
+                            .filter(([_, v]) => v !== undefined && v !== null && v !== '')
+                            .map(([subK, subV]) => (
+                              <div key={`${cat}_${subK}`} className="space-y-0.5">
+                                <span className="text-[10px] text-zinc-400 font-medium block">
+                                  {formatServiceParamLabel(subK)}
+                                </span>
+                                <span className="text-zinc-800 font-medium text-xs block">
+                                  {formatServiceParamValue(subV)}
+                                </span>
+                              </div>
+                            ));
+                        }
+                        if (catVal !== undefined && catVal !== null && catVal !== '') {
+                          return [
+                            <div key={cat} className="space-y-0.5">
+                              <span className="text-[10px] text-zinc-400 font-medium block">
+                                {formatServiceParamLabel(cat)}
+                              </span>
+                              <span className="text-zinc-800 font-medium text-xs block">
+                                {formatServiceParamValue(catVal)}
+                              </span>
+                            </div>,
+                          ];
+                        }
+                        return [];
+                      })}
+                    </div>
+
+                    {/* Diagnostic toggle */}
+                    <details className="mt-3 pt-2 border-t border-black/[0.04] text-[10px] text-zinc-400">
+                      <summary className="cursor-pointer hover:text-zinc-600 transition-colors">
+                        Technical Payload (Diagnostic)
+                      </summary>
+                      <pre className="mt-1.5 p-2 bg-white rounded border border-black/[0.06] font-mono text-[10px] overflow-x-auto text-zinc-600">
+                        {JSON.stringify(selectedEnquiry.serviceDetails, null, 2)}
+                      </pre>
+                    </details>
                   </div>
                 )}
               </div>
 
-              {/* Status Pipeline Transition Control - Segmented bar */}
+              {/* 3. Service Location & Preferred Timing */}
+              <div className="space-y-3 pb-5 border-b border-black/[0.06]">
+                <div className="text-[10px] font-semibold uppercase tracking-widest text-zinc-400">
+                  Service Location & Timing
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                  <div className="inline-flex items-center gap-2 text-zinc-700">
+                    <MapPin className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
+                    <span>{selectedEnquiry.serviceLocation || 'Ottawa, ON Area'}</span>
+                  </div>
+
+                  <div className="inline-flex items-center gap-2 text-zinc-700">
+                    <Calendar className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
+                    <span>{selectedEnquiry.preferredTiming || 'Flexible schedule'}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* 4. Request Details */}
+              <div className="space-y-2 pb-5 border-b border-black/[0.06]">
+                <div className="text-[10px] font-semibold uppercase tracking-widest text-zinc-400">
+                  Customer Notes & Requirements
+                </div>
+                <div className="border-l-2 border-[#49056B]/40 pl-3.5 py-0.5 text-xs text-zinc-700 leading-relaxed whitespace-pre-wrap">
+                  {selectedEnquiry.details || 'No additional details provided.'}
+                </div>
+              </div>
+
+              {/* 5. Appointments & Meeting Scheduling */}
+              <div className="space-y-2.5 pb-5 border-b border-black/[0.06]">
+                <div className="flex items-center justify-between">
+                  <div className="text-[10px] font-semibold uppercase tracking-widest text-zinc-400">
+                    Appointments & Consultations
+                  </div>
+                  <span className="text-[11px] text-zinc-400">Ottawa Local Time</span>
+                </div>
+
+                <div className="p-3.5 rounded-[10px] bg-zinc-50 border border-black/[0.06] flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <CalendarPlus className="w-4 h-4 text-zinc-400" />
+                    <span className="text-xs text-zinc-600">No appointment scheduled</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      alert('Phase B consultation scheduling will open the appointment booking interface.');
+                    }}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#49056B] text-white text-xs font-semibold hover:bg-[#5B0785] transition-all shadow-2xs"
+                  >
+                    <span>Schedule Meeting</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* 6. Lead Status Pipeline Transition Control */}
               <div className="space-y-2 pb-5 border-b border-black/[0.06]">
                 <div className="text-[10px] font-semibold uppercase tracking-widest text-zinc-400">
                   Lead Status Pipeline
@@ -561,14 +661,15 @@ export default function AdminEnquiriesPage() {
                 )}
               </div>
 
-              {/* Internal Operations Notes - Premium CRM Timeline */}
+              {/* 7. Activity & Notes */}
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] font-semibold uppercase tracking-widest text-zinc-400">
-                    Internal Notes History
+                    Activity & Notes
                   </span>
-                  <span className="text-xs text-zinc-400 font-medium">
-                    {selectedEnquiry.internalNotes?.length || 0} entry(ies)
+                  <span className="text-xs text-zinc-500 font-medium">
+                    {selectedEnquiry.internalNotes?.length || 0}{' '}
+                    {selectedEnquiry.internalNotes?.length === 1 ? 'note' : 'notes'}
                   </span>
                 </div>
 
@@ -579,12 +680,16 @@ export default function AdminEnquiriesPage() {
                       <div key={note.id} className="relative space-y-1">
                         <div className="absolute -left-4 top-1.5 w-2 h-2 rounded-full bg-zinc-300 ring-4 ring-white" />
                         <div className="flex items-center justify-between text-[11px]">
-                          <span className="font-semibold text-zinc-800">{note.author}</span>
+                          <span className="font-semibold text-zinc-800">
+                            {formatNoteAuthor(note.author)}
+                          </span>
                           <span className="text-zinc-400 text-[10px]">
-                            {new Date(note.createdAt).toLocaleString()}
+                            {formatCanadianDateTime(note.createdAt)}
                           </span>
                         </div>
-                        <p className="text-xs text-zinc-600 leading-relaxed">{note.note}</p>
+                        <p className="text-xs text-zinc-600 leading-relaxed">
+                          {formatNoteContent(note.note)}
+                        </p>
                       </div>
                     ))
                   ) : (
@@ -608,7 +713,7 @@ export default function AdminEnquiriesPage() {
                       className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-[8px] bg-[#49056B] text-white text-xs font-semibold hover:bg-[#5B0785] disabled:opacity-50 transition-all shadow-2xs"
                     >
                       <Send className="w-3 h-3 text-orange-400" />
-                      <span>Append Note</span>
+                      <span>Save Note</span>
                     </button>
                   </div>
                 </form>

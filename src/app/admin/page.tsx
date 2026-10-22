@@ -11,6 +11,7 @@ import {
   PhoneCall,
   Inbox,
 } from 'lucide-react';
+import { formatCanadianDate, formatEnquirySource } from '@/lib/utils/formatters';
 
 interface Stats {
   totalEnquiries: number;
@@ -107,7 +108,7 @@ export default function AdminOverviewPage() {
             Business Operations Overview
           </h1>
           <p className="text-sm text-zinc-500 mt-1">
-            Real-time status of inbound service requests, customer enquiries, and AI handoffs.
+            Real-time status of inbound service requests, customer enquiries, and customer follow-ups.
           </p>
         </div>
 
@@ -192,18 +193,18 @@ export default function AdminOverviewPage() {
           </div>
         </div>
 
-        {/* Metric 4: AI Escalations */}
+        {/* Metric 4: Customer Follow-ups */}
         <div className="bg-white rounded-xl p-5 border border-black/[0.06] shadow-xs flex flex-col justify-between">
           <div className="text-xs font-medium text-zinc-500 tracking-wide uppercase">
-            Assistant Handoffs
+            Customer Follow-ups
           </div>
           <div className="my-2.5">
             <div className="text-3xl font-semibold text-zinc-900 tracking-tight">
               {loading ? '—' : stats?.pendingHandoffs ?? 0}
             </div>
-            <p className="text-xs text-zinc-400 mt-0.5">Chat requests for callback</p>
+            <p className="text-xs text-zinc-400 mt-0.5">Requests awaiting staff follow-up</p>
           </div>
-          <div className="text-[11px] text-zinc-400">Direct human escalation</div>
+          <div className="text-[11px] text-zinc-400">Callback & inquiry follow-ups</div>
         </div>
       </div>
 
@@ -241,19 +242,19 @@ export default function AdminOverviewPage() {
           {/* Column 2 */}
           <div className="py-3 md:py-0 md:px-6">
             <div className="flex items-center justify-between mb-1.5">
-              <span className="text-xs font-semibold text-zinc-800">AI Assistant Escalations</span>
+              <span className="text-xs font-semibold text-zinc-800">Customer Callback Requests</span>
               <span className="text-xs font-bold text-zinc-900">{stats?.pendingHandoffs ?? 0}</span>
             </div>
             <p className="text-xs text-zinc-500 leading-relaxed">
               {(stats?.pendingHandoffs ?? 0) > 0
-                ? `${stats?.pendingHandoffs} visitor chat session(s) escalated to human callback.`
-                : 'No pending AI chat escalations requiring telephone follow-up.'}
+                ? `${stats?.pendingHandoffs} visitor chat session(s) awaiting telephone or email follow-up.`
+                : 'No pending callback requests requiring follow-up.'}
             </p>
             <Link
               href="/admin/enquiries"
               className="inline-flex items-center gap-1 text-xs font-medium text-[#49056B] hover:text-[#5B0785] mt-2.5 transition-colors"
             >
-              <span>View handoff requests</span>
+              <span>View callback requests</span>
               <ArrowRight className="w-3 h-3" />
             </Link>
           </div>
@@ -261,13 +262,19 @@ export default function AdminOverviewPage() {
           {/* Column 3 */}
           <div className="py-3 md:py-0 md:pl-6">
             <div className="flex items-center justify-between mb-1.5">
-              <span className="text-xs font-semibold text-zinc-800">Dispatch Notification Health</span>
-              <span className="text-xs font-medium text-emerald-600">Active</span>
+              <span className="text-xs font-semibold text-zinc-800">
+                {(stats?.failedDeliveries ?? 0) > 0
+                  ? 'Email Notifications Needing Attention'
+                  : 'Dispatch Notifications'}
+              </span>
+              <span className={`text-xs font-medium ${(stats?.failedDeliveries ?? 0) > 0 ? 'text-amber-600 font-bold' : 'text-emerald-600'}`}>
+                {(stats?.failedDeliveries ?? 0) > 0 ? `${stats?.failedDeliveries} Alert` : 'Active'}
+              </span>
             </div>
             <p className="text-xs text-zinc-500 leading-relaxed">
               {(stats?.failedDeliveries ?? 0) === 0
                 ? 'Outbound email notifications operational. Zero delivery failures logged.'
-                : `${stats?.failedDeliveries} notification delivery warnings recorded.`}
+                : `${stats?.failedDeliveries} email notification(s) needing attention.`}
             </p>
             <span className="inline-block text-[11px] text-zinc-400 mt-2.5">
               Automated logging enabled
@@ -318,8 +325,8 @@ export default function AdminOverviewPage() {
                   <tr key={enq.id} className="hover:bg-zinc-50/60 transition-colors">
                     <td className="py-3.5 px-6 text-zinc-500 text-[11px]">
                       <div className="font-semibold text-zinc-900 tracking-tight">{enq.id}</div>
-                      <div className="text-zinc-400 text-[10px]">
-                        {new Date(enq.createdAt).toLocaleDateString()}
+                      <div className="text-zinc-500 text-[10px]">
+                        {formatCanadianDate(enq.createdAt)} · {formatEnquirySource(enq.source)}
                       </div>
                     </td>
                     <td className="py-3.5 px-6">
