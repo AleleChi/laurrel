@@ -17,7 +17,9 @@ export const Hero: React.FC<HeroProps> = ({ onOpenQuote, initialData }) => {
   const [hero, setHero] = useState(initialData || siteConfig.hero);
 
   useEffect(() => {
-    if (isCmsConfigured && !initialData) {
+    if (initialData) {
+      setHero(initialData);
+    } else if (isCmsConfigured) {
       getHomeHeroData().then((res) => {
         if (res?.data) {
           setHero(res.data);

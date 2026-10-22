@@ -1,119 +1,164 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminSessionFromRequest } from '@/lib/auth/session';
-import { readAllEnquiries, updateEnquiryStatus } from '@/lib/db/enquiries';
 
 export async function GET(req: NextRequest, { params }: { params: { slug: string[] } }) {
   const session = getAdminSessionFromRequest(req);
-  const secret = process.env.ADMIN_API_SECRET;
-  const tokenHeader = req.headers.get('x-admin-token');
-  const isDirectSecretCall = secret && tokenHeader === secret;
 
-  if (!session && !isDirectSecretCall) {
+  if (!session?.sessionId) {
     return NextResponse.json(
-      { error: 'Unauthorized: Valid administrator session or credentials required.' },
+      { error: 'Unauthorized: Active administrator session required.' },
       { status: 401 }
     );
   }
 
-  // Forward to Render backend if configured
-  const backendUrl = process.env.BACKEND_API_URL || process.env.API_BASE_URL;
-  if (backendUrl) {
-    try {
-      const path = params.slug.join('/');
-      const search = req.nextUrl.search;
-      const target = `${backendUrl.replace(/\/$/, '')}/api/admin/${path}${search}`;
+  const backendUrl = process.env.BACKEND_API_URL || process.env.API_BASE_URL || 'http://localhost:5000';
+  const secret = process.env.ADMIN_API_SECRET;
+  const path = params.slug.join('/');
+  const search = req.nextUrl.search;
+  const target = `${backendUrl.replace(/\/$/, '')}/api/admin/${path}${search}`;
 
-      const res = await fetch(target, {
-        headers: {
-          ...(secret ? { 'x-admin-token': secret } : {}),
-        },
-      });
-
-      const data = await res.json();
-      return NextResponse.json(data, { status: res.status });
-    } catch (err) {
-      console.warn('[Admin API] Backend forward failed, falling back to local storage:', err);
-    }
-  }
-
-  // Local fallback
-  const action = params.slug[0];
-
-  if (action === 'stats') {
-    const all = await readAllEnquiries();
-    return NextResponse.json({
-      totalEnquiries: all.length,
-      newEnquiries: all.filter((e) => e.status === 'new').length,
-      reviewed: all.filter((e) => e.status === 'under_review').length,
-      scheduled: all.filter((e) => e.status === 'accepted' || e.status === 'quoted').length,
-      failedDeliveries: 0,
-      pendingHandoffs: 0,
+  try {
+    const res = await fetch(target, {
+      headers: {
+        ...(secret ? { 'x-admin-token': secret } : {}),
+        'x-admin-session-id': session.sessionId,
+      },
+      cache: 'no-store',
     });
+
+    const data = await res.json();
+    return NextResponse.json(data, { status: res.status });
+  } catch (err: any) {
+    console.error(`[Admin Gateway Error] Failed to reach backend at ${target}:`, err.message);
+    return NextResponse.json(
+      { error: 'Backend administrative service is unreachable. Please verify server status.' },
+      { status: 503 }
+    );
   }
-
-  if (action === 'enquiries') {
-    const all = await readAllEnquiries();
-    const status = req.nextUrl.searchParams.get('status');
-    const service = req.nextUrl.searchParams.get('service');
-
-    let filtered = all;
-    if (status) filtered = filtered.filter((e) => e.status === status);
-    if (service) filtered = filtered.filter((e) => e.services.includes(service as any));
-
-    return NextResponse.json({ enquiries: filtered });
-  }
-
-  if (action === 'handoffs') {
-    return NextResponse.json({ handoffs: [] });
-  }
-
-  return NextResponse.json({ error: 'Endpoint not found' }, { status: 404 });
 }
 
 export async function PATCH(req: NextRequest, { params }: { params: { slug: string[] } }) {
   const session = getAdminSessionFromRequest(req);
-  const secret = process.env.ADMIN_API_SECRET;
-  const tokenHeader = req.headers.get('x-admin-token');
-  const isDirectSecretCall = secret && tokenHeader === secret;
 
-  if (!session && !isDirectSecretCall) {
+  if (!session?.sessionId) {
     return NextResponse.json(
-      { error: 'Unauthorized: Valid administrator session required.' },
+      { error: 'Unauthorized: Active administrator session required.' },
       { status: 401 }
     );
   }
 
-  const backendUrl = process.env.BACKEND_API_URL || process.env.API_BASE_URL;
-  if (backendUrl) {
-    try {
-      const path = params.slug.join('/');
-      const target = `${backendUrl.replace(/\/$/, '')}/api/admin/${path}`;
-      const body = await req.json();
+  const backendUrl = process.env.BACKEND_API_URL || process.env.API_BASE_URL || 'http://localhost:5000';
+  const secret = process.env.ADMIN_API_SECRET;
+  const path = params.slug.join('/');
+  const target = `${backendUrl.replace(/\/$/, '')}/api/admin/${path}`;
 
-      const res = await fetch(target, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(secret ? { 'x-admin-token': secret } : {}),
-        },
-        body: JSON.stringify(body),
-      });
+  try {
+    const body = await req.json();
 
-      const data = await res.json();
-      return NextResponse.json(data, { status: res.status });
-    } catch (err) {
-      console.warn('[Admin API] Backend forward failed:', err);
+    const res = await fetch(target, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(secret ? { 'x-admin-token': secret } : {}),
+        'x-admin-session-id': session.sessionId,
+      },
+      body: JSON.stringify(body),
+    });
+
+    const data = await res.json();
+    return NextResponse.json(data, { status: res.status });
+  } catch (err: any) {
+    console.error(`[Admin Gateway Error] Failed PATCH to backend at ${target}:`, err.message);
+    return NextResponse.json(
+      { error: 'Backend administrative service is unreachable. Status update failed.' },
+      { status: 503 }
+    );
+  }
+}
+
+export async function POST(req: NextRequest, { params }: { params: { slug: string[] } }) {
+  const session = getAdminSessionFromRequest(req);
+
+  if (!session?.sessionId) {
+    return NextResponse.json(
+      { error: 'Unauthorized: Active administrator session required.' },
+      { status: 401 }
+    );
+  }
+
+  const backendUrl = process.env.BACKEND_API_URL || process.env.API_BASE_URL || 'http://localhost:5000';
+  const secret = process.env.ADMIN_API_SECRET;
+  const path = params.slug.join('/');
+  const target = `${backendUrl.replace(/\/$/, '')}/api/admin/${path}`;
+
+  try {
+    const contentType = req.headers.get('content-type') || '';
+    const isMultipart = contentType.includes('multipart/form-data');
+
+    const forwardHeaders: Record<string, string> = {
+      ...(secret ? { 'x-admin-token': secret } : {}),
+      'x-admin-session-id': session.sessionId,
+    };
+
+    let bodyData: any;
+    if (isMultipart) {
+      const arrayBuffer = await req.arrayBuffer();
+      bodyData = Buffer.from(arrayBuffer);
+      forwardHeaders['Content-Type'] = contentType;
+    } else {
+      const jsonBody = await req.json();
+      bodyData = JSON.stringify(jsonBody);
+      forwardHeaders['Content-Type'] = 'application/json';
     }
+
+    const res = await fetch(target, {
+      method: 'POST',
+      headers: forwardHeaders,
+      body: bodyData,
+    });
+
+    const data = await res.json();
+    return NextResponse.json(data, { status: res.status });
+  } catch (err: any) {
+    console.error(`[Admin Gateway Error] Failed POST to backend at ${target}:`, err.message);
+    return NextResponse.json(
+      { error: 'Backend administrative service is unreachable.' },
+      { status: 503 }
+    );
+  }
+}
+
+export async function DELETE(req: NextRequest, { params }: { params: { slug: string[] } }) {
+  const session = getAdminSessionFromRequest(req);
+
+  if (!session?.sessionId) {
+    return NextResponse.json(
+      { error: 'Unauthorized: Active administrator session required.' },
+      { status: 401 }
+    );
   }
 
-  // Local fallback
-  if (params.slug[0] === 'enquiries' && params.slug[2] === 'status') {
-    const id = params.slug[1];
-    const { status, note, author } = await req.json();
-    const actor = author || (session ? session.user.name : 'Administrator');
-    const updated = await updateEnquiryStatus(id, status, actor, note);
-    return NextResponse.json({ success: true, enquiry: updated });
-  }
+  const backendUrl = process.env.BACKEND_API_URL || process.env.API_BASE_URL || 'http://localhost:5000';
+  const secret = process.env.ADMIN_API_SECRET;
+  const path = params.slug.join('/');
+  const target = `${backendUrl.replace(/\/$/, '')}/api/admin/${path}`;
 
-  return NextResponse.json({ error: 'Endpoint not found' }, { status: 404 });
+  try {
+    const res = await fetch(target, {
+      method: 'DELETE',
+      headers: {
+        ...(secret ? { 'x-admin-token': secret } : {}),
+        'x-admin-session-id': session.sessionId,
+      },
+    });
+
+    const data = await res.json();
+    return NextResponse.json(data, { status: res.status });
+  } catch (err: any) {
+    console.error(`[Admin Gateway Error] Failed DELETE to backend at ${target}:`, err.message);
+    return NextResponse.json(
+      { error: 'Backend administrative service is unreachable.' },
+      { status: 503 }
+    );
+  }
 }

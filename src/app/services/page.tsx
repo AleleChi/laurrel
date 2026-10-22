@@ -1,27 +1,33 @@
 import type { Metadata } from 'next';
-import { getServicesPageData } from '@/sanity/client';
+import { getPublishedServicesPageData } from '@/lib/cms/content';
+import { getSiteUrl } from '@/content/site';
 import { ServicesPageClient } from './ServicesPageClient';
 
+export const dynamic = 'force-dynamic';
+
 export async function generateMetadata(): Promise<Metadata> {
-  const { data } = await getServicesPageData();
+  const { data } = await getPublishedServicesPageData();
+  const title = data.meta?.title || 'Cleaning, Moving & Storage Services Ottawa | Laurrel Services';
+  const description = data.meta?.description || 'Explore cleaning, moving and storage services in Ottawa.';
 
   return {
-    title: data.meta.title,
-    description: data.meta.description,
+    title,
+    description,
     openGraph: {
-      title: data.meta.title,
-      description: data.meta.description,
+      title,
+      description,
       locale: 'en_CA',
       type: 'website',
     },
     alternates: {
-      canonical: 'https://laurrelservices.ca/services',
+      canonical: `${getSiteUrl()}/services`,
     },
   };
 }
 
 export default async function ServicesPage() {
-  const { data } = await getServicesPageData();
+  const { data } = await getPublishedServicesPageData();
+  const siteUrl = getSiteUrl();
 
   const jsonLd = {
     '@context': 'https://schema.org',
@@ -31,13 +37,13 @@ export default async function ServicesPage() {
         '@type': 'ListItem',
         position: 1,
         name: 'Home',
-        item: 'https://laurrelservices.ca',
+        item: siteUrl,
       },
       {
         '@type': 'ListItem',
         position: 2,
         name: 'Services',
-        item: 'https://laurrelservices.ca/services',
+        item: `${siteUrl}/services`,
       },
     ],
   };

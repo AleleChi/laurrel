@@ -2,7 +2,49 @@ import fs from 'fs';
 import path from 'path';
 import { getDbPool } from './pool';
 
-export async function runMigrations(): Promise<{ success: boolean; message: string }> {
+const ADVISORY_LOCK_ID = 74239842;
+
+interface MigrationStep {
+  version: string;
+  description: string;
+  run: (client: any, baseSql: string) => Promise<void>;
+}
+
+const MIGRATION_PIPELINE: MigrationStep[] = [
+  {
+    version: '20261021_module_01_02_03_consolidated',
+    description: 'Initial consolidated DDL for Modules 01, 02, and 03',
+    run: async (client, baseSql) => {
+      await client.query(baseSql);
+    },
+  },
+  {
+    version: '20261021_storage_bucket_and_integrity',
+    description: 'Add storage_bucket column and index to media_assets for multi-bucket isolation',
+    run: async (client) => {
+      await client.query(`
+        ALTER TABLE media_assets ADD COLUMN IF NOT EXISTS storage_bucket VARCHAR(128);
+        CREATE INDEX IF NOT EXISTS idx_media_assets_storage_bucket ON media_assets(storage_bucket);
+      `);
+    },
+  },
+  {
+    version: '20261021_associate_staging_r2_bucket',
+    description: 'Safely associate confirmed staging R2 assets with laurrel-media-staging without guessing',
+    run: async (client) => {
+      const updateRes = await client.query(`
+        UPDATE media_assets
+        SET storage_bucket = 'laurrel-media-staging', updated_at = NOW()
+        WHERE storage_provider = 'r2'
+          AND storage_bucket IS NULL
+          AND public_url LIKE 'https://pub-185e32b3a8d04a9e92249aa5108b673f.r2.dev%'
+      `);
+      console.log(`[Migration] Associated ${updateRes.rowCount} confirmed staging R2 asset(s) with laurrel-media-staging.`);
+    },
+  },
+];
+
+export async function runMigrations(): Promise<{ success: boolean; message: string; appliedCount?: number }> {
   const pool = getDbPool();
   if (!pool) {
     return {
@@ -32,10 +74,54 @@ export async function runMigrations(): Promise<{ success: boolean; message: stri
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
-      await client.query(sql);
+
+      // 1. Concurrency safeguard: PostgreSQL transaction-level advisory lock
+      // Ensures only one worker runs migrations at any given time during scale-up
+      await client.query('SELECT pg_advisory_xact_lock($1)', [ADVISORY_LOCK_ID]);
+
+      // 2. Migration tracking table
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS schema_migrations (
+          version VARCHAR(64) PRIMARY KEY,
+          applied_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        )
+      `);
+
+      // 3. Query existing applied migrations
+      const appliedRes = await client.query('SELECT version FROM schema_migrations');
+      const appliedVersions = new Set<string>(appliedRes.rows.map((r: any) => r.version));
+
+      let newCount = 0;
+      for (const step of MIGRATION_PIPELINE) {
+        if (!appliedVersions.has(step.version)) {
+          console.log(`[Migration] Applying ${step.version}: ${step.description}...`);
+          await step.run(client, sql);
+          await client.query(
+            'INSERT INTO schema_migrations (version, applied_at) VALUES ($1, NOW())',
+            [step.version]
+          );
+          newCount++;
+          console.log(`[Migration] Successfully applied ${step.version}.`);
+        }
+      }
+
       await client.query('COMMIT');
-      console.log('[Migration] PostgreSQL schema migration executed successfully.');
-      return { success: true, message: 'All tables and indexes initialized.' };
+
+      if (newCount === 0) {
+        console.log('[Migration] All schema migrations are up-to-date.');
+        return {
+          success: true,
+          message: 'All schema migrations are up-to-date.',
+          appliedCount: 0,
+        };
+      }
+
+      console.log(`[Migration] Successfully executed ${newCount} schema migration(s).`);
+      return {
+        success: true,
+        message: `Successfully executed ${newCount} schema migration(s).`,
+        appliedCount: newCount,
+      };
     } catch (err: any) {
       await client.query('ROLLBACK');
       console.error('[Migration Error]:', err.message);

@@ -240,7 +240,7 @@ export const QuoteInquiryModal: React.FC<QuoteInquiryModalProps> = ({
               Quote Request Received
             </h3>
             {submissionResult.referenceId && (
-              <p className="text-xs font-mono font-semibold uppercase tracking-wider text-[#49056B] mt-1">
+              <p className="text-xs font-semibold uppercase tracking-wider text-[#49056B] mt-1 font-sans">
                 Reference: {submissionResult.referenceId}
               </p>
             )}

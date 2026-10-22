@@ -134,10 +134,12 @@ CREATE TABLE IF NOT EXISTS admin_users (
     email VARCHAR(255) UNIQUE NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
     name VARCHAR(255) NOT NULL,
-    role VARCHAR(32) NOT NULL DEFAULT 'admin', -- 'owner', 'admin', 'dispatcher'
+    role VARCHAR(32) NOT NULL DEFAULT 'admin', -- 'owner', 'admin', 'content_editor', 'operations_staff', 'viewer'
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
     password_reset_token VARCHAR(128),
     password_reset_expires TIMESTAMPTZ,
+    failed_login_attempts INT NOT NULL DEFAULT 0,
+    locked_until TIMESTAMPTZ,
     last_login_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -145,3 +147,138 @@ CREATE TABLE IF NOT EXISTS admin_users (
 
 CREATE INDEX IF NOT EXISTS idx_admin_users_email ON admin_users(email);
 CREATE INDEX IF NOT EXISTS idx_admin_users_role ON admin_users(role);
+
+ALTER TABLE admin_users ADD COLUMN IF NOT EXISTS failed_login_attempts INT NOT NULL DEFAULT 0;
+ALTER TABLE admin_users ADD COLUMN IF NOT EXISTS locked_until TIMESTAMPTZ;
+
+-- 8. Administrator Sessions Table (Server-managed session revocation)
+CREATE TABLE IF NOT EXISTS admin_sessions (
+    id VARCHAR(64) PRIMARY KEY,
+    user_id VARCHAR(64) NOT NULL REFERENCES admin_users(id) ON DELETE CASCADE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    expires_at TIMESTAMPTZ NOT NULL,
+    revoked_at TIMESTAMPTZ,
+    ip_address VARCHAR(45),
+    user_agent TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_admin_sessions_user_id ON admin_sessions(user_id);
+CREATE INDEX IF NOT EXISTS idx_admin_sessions_expires_at ON admin_sessions(expires_at);
+
+-- 9. Administrator Auth Audit Events Table
+CREATE TABLE IF NOT EXISTS admin_auth_events (
+    id VARCHAR(64) PRIMARY KEY,
+    email VARCHAR(255) NOT NULL,
+    event_type VARCHAR(64) NOT NULL,
+    ip_address VARCHAR(45),
+    user_agent TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_admin_auth_events_email ON admin_auth_events(email);
+CREATE INDEX IF NOT EXISTS idx_admin_auth_events_created_at ON admin_auth_events(created_at DESC);
+
+-- =========================================================
+-- 10. CMS DATA MODEL (MODULE 02)
+-- =========================================================
+
+-- Pages table
+CREATE TABLE IF NOT EXISTS cms_pages (
+    id VARCHAR(64) PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    slug VARCHAR(255) UNIQUE NOT NULL,
+    template VARCHAR(64) NOT NULL DEFAULT 'standard',
+    status VARCHAR(32) NOT NULL DEFAULT 'published', -- 'draft', 'published', 'scheduled'
+    seo JSONB NOT NULL DEFAULT '{}',
+    current_revision_id VARCHAR(64),
+    last_editor_id VARCHAR(64) REFERENCES admin_users(id) ON DELETE SET NULL,
+    last_editor_email VARCHAR(255),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    published_at TIMESTAMPTZ
+);
+
+CREATE INDEX IF NOT EXISTS idx_cms_pages_slug ON cms_pages(slug);
+CREATE INDEX IF NOT EXISTS idx_cms_pages_status ON cms_pages(status);
+
+-- Page Sections table
+CREATE TABLE IF NOT EXISTS cms_sections (
+    id VARCHAR(64) PRIMARY KEY,
+    page_id VARCHAR(64) NOT NULL REFERENCES cms_pages(id) ON DELETE CASCADE,
+    section_key VARCHAR(64) NOT NULL,
+    section_type VARCHAR(64) NOT NULL,
+    sort_order INT NOT NULL DEFAULT 0,
+    content JSONB NOT NULL,
+    draft_content JSONB,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE(page_id, section_key)
+);
+
+CREATE INDEX IF NOT EXISTS idx_cms_sections_page_id ON cms_sections(page_id);
+CREATE INDEX IF NOT EXISTS idx_cms_sections_sort_order ON cms_sections(page_id, sort_order);
+
+-- Content Revisions table (Version history, transactional publishing, rollback)
+CREATE TABLE IF NOT EXISTS cms_revisions (
+    id VARCHAR(64) PRIMARY KEY,
+    page_id VARCHAR(64) NOT NULL REFERENCES cms_pages(id) ON DELETE CASCADE,
+    revision_number INT NOT NULL,
+    data JSONB NOT NULL,
+    is_published BOOLEAN NOT NULL DEFAULT FALSE,
+    author_id VARCHAR(64) REFERENCES admin_users(id) ON DELETE SET NULL,
+    author_email VARCHAR(255),
+    author_name VARCHAR(255),
+    notes TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE(page_id, revision_number)
+);
+
+CREATE INDEX IF NOT EXISTS idx_cms_revisions_page_id ON cms_revisions(page_id);
+CREATE INDEX IF NOT EXISTS idx_cms_revisions_created_at ON cms_revisions(created_at DESC);
+
+-- Site Settings table
+CREATE TABLE IF NOT EXISTS cms_site_settings (
+    key VARCHAR(64) PRIMARY KEY,
+    value JSONB NOT NULL,
+    last_editor_id VARCHAR(64) REFERENCES admin_users(id) ON DELETE SET NULL,
+    last_editor_email VARCHAR(255),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- =========================================================
+-- 11. MEDIA LIBRARY DATA MODEL (MODULE 03)
+-- =========================================================
+
+CREATE TABLE IF NOT EXISTS media_assets (
+    id VARCHAR(64) PRIMARY KEY,
+    original_filename VARCHAR(255) NOT NULL,
+    stored_filename VARCHAR(255) NOT NULL,
+    asset_type VARCHAR(32) NOT NULL DEFAULT 'image', -- 'image', 'video', 'document'
+    mime_type VARCHAR(128) NOT NULL,
+    file_size BIGINT NOT NULL,
+    width INT,
+    height INT,
+    duration NUMERIC(8, 2), -- in seconds, for videos
+    storage_provider VARCHAR(32) NOT NULL DEFAULT 'local', -- 'local', 'r2', 'cloudinary'
+    storage_bucket VARCHAR(128),
+    storage_reference TEXT NOT NULL,
+    public_url TEXT NOT NULL,
+    thumbnail_url TEXT,
+    alt_text TEXT NOT NULL DEFAULT '',
+    caption TEXT,
+    copyright TEXT,
+    focal_point VARCHAR(64) NOT NULL DEFAULT 'center', -- 'center', 'top', 'bottom', 'left', 'right' or coordinates
+    folder VARCHAR(64) NOT NULL DEFAULT 'general', -- 'general', 'hero', 'about', 'services', 'videos', 'brand'
+    uploaded_by_id VARCHAR(64) REFERENCES admin_users(id) ON DELETE SET NULL,
+    uploaded_by_email VARCHAR(255),
+    is_archived BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_media_assets_folder ON media_assets(folder);
+CREATE INDEX IF NOT EXISTS idx_media_assets_asset_type ON media_assets(asset_type);
+CREATE INDEX IF NOT EXISTS idx_media_assets_is_archived ON media_assets(is_archived);
+CREATE INDEX IF NOT EXISTS idx_media_assets_storage_bucket ON media_assets(storage_bucket);
+CREATE INDEX IF NOT EXISTS idx_media_assets_created_at ON media_assets(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_media_assets_public_url ON media_assets(public_url);

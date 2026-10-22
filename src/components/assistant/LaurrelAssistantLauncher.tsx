@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import dynamic from 'next/dynamic';
+import { usePathname } from 'next/navigation';
 import { MessageSquare } from 'lucide-react';
 
 // Lazy-load the chat panel so zero assistant bundle is downloaded on initial page load
@@ -12,6 +13,12 @@ const LaurrelAssistantPanel = dynamic(
 
 export default function LaurrelAssistantLauncher() {
   const [isOpen, setIsOpen] = useState(false);
+  const pathname = usePathname();
+
+  // Hide the customer assistant launcher entirely within the administration platform
+  if (pathname?.startsWith('/admin')) {
+    return null;
+  }
 
   return (
     <>

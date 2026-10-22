@@ -1,15 +1,18 @@
 import crypto from 'crypto';
 import { NextRequest, NextResponse } from 'next/server';
 
+export type AdminRole = 'owner' | 'admin' | 'content_editor' | 'operations_staff' | 'viewer';
+
 export interface AdminSessionUser {
   id: string;
   email: string;
   name: string;
-  role: 'owner' | 'admin' | 'dispatcher';
+  role: AdminRole;
 }
 
 export interface AdminSessionPayload {
   user: AdminSessionUser;
+  sessionId?: string;
   iat: number;
   exp: number;
 }
@@ -20,8 +23,11 @@ const SESSION_MAX_AGE_SECONDS = 60 * 60 * 12; // 12 hours
 function getSessionSecret(): string {
   const secret = process.env.ADMIN_SESSION_SECRET || process.env.ADMIN_API_SECRET;
   if (!secret) {
-    // In local dev without secret configured, provide deterministic fallback
-    return 'laurrel-operations-fallback-session-secret-2026';
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('[Security Exception]: ADMIN_SESSION_SECRET is required in production.');
+    }
+    // Safe deterministic development secret (strictly non-production)
+    return 'laurrel-development-only-session-secret-local';
   }
   return secret;
 }
@@ -29,9 +35,10 @@ function getSessionSecret(): string {
 /**
  * Sign session payload into tamper-proof base64 HMAC token
  */
-export function signSessionToken(user: AdminSessionUser): string {
+export function signSessionToken(user: AdminSessionUser, sessionId?: string): string {
   const payload: AdminSessionPayload = {
     user,
+    sessionId,
     iat: Math.floor(Date.now() / 1000),
     exp: Math.floor(Date.now() / 1000) + SESSION_MAX_AGE_SECONDS,
   };
@@ -94,8 +101,12 @@ export function getAdminSessionFromRequest(req: NextRequest): AdminSessionPayloa
 /**
  * Set HttpOnly session cookie on a NextResponse
  */
-export function setAdminSessionCookie(res: NextResponse, user: AdminSessionUser): void {
-  const token = signSessionToken(user);
+export function setAdminSessionCookie(
+  res: NextResponse,
+  user: AdminSessionUser,
+  sessionId?: string
+): void {
+  const token = signSessionToken(user, sessionId);
   res.cookies.set({
     name: ADMIN_COOKIE_NAME,
     value: token,

@@ -159,19 +159,24 @@ export async function createEnquiry(payload: {
 
         await client.query('COMMIT');
         return record;
-      } catch (dbErr) {
+      } catch (dbErr: any) {
         await client.query('ROLLBACK');
         console.error('[PostgreSQL createEnquiry Error]:', dbErr);
-        // Fall back to local file
+        throw new Error(`Database error saving enquiry: ${dbErr.message}`);
       } finally {
         client.release();
       }
-    } catch (poolErr) {
+    } catch (poolErr: any) {
       console.error('[PostgreSQL Pool Connection Error]:', poolErr);
+      throw new Error(`Database connection failed: ${poolErr.message}`);
     }
   }
 
-  // Fallback to local persistence
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error('DATABASE_URL is not configured in production. Cannot persist enquiry.');
+  }
+
+  // Fallback to local persistence in development only
   try {
     ensureLocalDir();
     let records: EnquiryRecord[] = [];

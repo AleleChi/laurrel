@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { Manrope } from 'next/font/google';
 import './globals.css';
-import { siteConfig } from '@/content/site';
+import { siteConfig, getSiteUrl } from '@/content/site';
 import { LaurrelAssistantLauncher } from '@/components/assistant';
 
 const manrope = Manrope({
@@ -14,7 +14,7 @@ const manrope = Manrope({
 export const metadata: Metadata = {
   title: siteConfig.meta.title,
   description: siteConfig.meta.description,
-  metadataBase: new URL('https://laurrelservices.ca'),
+  metadataBase: new URL(getSiteUrl()),
   openGraph: {
     title: siteConfig.meta.title,
     description: siteConfig.meta.description,
