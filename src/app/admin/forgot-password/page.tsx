@@ -59,10 +59,10 @@ export default function ForgotPasswordPage() {
     <main className="min-h-screen flex items-center justify-center bg-[#F8F7F4] px-4 py-12 font-sans antialiased text-[#202024]">
       <div className="w-full max-w-[400px]">
         {/* Return to login link */}
-        <div className="mb-5">
+        <div className="mb-4">
           <Link
             href="/admin/login"
-            className="inline-flex items-center gap-1.5 text-xs font-medium text-zinc-500 hover:text-zinc-900 transition-colors"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-zinc-500 hover:text-[#49056B] transition-colors"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
             <span>Return to Sign In</span>
@@ -70,23 +70,23 @@ export default function ForgotPasswordPage() {
         </div>
 
         {/* Card */}
-        <div className="bg-white rounded-2xl p-7 sm:p-9 border border-black/[0.08] shadow-xs">
+        <div className="bg-white rounded-md p-6 sm:p-8 border border-zinc-200/80 shadow-2xs">
           {/* Logo & Heading */}
           <div className="flex flex-col items-center text-center mb-6">
-            <Link href="/" className="relative h-9 w-40 mb-3 select-none block">
+            <Link href="/" className="relative h-8 w-36 mb-3 select-none block">
               <Image
                 src="/assets/brand/laurrel-logo-primary.png"
                 alt="Laurrel Services"
                 fill
-                sizes="160px"
+                sizes="144px"
                 className="object-contain"
                 priority
               />
             </Link>
-            <h1 className="text-lg font-bold tracking-tight text-zinc-900">
+            <h1 className="text-base font-bold tracking-tight text-zinc-900">
               Password Recovery
             </h1>
-            <p className="text-xs text-zinc-500 mt-1">
+            <p className="text-xs text-zinc-500 mt-0.5">
               Enter your administrator email to receive reset instructions
             </p>
           </div>
@@ -95,7 +95,7 @@ export default function ForgotPasswordPage() {
           {errorMessage && (
             <div
               role="alert"
-              className="mb-5 p-3 rounded-lg bg-red-50/80 border border-red-200/80 text-xs text-red-800 leading-relaxed flex items-start gap-2"
+              className="mb-4 p-3 rounded-md bg-red-50 border border-red-200 text-xs text-red-800 leading-relaxed flex items-start gap-2"
             >
               <span className="font-semibold shrink-0 text-red-700">Notice:</span>
               <span>{errorMessage}</span>
@@ -103,37 +103,29 @@ export default function ForgotPasswordPage() {
           )}
 
           {isSubmitted ? (
-            <div className="text-center py-2 space-y-4">
-              <div className="w-12 h-12 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-600 flex items-center justify-center mx-auto">
-                <CheckCircle2 className="w-6 h-6" />
+            <div className="text-center py-4 space-y-3">
+              <div className="w-10 h-10 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto">
+                <CheckCircle2 className="w-5 h-5" />
               </div>
-              <div>
-                <h2 className="text-sm font-semibold text-zinc-900">
-                  Recovery Instructions Dispatched
-                </h2>
-                <p className="text-xs text-zinc-600 mt-2 leading-relaxed">
-                  If an authorized administrator account exists for{' '}
-                  <strong className="text-zinc-900">{email}</strong>, password reset instructions have
-                  been sent.
-                </p>
-                <div className="mt-3 p-3 bg-zinc-50 border border-black/[0.06] rounded-lg text-[11px] text-zinc-500 text-left leading-relaxed">
-                  • The reset link is single-use and expires in <strong>30 minutes</strong>.<br />
-                  • Check your junk or spam folder if the email does not arrive within a few minutes.
-                </div>
+              <h2 className="text-sm font-bold text-zinc-900">Recovery Instructions Dispatched</h2>
+              <p className="text-xs text-zinc-500 leading-relaxed">
+                If an active administrator account exists for <strong>{email}</strong>, a secure password reset link has been dispatched to that inbox.
+              </p>
+              <div className="pt-3">
+                <Link
+                  href="/admin/login"
+                  className="inline-flex items-center justify-center w-full py-2 px-4 rounded-md bg-zinc-100 hover:bg-zinc-200 text-xs font-semibold text-zinc-800 transition-colors"
+                >
+                  Return to Sign In
+                </Link>
               </div>
-              <Link
-                href="/admin/login"
-                className="inline-block w-full mt-3 py-2.5 px-4 rounded-[10px] bg-[#49056B] text-white text-xs font-semibold shadow-xs hover:bg-[#5B0785] transition-all text-center"
-              >
-                Back to Sign In
-              </Link>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label
                   htmlFor="recovery-email"
-                  className="block text-xs font-semibold text-zinc-700 mb-1.5"
+                  className="block text-xs font-semibold text-zinc-700 mb-1"
                 >
                   Administrator Email
                 </label>
@@ -143,11 +135,11 @@ export default function ForgotPasswordPage() {
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="e.g. owner@laurrelservices.ca"
+                    placeholder="e.g. staff@laurrelservices.ca"
                     required
                     autoFocus
                     autoComplete="email"
-                    className="w-full px-3.5 py-2.5 bg-[#F8F7F4] border border-black/10 rounded-[10px] text-xs text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#49056B] focus:border-transparent transition-all"
+                    className="w-full px-3 py-2 bg-zinc-50 border border-zinc-200/80 rounded-md text-xs text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#49056B] focus:bg-white transition-all"
                   />
                   <Mail className="w-4 h-4 text-zinc-400 absolute right-3 top-2.5 pointer-events-none" />
                 </div>
@@ -156,12 +148,12 @@ export default function ForgotPasswordPage() {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full mt-2 py-2.5 px-4 rounded-[10px] bg-[#49056B] text-white text-xs font-semibold shadow-xs hover:bg-[#5B0785] focus:outline-none focus:ring-2 focus:ring-[#49056B] focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
+                className="w-full py-2 px-4 rounded-md bg-[#49056B] text-white text-xs font-semibold hover:bg-[#390044] focus:outline-none focus:ring-2 focus:ring-[#49056B] focus:ring-offset-2 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
               >
                 {isLoading ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin text-white" />
-                    <span>Sending Reset Link...</span>
+                    <span>Processing...</span>
                   </>
                 ) : (
                   <span>Send Reset Link</span>
@@ -170,9 +162,8 @@ export default function ForgotPasswordPage() {
             </form>
           )}
 
-          {/* Footer note */}
-          <div className="mt-7 pt-5 border-t border-black/[0.06] text-center">
-            <p className="text-[10px] text-zinc-400 tracking-wider uppercase font-medium">
+          <div className="mt-6 pt-4 border-t border-zinc-100 text-center">
+            <p className="text-[10px] text-zinc-400 tracking-wider uppercase font-semibold">
               Laurrel Services • Ottawa Operations
             </p>
           </div>

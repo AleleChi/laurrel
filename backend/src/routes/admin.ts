@@ -294,10 +294,25 @@ adminRouter.get(
         FROM appointments
       `);
 
-      const [enqRes, handoffRes, aptRes] = await Promise.all([
+      const timelinePromise = pool.query(
+        `SELECT TO_CHAR(DATE_TRUNC('day', created_at), 'YYYY-MM-DD') as period, COUNT(*)::int as count FROM enquiries WHERE created_at >= NOW() - INTERVAL '60 days' GROUP BY 1 ORDER BY 1 ASC`
+      );
+
+      const servicesBreakdownPromise = pool.query(
+        `SELECT unnest(services) as service, COUNT(*)::int as count FROM enquiries GROUP BY 1 ORDER BY 2 DESC`
+      );
+
+      const statusBreakdownPromise = pool.query(
+        `SELECT status, COUNT(*)::int as count FROM enquiries GROUP BY 1 ORDER BY 2 DESC`
+      );
+
+      const [enqRes, handoffRes, aptRes, timelineRes, servicesRes, statusRes] = await Promise.all([
         enqStatsPromise,
         handoffStatsPromise,
         appointmentStatsPromise,
+        timelinePromise,
+        servicesBreakdownPromise,
+        statusBreakdownPromise,
       ]);
       const enqRow = enqRes.rows[0] || {};
       const handoffRow = handoffRes.rows[0] || {};
@@ -312,6 +327,9 @@ adminRouter.get(
         pendingHandoffs: handoffRow.pendingHandoffs || 0,
         upcomingAppointments: aptRow.upcomingAppointments || 0,
         todayAppointments: aptRow.todayAppointments || 0,
+        timeline: timelineRes.rows || [],
+        servicesBreakdown: servicesRes.rows || [],
+        statusBreakdown: statusRes.rows || [],
       });
     } catch (err: any) {
       console.error('[Admin Stats SQL Error]:', err);

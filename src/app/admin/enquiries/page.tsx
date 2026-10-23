@@ -23,6 +23,8 @@ import {
   Ban,
   Check,
   ExternalLink,
+  AlertCircle,
+  FilterX,
 } from 'lucide-react';
 import {
   formatEnquirySource,
@@ -92,6 +94,7 @@ export default function AdminEnquiriesPage() {
   const [searchQuery, setSearchQuery] = useState<string>('');
 
   const [loading, setLoading] = useState<boolean>(true);
+  const [apiError, setApiError] = useState<string | null>(null);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState<boolean>(false);
   const [newNoteText, setNewNoteText] = useState<string>('');
   const [statusError, setStatusError] = useState<string>('');
@@ -186,6 +189,7 @@ export default function AdminEnquiriesPage() {
   const loadData = async () => {
     try {
       setLoading(true);
+      setApiError(null);
       const [enqRes, handoffsRes] = await Promise.all([
         fetch('/api/admin/enquiries?limit=200', { cache: 'no-store' }),
         fetch('/api/admin/handoffs', { cache: 'no-store' }),
@@ -203,14 +207,18 @@ export default function AdminEnquiriesPage() {
           const updated = list.find((e) => e.id === selectedEnquiry.id);
           if (updated) setSelectedEnquiry(updated);
         }
+      } else {
+        const errData = await enqRes.json().catch(() => ({}));
+        setApiError(errData.error || `Server responded with status ${enqRes.status}`);
       }
 
       if (handoffsRes.ok) {
         const hData = await handoffsRes.json();
         setHandoffs(hData.handoffs || []);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('[Enquiries Page Load Error]:', err);
+      setApiError('Unable to connect to administrative services. Please check network or server status.');
     } finally {
       setLoading(false);
     }
@@ -286,41 +294,70 @@ export default function AdminEnquiriesPage() {
     return true;
   });
 
-  // Clean, restrained status presentation without decorative dots or badge-heavy styling
   const renderStatus = (status: string) => {
     switch (status) {
       case 'new':
-        return <span className="text-xs font-semibold text-[#FE6000]">New Lead</span>;
+        return (
+          <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-orange-50 text-[#FE6000] border border-orange-200/60">
+            Awaiting Review
+          </span>
+        );
       case 'reviewed':
-        return <span className="text-xs font-medium text-zinc-700">Reviewed</span>;
+        return (
+          <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-zinc-100 text-zinc-700 border border-zinc-200">
+            Reviewed
+          </span>
+        );
       case 'quoted':
-        return <span className="text-xs font-medium text-[#49056B]">Quoted</span>;
+        return (
+          <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-purple-50 text-[#49056B] border border-purple-200/60">
+            Quoted
+          </span>
+        );
       case 'scheduled':
-        return <span className="text-xs font-medium text-emerald-700">Scheduled</span>;
+        return (
+          <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200/60">
+            Scheduled
+          </span>
+        );
       case 'closed':
-        return <span className="text-xs text-zinc-400">Closed</span>;
+        return (
+          <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-zinc-50 text-zinc-400 border border-zinc-200/60">
+            Closed
+          </span>
+        );
       default:
-        return <span className="text-xs text-zinc-500 capitalize">{status}</span>;
+        return (
+          <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-zinc-100 text-zinc-600 capitalize">
+            {status}
+          </span>
+        );
     }
+  };
+
+  const resetFilters = () => {
+    setStatusFilter('all');
+    setServiceFilter('all');
+    setSearchQuery('');
   };
 
   return (
     <div className="space-y-6">
-      {/* Title & View Segmented Control */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-2">
+      {/* Page Header with Segmented View Switcher */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-1">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-zinc-900">
-            Customer Enquiries & Dispatch
+            Customer Enquiries
           </h1>
-          <p className="text-sm text-zinc-500 mt-1">
-            Review inbound quote requests, qualify leads, and manage customer communications.
+          <p className="text-xs text-zinc-500 mt-0.5">
+            Manage quote requests, qualify customer requirements, and coordinate service consultations.
           </p>
         </div>
 
-        <div className="flex items-center p-1 bg-zinc-200/60 rounded-[10px] self-start sm:self-auto">
+        <div className="flex items-center p-1 bg-zinc-200/70 rounded-md self-start sm:self-auto border border-zinc-200/80">
           <button
             onClick={() => setActiveTab('enquiries')}
-            className={`px-3.5 py-1.5 rounded-md text-xs font-semibold transition-all ${
+            className={`px-3 py-1.5 rounded text-xs font-semibold transition-all ${
               activeTab === 'enquiries'
                 ? 'bg-white text-zinc-900 shadow-2xs'
                 : 'text-zinc-600 hover:text-zinc-900'
@@ -330,7 +367,7 @@ export default function AdminEnquiriesPage() {
           </button>
           <button
             onClick={() => setActiveTab('handoffs')}
-            className={`px-3.5 py-1.5 rounded-md text-xs font-semibold transition-all ${
+            className={`px-3 py-1.5 rounded text-xs font-semibold transition-all ${
               activeTab === 'handoffs'
                 ? 'bg-white text-zinc-900 shadow-2xs'
                 : 'text-zinc-600 hover:text-zinc-900'
@@ -341,9 +378,9 @@ export default function AdminEnquiriesPage() {
         </div>
       </div>
 
-      {/* Filter & Search Bar - Clean, calm, restrained */}
-      <div className="bg-white rounded-xl p-3.5 border border-black/[0.06] shadow-xs">
-        <div className="flex flex-col md:flex-row gap-3">
+      {/* Unified CRM Filter Toolbar (WowDash / Geex Inspired) */}
+      <div className="bg-white rounded-md p-3 border border-zinc-200/80 shadow-2xs">
+        <div className="flex flex-col md:flex-row gap-2.5">
           {/* Search Box */}
           <div className="relative flex-1">
             <input
@@ -351,7 +388,7 @@ export default function AdminEnquiriesPage() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search by customer name, email, phone, location or ID..."
-              className="w-full pl-9 pr-4 py-2 bg-[#F8F7F4] border border-black/10 rounded-[10px] text-xs text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#49056B] focus:border-transparent transition-all"
+              className="w-full pl-9 pr-4 py-2 bg-zinc-50 border border-zinc-200/80 rounded-md text-xs text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#49056B] focus:bg-white transition-all"
             />
             <Search className="w-4 h-4 text-zinc-400 absolute left-3 top-2.5" />
           </div>
@@ -362,10 +399,10 @@ export default function AdminEnquiriesPage() {
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
               aria-label="Filter by status"
-              className="px-3 py-2 bg-[#F8F7F4] border border-black/10 rounded-[10px] text-xs font-medium text-zinc-700 focus:outline-none focus:ring-2 focus:ring-[#49056B]"
+              className="px-3 py-2 bg-zinc-50 border border-zinc-200/80 rounded-md text-xs font-medium text-zinc-700 focus:outline-none focus:ring-2 focus:ring-[#49056B]"
             >
               <option value="all">All Statuses</option>
-              <option value="new">New Leads</option>
+              <option value="new">Awaiting Review</option>
               <option value="reviewed">Reviewed</option>
               <option value="quoted">Quoted</option>
               <option value="scheduled">Scheduled</option>
@@ -377,7 +414,7 @@ export default function AdminEnquiriesPage() {
               value={serviceFilter}
               onChange={(e) => setServiceFilter(e.target.value)}
               aria-label="Filter by service"
-              className="px-3 py-2 bg-[#F8F7F4] border border-black/10 rounded-[10px] text-xs font-medium text-zinc-700 focus:outline-none focus:ring-2 focus:ring-[#49056B]"
+              className="px-3 py-2 bg-zinc-50 border border-zinc-200/80 rounded-md text-xs font-medium text-zinc-700 focus:outline-none focus:ring-2 focus:ring-[#49056B]"
             >
               <option value="all">All Services</option>
               <option value="cleaning">Cleaning</option>
@@ -386,11 +423,23 @@ export default function AdminEnquiriesPage() {
               <option value="general">General</option>
             </select>
 
+            {(statusFilter !== 'all' || serviceFilter !== 'all' || searchQuery.trim()) && (
+              <button
+                onClick={resetFilters}
+                title="Reset filters"
+                className="px-2.5 py-2 rounded-md bg-zinc-100 hover:bg-zinc-200 text-zinc-600 text-xs font-medium inline-flex items-center gap-1 transition-colors"
+              >
+                <FilterX className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Reset</span>
+              </button>
+            )}
+
             <button
               onClick={loadData}
-              title="Refresh"
+              title="Refresh data"
               aria-label="Refresh data"
-              className="p-2 rounded-[10px] bg-[#F8F7F4] border border-black/10 text-zinc-500 hover:text-[#49056B] transition-colors"
+              disabled={loading}
+              className="p-2 rounded-md bg-zinc-50 border border-zinc-200/80 text-zinc-600 hover:text-[#49056B] hover:bg-white transition-colors"
             >
               <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-[#49056B]' : ''}`} />
             </button>
@@ -398,46 +447,83 @@ export default function AdminEnquiriesPage() {
         </div>
       </div>
 
-      {/* Main Content Area */}
+      {/* Main CRM Table Area */}
       {activeTab === 'enquiries' ? (
-        <div className="bg-white rounded-xl border border-black/[0.06] shadow-xs overflow-hidden">
+        <div className="bg-white rounded-md border border-zinc-200/80 shadow-2xs overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
-                <tr className="bg-zinc-50/60 border-b border-black/[0.06] text-zinc-400 font-semibold uppercase tracking-wider text-[10px]">
-                  <th className="py-3 px-6">Reference</th>
-                  <th className="py-3 px-6">Customer</th>
-                  <th className="py-3 px-6">Services</th>
-                  <th className="py-3 px-6">Location</th>
-                  <th className="py-3 px-6">Preferred Timing</th>
-                  <th className="py-3 px-6">Status</th>
-                  <th className="py-3 px-6 text-right">Details</th>
+                <tr className="bg-zinc-50/80 border-b border-zinc-200/80 text-zinc-500 font-bold uppercase tracking-wider text-[11px]">
+                  <th className="py-3 px-4 sm:px-6">Customer</th>
+                  <th className="py-3 px-4 sm:px-6">Services</th>
+                  <th className="py-3 px-4 sm:px-6 hidden md:table-cell">Location</th>
+                  <th className="py-3 px-4 sm:px-6 hidden sm:table-cell">Received</th>
+                  <th className="py-3 px-4 sm:px-6">Status</th>
+                  <th className="py-3 px-4 sm:px-6 text-right">Details</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-black/[0.04]">
+              <tbody className="divide-y divide-zinc-100">
+                {/* 1. Loading State */}
                 {loading && enquiries.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="py-12 text-center text-zinc-400">
-                      <div className="flex flex-col items-center justify-center gap-2.5" role="status" aria-busy="true">
-                        <div className="relative w-6 h-6 motion-safe:animate-pulse">
-                          <Image
-                            src="/assets/brand/laurrel-symbol.png"
-                            alt="Loading"
-                            fill
-                            sizes="24px"
-                            className="object-contain"
-                          />
-                        </div>
-                        <span className="text-xs text-zinc-400 font-medium tracking-wide">
-                          Loading records from database...
+                    <td colSpan={6} className="py-14 text-center text-zinc-400">
+                      <div className="flex flex-col items-center justify-center gap-2.5">
+                        <RefreshCw className="w-5 h-5 text-[#49056B] animate-spin" />
+                        <span className="text-xs text-zinc-500 font-medium">
+                          Loading enquiries from database...
                         </span>
                       </div>
                     </td>
                   </tr>
-                ) : filteredEnquiries.length === 0 ? (
+                ) : apiError ? (
+                  /* 2. API Error State (Demonstrating true cause rather than false empty list) */
                   <tr>
-                    <td colSpan={7} className="py-12 text-center text-zinc-400">
-                      No customer enquiries matched your search criteria.
+                    <td colSpan={6} className="py-12 px-6 text-center">
+                      <div className="max-w-md mx-auto space-y-2">
+                        <AlertCircle className="w-6 h-6 text-amber-600 mx-auto" />
+                        <h3 className="text-sm font-bold text-zinc-900">
+                          Unable to retrieve customer enquiries
+                        </h3>
+                        <p className="text-xs text-zinc-500">
+                          {apiError}
+                        </p>
+                        <button
+                          onClick={loadData}
+                          className="mt-3 px-3.5 py-1.5 rounded-md bg-[#49056B] text-white text-xs font-semibold hover:bg-[#390044] transition-colors"
+                        >
+                          Retry Request
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ) : enquiries.length === 0 ? (
+                  /* 3. Empty Database State */
+                  <tr>
+                    <td colSpan={6} className="py-14 text-center text-zinc-400">
+                      <div className="max-w-sm mx-auto space-y-1">
+                        <p className="text-sm font-semibold text-zinc-700">No customer enquiries recorded yet</p>
+                        <p className="text-xs text-zinc-400">
+                          Inbound requests submitted through the website or customer portal will appear here in real time.
+                        </p>
+                      </div>
+                    </td>
+                  </tr>
+                ) : filteredEnquiries.length === 0 ? (
+                  /* 4. Filter No-Match State */
+                  <tr>
+                    <td colSpan={6} className="py-12 text-center text-zinc-400">
+                      <div className="max-w-sm mx-auto space-y-2">
+                        <p className="text-sm font-semibold text-zinc-700">No enquiries match the selected filters</p>
+                        <p className="text-xs text-zinc-400">
+                          Try adjusting your status, service or search criteria.
+                        </p>
+                        <button
+                          onClick={resetFilters}
+                          className="mt-2 text-xs font-semibold text-[#49056B] hover:underline"
+                        >
+                          Clear all filters
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ) : (
@@ -448,46 +534,48 @@ export default function AdminEnquiriesPage() {
                         key={enq.id}
                         onClick={() => setSelectedEnquiry(enq)}
                         className={`cursor-pointer transition-colors ${
-                          isSelected ? 'bg-[#49056B]/[0.04]' : 'hover:bg-zinc-50/60'
+                          isSelected
+                            ? 'bg-[#49056B]/[0.05] border-l-2 border-[#49056B]'
+                            : 'hover:bg-zinc-50/70'
                         }`}
                       >
-                        <td className="py-3.5 px-6 text-[11px] text-zinc-500">
-                          <div className="font-semibold text-zinc-900 tracking-tight">{enq.id}</div>
-                          <div className="text-zinc-500 text-[10px]">
-                            {formatCanadianDate(enq.createdAt)} · {formatEnquirySource(enq.source)}
+                        <td className="py-3 px-4 sm:px-6">
+                          <div className="font-semibold text-zinc-900">{enq.customer.name}</div>
+                          <div className="text-[11px] text-zinc-500 truncate max-w-[200px]">
+                            {enq.customer.email}
                           </div>
-                        </td>
-                        <td className="py-3.5 px-6">
-                          <div className="font-medium text-zinc-900">{enq.customer.name}</div>
-                          <div className="text-zinc-400 text-[11px]">{enq.customer.email}</div>
                           {enq.customer.phone && (
-                            <div className="text-zinc-400 text-[11px]">{enq.customer.phone}</div>
+                            <div className="text-[10px] text-zinc-400">
+                              {enq.customer.phone}
+                            </div>
                           )}
                         </td>
-                        <td className="py-3.5 px-6">
-                          <span className="text-xs text-zinc-700 capitalize font-medium">
-                            {enq.services.join(' • ')}
-                          </span>
+                        <td className="py-3 px-4 sm:px-6">
+                          <div className="flex flex-wrap gap-1">
+                            {enq.services.map((svc) => (
+                              <span
+                                key={svc}
+                                className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-zinc-100 text-zinc-700 capitalize"
+                              >
+                                {svc}
+                              </span>
+                            ))}
+                          </div>
                         </td>
-                        <td className="py-3.5 px-6 text-zinc-600">
+                        <td className="py-3 px-4 sm:px-6 hidden md:table-cell text-zinc-600">
                           {enq.serviceLocation || 'Ottawa Area'}
                         </td>
-                        <td className="py-3.5 px-6 text-zinc-600">
-                          {enq.preferredTiming || 'Flexible'}
+                        <td className="py-3 px-4 sm:px-6 hidden sm:table-cell text-zinc-500">
+                          {formatCanadianDate(enq.createdAt)}
                         </td>
-                        <td className="py-3.5 px-6">
+                        <td className="py-3 px-4 sm:px-6">
                           {renderStatus(enq.status)}
                         </td>
-                        <td className="py-3.5 px-6 text-right">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setSelectedEnquiry(enq);
-                            }}
-                            className="inline-flex items-center text-xs font-semibold text-[#49056B] hover:text-[#FE6000] transition-colors"
-                          >
-                            Inspect
-                          </button>
+                        <td className="py-3 px-4 sm:px-6 text-right">
+                          <span className="inline-flex items-center gap-1 text-xs font-semibold text-[#49056B] hover:text-[#390044]">
+                            <span>Review</span>
+                            <ChevronRight className="w-3.5 h-3.5" />
+                          </span>
                         </td>
                       </tr>
                     );
@@ -499,19 +587,19 @@ export default function AdminEnquiriesPage() {
         </div>
       ) : (
         /* Customer Callback Requests Tab */
-        <div className="bg-white rounded-xl border border-black/[0.06] shadow-xs overflow-hidden">
+        <div className="bg-white rounded-md border border-zinc-200/80 shadow-2xs overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
-                <tr className="bg-zinc-50/60 border-b border-black/[0.06] text-zinc-400 font-semibold uppercase tracking-wider text-[10px]">
-                  <th className="py-3 px-6">Reference</th>
-                  <th className="py-3 px-6">Customer Contact</th>
-                  <th className="py-3 px-6">Callback Details</th>
-                  <th className="py-3 px-6">Services</th>
-                  <th className="py-3 px-6">Status</th>
+                <tr className="bg-zinc-50/80 border-b border-zinc-200/80 text-zinc-500 font-bold uppercase tracking-wider text-[11px]">
+                  <th className="py-3 px-4 sm:px-6">Customer Contact</th>
+                  <th className="py-3 px-4 sm:px-6">Callback Details</th>
+                  <th className="py-3 px-4 sm:px-6">Services</th>
+                  <th className="py-3 px-4 sm:px-6">Requested</th>
+                  <th className="py-3 px-4 sm:px-6">Status</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-black/[0.04]">
+              <tbody className="divide-y divide-zinc-100">
                 {handoffs.length === 0 ? (
                   <tr>
                     <td colSpan={5} className="py-12 text-center text-zinc-400">
@@ -521,31 +609,28 @@ export default function AdminEnquiriesPage() {
                 ) : (
                   handoffs.map((h) => (
                     <tr key={h.id} className="hover:bg-zinc-50/60 transition-colors">
-                      <td className="py-3.5 px-6 text-[11px] text-zinc-500">
-                        <div className="font-semibold text-zinc-900 tracking-tight">{h.id}</div>
-                        <div className="text-zinc-500 text-[10px]">
-                          {formatCanadianDate(h.createdAt)}
-                        </div>
-                      </td>
-                      <td className="py-3.5 px-6">
-                        <div className="font-medium text-zinc-900">
+                      <td className="py-3 px-4 sm:px-6">
+                        <div className="font-semibold text-zinc-900">
                           {h.customerName || 'Laurrel Visitor'}
                         </div>
-                        <div className="text-zinc-400 text-[11px]">{h.customerEmail}</div>
+                        <div className="text-zinc-500 text-[11px]">{h.customerEmail}</div>
                         {h.customerPhone && (
                           <div className="text-zinc-400 text-[11px]">{h.customerPhone}</div>
                         )}
                       </td>
-                      <td className="py-3.5 px-6 max-w-sm text-zinc-600">
+                      <td className="py-3 px-4 sm:px-6 max-w-sm text-zinc-700">
                         {h.reason}
                       </td>
-                      <td className="py-3.5 px-6">
+                      <td className="py-3 px-4 sm:px-6">
                         <span className="text-xs text-zinc-700 capitalize font-medium">
                           {(h.services || ['general']).join(' • ')}
                         </span>
                       </td>
-                      <td className="py-3.5 px-6">
-                        <span className="text-xs font-medium text-zinc-700 capitalize">
+                      <td className="py-3 px-4 sm:px-6 text-zinc-500">
+                        {formatCanadianDate(h.createdAt)}
+                      </td>
+                      <td className="py-3 px-4 sm:px-6">
+                        <span className="px-2 py-0.5 rounded text-[11px] font-medium bg-zinc-100 text-zinc-700 capitalize">
                           {h.status}
                         </span>
                       </td>
@@ -558,26 +643,27 @@ export default function AdminEnquiriesPage() {
         </div>
       )}
 
-      {/* Refined CRM Slide-Over Drawer - No heavy boxed fragments, clean typographic structure */}
+      {/* Refined CRM Slide-Over Drawer — Customer Workspace */}
       {selectedEnquiry && (
-        <div className="fixed inset-0 z-50 flex items-center justify-end bg-black/30 backdrop-blur-xs">
-          <div className="w-full max-w-lg h-full bg-white shadow-2xl flex flex-col border-l border-black/[0.08] overflow-hidden">
+        <div className="fixed inset-0 z-50 flex items-center justify-end bg-black/30 backdrop-blur-2xs">
+          <div className="w-full max-w-xl h-full bg-white shadow-2xl flex flex-col border-l border-zinc-200 overflow-hidden animate-in slide-in-from-right duration-200">
             {/* Drawer Header */}
-            <div className="px-6 py-4.5 border-b border-black/[0.06] flex items-center justify-between bg-zinc-50/60">
+            <div className="px-6 py-4 border-b border-zinc-200/80 flex items-center justify-between bg-zinc-50/60">
               <div>
                 <div className="flex items-center gap-2.5">
-                  <span className="text-xs font-semibold text-zinc-900 tracking-tight">
-                    {selectedEnquiry.id}
+                  <span className="text-sm font-bold text-zinc-900 tracking-tight">
+                    {selectedEnquiry.customer.name}
                   </span>
                   {renderStatus(selectedEnquiry.status)}
                 </div>
                 <p className="text-[11px] text-zinc-500 mt-0.5">
-                  {formatEnquiryReceivedHeader(selectedEnquiry.createdAt, selectedEnquiry.source)}
+                  Reference: {selectedEnquiry.id} • {formatEnquiryReceivedHeader(selectedEnquiry.createdAt, selectedEnquiry.source)}
                 </p>
               </div>
               <button
                 onClick={() => setSelectedEnquiry(null)}
-                className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-900 hover:bg-black/5 transition-colors"
+                className="p-1.5 rounded-md text-zinc-400 hover:text-zinc-900 hover:bg-zinc-100 transition-colors"
+                aria-label="Close details"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -585,48 +671,48 @@ export default function AdminEnquiriesPage() {
 
             {/* Drawer Content Body */}
             <div className="flex-1 overflow-y-auto px-6 py-5 space-y-6">
-              {/* 1. Customer Name and Contact */}
-              <div className="space-y-3 pb-5 border-b border-black/[0.06]">
-                <div className="text-[10px] font-semibold uppercase tracking-widest text-zinc-400">
-                  Customer Contact
-                </div>
-                <div>
-                  <h3 className="text-lg font-bold text-zinc-900 tracking-tight">
-                    {selectedEnquiry.customer.name}
-                  </h3>
+              {/* 1. Customer Contact Card */}
+              <div className="space-y-3 pb-5 border-b border-zinc-100">
+                <div className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">
+                  Customer Contact Information
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs pt-1">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs pt-1">
                   <a
                     href={`mailto:${selectedEnquiry.customer.email}`}
-                    className="inline-flex items-center gap-2 text-zinc-700 hover:text-[#49056B] transition-colors"
+                    className="inline-flex items-center gap-2 p-2.5 rounded-md bg-zinc-50 border border-zinc-200/60 text-zinc-800 hover:border-zinc-300 transition-colors"
                   >
-                    <Mail className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
-                    <span className="truncate">{selectedEnquiry.customer.email}</span>
+                    <Mail className="w-4 h-4 text-[#49056B] shrink-0" />
+                    <span className="truncate font-medium">{selectedEnquiry.customer.email}</span>
                   </a>
 
-                  {selectedEnquiry.customer.phone && (
+                  {selectedEnquiry.customer.phone ? (
                     <a
                       href={`tel:${selectedEnquiry.customer.phone}`}
-                      className="inline-flex items-center gap-2 text-zinc-700 hover:text-[#49056B] transition-colors"
+                      className="inline-flex items-center gap-2 p-2.5 rounded-md bg-zinc-50 border border-zinc-200/60 text-zinc-800 hover:border-zinc-300 transition-colors"
                     >
-                      <Phone className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
-                      <span>{selectedEnquiry.customer.phone}</span>
+                      <Phone className="w-4 h-4 text-[#FE6000] shrink-0" />
+                      <span className="font-medium">{selectedEnquiry.customer.phone}</span>
                     </a>
+                  ) : (
+                    <div className="inline-flex items-center gap-2 p-2.5 rounded-md bg-zinc-50 border border-zinc-200/60 text-zinc-400">
+                      <Phone className="w-4 h-4 shrink-0" />
+                      <span>No phone provided</span>
+                    </div>
                   )}
                 </div>
               </div>
 
               {/* 2. Requested Services */}
-              <div className="space-y-3 pb-5 border-b border-black/[0.06]">
-                <div className="text-[10px] font-semibold uppercase tracking-widest text-zinc-400">
-                  Requested Services
+              <div className="space-y-3 pb-5 border-b border-zinc-100">
+                <div className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">
+                  Requested Services & Scope
                 </div>
                 <div className="flex flex-wrap gap-1.5">
                   {selectedEnquiry.services.map((svc) => (
                     <span
                       key={svc}
-                      className="px-2.5 py-1 rounded-md bg-zinc-100 text-zinc-800 text-xs font-semibold capitalize"
+                      className="px-2.5 py-1 rounded-md bg-purple-50 text-[#49056B] border border-purple-200/60 text-xs font-semibold capitalize"
                     >
                       {svc}
                     </span>
@@ -635,9 +721,9 @@ export default function AdminEnquiriesPage() {
 
                 {/* Service-Specific Parameters (Human Readable) */}
                 {selectedEnquiry.serviceDetails && Object.keys(selectedEnquiry.serviceDetails).length > 0 && (
-                  <div className="mt-3 p-3.5 bg-zinc-50/80 rounded-[10px] border border-black/[0.06] space-y-2">
-                    <div className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
-                      Service Scope & Details
+                  <div className="mt-3 p-3.5 bg-zinc-50 rounded-md border border-zinc-200/70 space-y-2">
+                    <div className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">
+                      Scope Specifications
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
                       {Object.entries(selectedEnquiry.serviceDetails).flatMap(([cat, catVal]) => {
@@ -649,7 +735,7 @@ export default function AdminEnquiriesPage() {
                                 <span className="text-[10px] text-zinc-400 font-medium block">
                                   {formatServiceParamLabel(subK)}
                                 </span>
-                                <span className="text-zinc-800 font-medium text-xs block">
+                                <span className="text-zinc-800 font-semibold text-xs block">
                                   {formatServiceParamValue(subV)}
                                 </span>
                               </div>
@@ -661,7 +747,7 @@ export default function AdminEnquiriesPage() {
                               <span className="text-[10px] text-zinc-400 font-medium block">
                                 {formatServiceParamLabel(cat)}
                               </span>
-                              <span className="text-zinc-800 font-medium text-xs block">
+                              <span className="text-zinc-800 font-semibold text-xs block">
                                 {formatServiceParamValue(catVal)}
                               </span>
                             </div>,
@@ -671,13 +757,13 @@ export default function AdminEnquiriesPage() {
                       })}
                     </div>
 
-                    {/* Authorised Diagnostic Access (Owner Only) - Hidden from ordinary staff */}
+                    {/* Authorised Diagnostic Payload (System Owner Only) */}
                     {userRole === 'owner' && (
-                      <details className="mt-3 pt-2 border-t border-black/[0.04] text-[10px] text-zinc-400">
+                      <details className="mt-3 pt-2 border-t border-zinc-200/70 text-[10px] text-zinc-400">
                         <summary className="cursor-pointer hover:text-zinc-600 transition-colors">
                           Authorised Diagnostic Payload (System Owner)
                         </summary>
-                        <pre className="mt-1.5 p-2 bg-white rounded border border-black/[0.06] font-mono text-[10px] overflow-x-auto text-zinc-600">
+                        <pre className="mt-1.5 p-2 bg-white rounded border border-zinc-200 font-mono text-[10px] overflow-x-auto text-zinc-600">
                           {JSON.stringify(selectedEnquiry.serviceDetails, null, 2)}
                         </pre>
                       </details>
@@ -686,318 +772,257 @@ export default function AdminEnquiriesPage() {
                 )}
               </div>
 
-              {/* 3. Service Location & Preferred Timing */}
-              <div className="space-y-3 pb-5 border-b border-black/[0.06]">
-                <div className="text-[10px] font-semibold uppercase tracking-widest text-zinc-400">
-                  Service Location & Timing
+              {/* 3. Service Location & Timing */}
+              <div className="space-y-3 pb-5 border-b border-zinc-100">
+                <div className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">
+                  Location & Timing
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
                   <div className="inline-flex items-center gap-2 text-zinc-700">
-                    <MapPin className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
+                    <MapPin className="w-4 h-4 text-zinc-400 shrink-0" />
                     <span>{selectedEnquiry.serviceLocation || 'Ottawa, ON Area'}</span>
                   </div>
 
                   <div className="inline-flex items-center gap-2 text-zinc-700">
-                    <Calendar className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
-                    <span>{selectedEnquiry.preferredTiming || 'Flexible schedule'}</span>
+                    <Calendar className="w-4 h-4 text-zinc-400 shrink-0" />
+                    <span>{selectedEnquiry.preferredTiming || 'Flexible / As soon as possible'}</span>
                   </div>
                 </div>
               </div>
 
-              {/* 4. Request Details */}
-              <div className="space-y-2 pb-5 border-b border-black/[0.06]">
-                <div className="text-[10px] font-semibold uppercase tracking-widest text-zinc-400">
-                  Customer Notes & Requirements
+              {/* 4. Customer Project Description */}
+              {selectedEnquiry.details && (
+                <div className="space-y-2 pb-5 border-b border-zinc-100">
+                  <div className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">
+                    Customer Project Notes
+                  </div>
+                  <div className="p-3 bg-zinc-50 rounded-md border border-zinc-200/60 text-xs text-zinc-700 leading-relaxed whitespace-pre-wrap">
+                    {selectedEnquiry.details}
+                  </div>
                 </div>
-                <div className="border-l-2 border-[#49056B]/40 pl-3.5 py-0.5 text-xs text-zinc-700 leading-relaxed whitespace-pre-wrap">
-                  {selectedEnquiry.details || 'No additional details provided.'}
-                </div>
-              </div>
+              )}
 
-              {/* 5. Appointments & Meeting Scheduling */}
-              <div className="space-y-3 pb-5 border-b border-black/[0.06]">
+              {/* 5. Consultation Appointments Section */}
+              <div className="space-y-3 pb-5 border-b border-zinc-100">
                 <div className="flex items-center justify-between">
-                  <div className="text-[10px] font-semibold uppercase tracking-widest text-zinc-400">
-                    Appointments & Consultations
+                  <div className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">
+                    Scheduled Consultations
                   </div>
-                  <span className="text-[11px] text-zinc-400">Ottawa Local Time</span>
+                  <button
+                    onClick={() => {
+                      setRescheduleAppointmentId(null);
+                      setIsScheduleModalOpen(true);
+                    }}
+                    className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#49056B] hover:text-[#390044] px-2.5 py-1 rounded bg-purple-50 hover:bg-purple-100 transition-colors"
+                  >
+                    <CalendarPlus className="w-3.5 h-3.5" />
+                    <span>Schedule Meeting</span>
+                  </button>
                 </div>
 
                 {appointmentActionMsg && (
-                  <div className="p-2.5 rounded-lg bg-zinc-100 border border-black/[0.06] text-xs text-zinc-800">
+                  <div className="p-2.5 rounded-md bg-purple-50 border border-purple-200 text-purple-900 text-xs font-medium">
                     {appointmentActionMsg}
                   </div>
                 )}
 
                 {loadingAppointments ? (
-                  <div className="p-4 rounded-xl bg-zinc-50 border border-black/[0.06] text-center text-xs text-zinc-400">
-                    Loading consultations...
+                  <div className="py-4 text-center text-xs text-zinc-400">
+                    Loading appointments...
                   </div>
-                ) : enquiryAppointments.length > 0 ? (
-                  <div className="space-y-3">
-                    {enquiryAppointments.map((apt) => {
-                      const statusBadge = formatAppointmentStatus(apt.status);
-                      const isUpcoming = ['pending', 'confirmed', 'rescheduled'].includes(apt.status);
-                      const isJoinableUrl = apt.locationOrLink && /^https?:\/\//i.test(apt.locationOrLink);
+                ) : enquiryAppointments.length === 0 ? (
+                  <div className="p-3.5 rounded-md bg-zinc-50 border border-zinc-200/60 text-xs text-zinc-500 text-center">
+                    No consultations scheduled yet for this enquiry.
+                  </div>
+                ) : (
+                  <div className="space-y-2.5">
+                    {enquiryAppointments.map((apt) => (
+                      <div
+                        key={apt.id}
+                        className="p-3 rounded-md bg-zinc-50 border border-zinc-200/80 space-y-2 text-xs"
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="font-semibold text-zinc-900">{apt.title}</span>
+                          {(() => {
+                            const statusInfo = formatAppointmentStatus(apt.status);
+                            return (
+                              <span className={`px-2 py-0.5 rounded text-[10px] font-semibold border ${statusInfo.bg} ${statusInfo.color}`}>
+                                {statusInfo.label}
+                              </span>
+                            );
+                          })()}
+                        </div>
 
-                      return (
-                        <div
-                          key={apt.id}
-                          className="p-4 rounded-xl bg-zinc-50 border border-black/[0.08] space-y-3 shadow-2xs"
-                        >
-                          {/* Card Header */}
-                          <div className="flex items-start justify-between gap-2">
-                            <div>
-                              <div className="flex items-center gap-2">
-                                <span
-                                  className={`px-2 py-0.5 rounded-md text-[10px] font-bold border uppercase tracking-wider ${statusBadge.color} ${statusBadge.bg}`}
-                                >
-                                  {statusBadge.label}
-                                </span>
-                                <span className="text-xs font-semibold text-zinc-900">{apt.title}</span>
-                              </div>
-                              <p className="text-[11px] text-zinc-500 mt-1">
-                                {formatAppointmentType(apt.appointmentType)} · {apt.durationMinutes} mins
-                              </p>
-                            </div>
-                          </div>
-
-                          {/* Time & Location Details */}
-                          <div className="grid grid-cols-1 gap-1.5 text-xs">
-                            <div className="inline-flex items-center gap-2 text-zinc-800 font-medium">
-                              <Calendar className="w-3.5 h-3.5 text-[#49056B] shrink-0" />
-                              <span>{formatOttawaTimeRange(apt.scheduledStart, apt.scheduledEnd)}</span>
-                            </div>
-
+                        <div className="text-zinc-600 space-y-1 text-[11px]">
+                          <div>
+                            Mode: <span className="font-medium capitalize">{formatAppointmentType(apt.appointmentType)}</span>
                             {apt.locationOrLink && (
-                              <div className="inline-flex items-center gap-2 text-zinc-700">
-                                <MapPin className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
-                                {isJoinableUrl ? (
-                                  <a
-                                    href={apt.locationOrLink}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className="text-[#49056B] hover:underline inline-flex items-center gap-1 font-medium"
-                                  >
-                                    <span>Join Meeting Link</span>
-                                    <ExternalLink className="w-3 h-3" />
-                                  </a>
-                                ) : (
-                                  <span className="truncate">{apt.locationOrLink}</span>
-                                )}
-                              </div>
-                            )}
-
-                            {apt.assignedStaffName && (
-                              <div className="inline-flex items-center gap-2 text-zinc-600">
-                                <User className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
-                                <span>Coordinator: {apt.assignedStaffName}</span>
-                              </div>
-                            )}
-                          </div>
-
-                          {/* Notification Indicator */}
-                          <div className="pt-2 border-t border-black/[0.04] flex items-center justify-between text-[11px]">
-                            <span className="text-zinc-500">
-                              {apt.notificationSent
-                                ? '✓ Customer invitation sent'
-                                : 'Invitation not delivered'}
-                            </span>
-                            {apt.cancellationReason && (
-                              <span className="text-red-600 italic">
-                                Reason: {apt.cancellationReason}
+                              <span className="ml-2 font-mono text-[10px] text-zinc-500">
+                                ({apt.locationOrLink})
                               </span>
                             )}
                           </div>
+                          <div>
+                            Time: <span className="font-medium">{formatOttawaDate(apt.scheduledStart)} at {formatOttawaTimeRange(apt.scheduledStart, apt.scheduledEnd)}</span>
+                          </div>
+                          {apt.assignedStaffName && (
+                            <div>
+                              Coordinator: <span className="font-medium">{apt.assignedStaffName}</span>
+                            </div>
+                          )}
+                        </div>
 
-                          {/* Quick Actions (if active) */}
-                          {isUpcoming && (
-                            <div className="pt-2 border-t border-black/[0.06] flex flex-wrap gap-2">
-                              {apt.status === 'pending' && (
-                                <button
-                                  type="button"
-                                  onClick={() => handleUpdateAppointmentStatus(apt.id, 'confirmed')}
-                                  className="px-2.5 py-1 rounded-md bg-emerald-50 text-emerald-700 hover:bg-emerald-100 text-[11px] font-semibold border border-emerald-200 transition-colors"
-                                >
-                                  Confirm
-                                </button>
-                              )}
+                        {/* Action buttons */}
+                        <div className="flex items-center gap-2 pt-1 border-t border-zinc-200/60">
+                          {apt.status === 'pending' && (
+                            <button
+                              onClick={() => handleUpdateAppointmentStatus(apt.id, 'confirmed')}
+                              className="px-2 py-1 rounded bg-emerald-50 text-emerald-700 hover:bg-emerald-100 font-semibold text-[10px] transition-colors"
+                            >
+                              Confirm
+                            </button>
+                          )}
+                          {apt.status === 'confirmed' && (
+                            <button
+                              onClick={() => handleUpdateAppointmentStatus(apt.id, 'completed')}
+                              className="px-2 py-1 rounded bg-zinc-100 text-zinc-700 hover:bg-zinc-200 font-semibold text-[10px] transition-colors"
+                            >
+                              Mark Completed
+                            </button>
+                          )}
+                          {apt.status !== 'cancelled' && apt.status !== 'completed' && (
+                            <>
                               <button
-                                type="button"
                                 onClick={() => {
                                   setRescheduleAppointmentId(apt.id);
                                   setIsScheduleModalOpen(true);
                                 }}
-                                className="px-2.5 py-1 rounded-md bg-white text-zinc-700 hover:bg-zinc-100 text-[11px] font-medium border border-black/[0.1] transition-colors"
+                                className="px-2 py-1 rounded bg-purple-50 text-[#49056B] hover:bg-purple-100 font-semibold text-[10px] transition-colors"
                               >
                                 Reschedule
                               </button>
                               <button
-                                type="button"
-                                onClick={() => handleResendInvite(apt.id)}
-                                className="px-2.5 py-1 rounded-md bg-white text-zinc-700 hover:bg-zinc-100 text-[11px] font-medium border border-black/[0.1] transition-colors"
-                              >
-                                Resend Invite
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => handleUpdateAppointmentStatus(apt.id, 'completed')}
-                                className="px-2.5 py-1 rounded-md bg-white text-zinc-700 hover:bg-zinc-100 text-[11px] font-medium border border-black/[0.1] transition-colors"
-                              >
-                                Complete
-                              </button>
-                              <button
-                                type="button"
                                 onClick={() => handleCancelAppointment(apt.id)}
-                                className="px-2.5 py-1 rounded-md bg-red-50 text-red-700 hover:bg-red-100 text-[11px] font-semibold border border-red-200 transition-colors"
+                                className="px-2 py-1 rounded bg-red-50 text-red-700 hover:bg-red-100 font-semibold text-[10px] transition-colors"
                               >
                                 Cancel
                               </button>
-                            </div>
+                            </>
                           )}
+                          <button
+                            onClick={() => handleResendInvite(apt.id)}
+                            className="px-2 py-1 rounded bg-zinc-100 text-zinc-600 hover:bg-zinc-200 font-medium text-[10px] ml-auto transition-colors"
+                          >
+                            Resend Email
+                          </button>
                         </div>
-                      );
-                    })}
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setRescheduleAppointmentId(null);
-                        setIsScheduleModalOpen(true);
-                      }}
-                      className="w-full py-2 rounded-lg border border-dashed border-black/[0.15] text-xs font-semibold text-[#49056B] hover:bg-[#49056B]/5 transition-colors"
-                    >
-                      + Schedule Another Consultation
-                    </button>
-                  </div>
-                ) : (
-                  <div className="p-3.5 rounded-[10px] bg-zinc-50 border border-black/[0.06] flex items-center justify-between">
-                    <div className="flex items-center gap-2.5">
-                      <CalendarPlus className="w-4 h-4 text-zinc-400" />
-                      <span className="text-xs text-zinc-600">No appointment scheduled</span>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setRescheduleAppointmentId(null);
-                        setIsScheduleModalOpen(true);
-                      }}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#49056B] text-white text-xs font-semibold hover:bg-[#5B0785] transition-all shadow-2xs"
-                    >
-                      <span>Schedule Meeting</span>
-                    </button>
+                      </div>
+                    ))}
                   </div>
                 )}
               </div>
 
-              {/* 6. Lead Status Pipeline Transition Control */}
-              <div className="space-y-2 pb-5 border-b border-black/[0.06]">
-                <div className="text-[10px] font-semibold uppercase tracking-widest text-zinc-400">
-                  Lead Status Pipeline
+              {/* 6. Lead Status Workflow Transition */}
+              <div className="space-y-3 pb-5 border-b border-zinc-100">
+                <div className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">
+                  Update Enquiry Status
                 </div>
-                <div className="grid grid-cols-5 p-1 bg-zinc-100 rounded-[10px] gap-1">
-                  {(['new', 'reviewed', 'quoted', 'scheduled', 'closed'] as const).map((s) => (
+                {statusError && (
+                  <div className="p-2.5 rounded-md bg-red-50 border border-red-200 text-red-700 text-xs">
+                    {statusError}
+                  </div>
+                )}
+
+                <div className="flex flex-wrap gap-1.5">
+                  {(['new', 'reviewed', 'quoted', 'scheduled', 'closed'] as const).map((st) => (
                     <button
-                      key={s}
-                      disabled={isUpdatingStatus}
-                      onClick={() => handleStatusUpdate(s)}
-                      className={`py-1.5 rounded-md text-xs font-semibold capitalize transition-all ${
-                        selectedEnquiry.status === s
+                      key={st}
+                      onClick={() => handleStatusUpdate(st)}
+                      disabled={isUpdatingStatus || selectedEnquiry.status === st}
+                      className={`px-3 py-1.5 rounded-md text-xs font-semibold capitalize transition-all ${
+                        selectedEnquiry.status === st
                           ? 'bg-[#49056B] text-white shadow-2xs'
-                          : 'text-zinc-600 hover:text-zinc-900'
+                          : 'bg-zinc-100 text-zinc-700 hover:bg-zinc-200 disabled:opacity-50'
                       }`}
                     >
-                      {s}
+                      {st === 'new' ? 'New Lead' : st}
                     </button>
                   ))}
                 </div>
-                {statusError && (
-                  <p className="text-xs text-red-600 font-medium">{statusError}</p>
-                )}
               </div>
 
-              {/* 7. Activity & Notes */}
+              {/* 7. Internal Coordinator Notes */}
               <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-semibold uppercase tracking-widest text-zinc-400">
-                    Activity & Notes
-                  </span>
-                  <span className="text-xs text-zinc-500 font-medium">
-                    {selectedEnquiry.internalNotes?.length || 0}{' '}
-                    {selectedEnquiry.internalNotes?.length === 1 ? 'note' : 'notes'}
-                  </span>
+                <div className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">
+                  Internal Staff Notes
                 </div>
 
-                {/* Timeline Entries */}
-                <div className="space-y-3 relative pl-4 before:absolute before:left-1.5 before:top-2 before:bottom-2 before:w-[1px] before:bg-zinc-200">
-                  {selectedEnquiry.internalNotes && selectedEnquiry.internalNotes.length > 0 ? (
-                    selectedEnquiry.internalNotes.map((note) => (
-                      <div key={note.id} className="relative space-y-1">
-                        <div className="absolute -left-4 top-1.5 w-2 h-2 rounded-full bg-zinc-300 ring-4 ring-white" />
-                        <div className="flex items-center justify-between text-[11px]">
-                          <span className="font-semibold text-zinc-800">
-                            {formatNoteAuthor(note.author)}
-                          </span>
-                          <span className="text-zinc-400 text-[10px]">
-                            {formatCanadianDateTime(note.createdAt)}
-                          </span>
-                        </div>
-                        <p className="text-xs text-zinc-600 leading-relaxed">
-                          {formatNoteContent(note.note)}
-                        </p>
-                      </div>
-                    ))
-                  ) : (
-                    <p className="text-xs text-zinc-400 italic">No notes recorded yet.</p>
-                  )}
-                </div>
-
-                {/* Add Note Form */}
-                <form onSubmit={handleAddNoteOnly} className="space-y-2 pt-3">
+                <form onSubmit={handleAddNoteOnly} className="space-y-2">
                   <textarea
-                    rows={2}
                     value={newNoteText}
                     onChange={(e) => setNewNoteText(e.target.value)}
-                    placeholder="Record customer contact, estimated hours, or dispatch instructions..."
-                    className="w-full p-2.5 bg-[#F8F7F4] border border-black/10 rounded-[10px] text-xs text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#49056B] focus:border-transparent transition-all"
+                    placeholder="Add operational notes, pricing considerations, or follow-up notes..."
+                    rows={3}
+                    className="w-full p-2.5 bg-zinc-50 border border-zinc-200/80 rounded-md text-xs text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#49056B] focus:bg-white transition-all"
                   />
                   <div className="flex justify-end">
                     <button
                       type="submit"
-                      disabled={isUpdatingStatus || !newNoteText.trim()}
-                      className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-[8px] bg-[#49056B] text-white text-xs font-semibold hover:bg-[#5B0785] disabled:opacity-50 transition-all shadow-2xs"
+                      disabled={!newNoteText.trim() || isUpdatingStatus}
+                      className="px-3.5 py-1.5 rounded-md bg-[#49056B] text-white text-xs font-semibold hover:bg-[#390044] transition-colors disabled:opacity-50"
                     >
-                      <Send className="w-3 h-3 text-orange-400" />
-                      <span>Save Note</span>
+                      Save Note
                     </button>
                   </div>
                 </form>
+
+                {selectedEnquiry.internalNotes && selectedEnquiry.internalNotes.length > 0 && (
+                  <div className="space-y-2 pt-2">
+                    {selectedEnquiry.internalNotes.map((note) => (
+                      <div
+                        key={note.id}
+                        className="p-3 bg-zinc-50 rounded-md border border-zinc-200/60 text-xs space-y-1"
+                      >
+                        <div className="flex items-center justify-between text-[11px] text-zinc-500">
+                          <span className="font-semibold text-zinc-700">
+                            {formatNoteAuthor(note.author)}
+                          </span>
+                          <span>{formatCanadianDateTime(note.createdAt)}</span>
+                        </div>
+                        <p className="text-zinc-800 leading-relaxed whitespace-pre-wrap">
+                          {formatNoteContent(note.note)}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* Schedule Meeting Modal */}
-      {isScheduleModalOpen && selectedEnquiry && (
+      {/* Appointment Booking / Rescheduling Modal */}
+      {selectedEnquiry && (
         <ScheduleMeetingModal
           isOpen={isScheduleModalOpen}
           onClose={() => {
             setIsScheduleModalOpen(false);
             setRescheduleAppointmentId(null);
           }}
-          onScheduled={async (apt) => {
-            await loadEnquiryAppointments(selectedEnquiry.id);
-            setAppointmentActionMsg(`Consultation "${apt.title}" booked successfully.`);
-            setTimeout(() => setAppointmentActionMsg(null), 4000);
+          enquiryId={selectedEnquiry.id}
+          customer={{
+            name: selectedEnquiry.customer.name,
+            email: selectedEnquiry.customer.email,
+            phone: selectedEnquiry.customer.phone,
           }}
-          enquiry={selectedEnquiry}
           rescheduleAppointmentId={rescheduleAppointmentId}
-          initialAppointment={
-            rescheduleAppointmentId
-              ? enquiryAppointments.find((a) => a.id === rescheduleAppointmentId)
-              : null
-          }
+          onSuccess={() => {
+            if (selectedEnquiry) {
+              loadEnquiryAppointments(selectedEnquiry.id);
+            }
+            loadData();
+          }}
         />
       )}
     </div>
