@@ -17,9 +17,15 @@ export interface GoogleConfig {
   redirectUri: string;
 }
 
+/**
+ * Returns fixed server-configured OAuth configuration.
+ * Client-supplied redirect URIs are strictly disallowed.
+ */
 export function getGoogleOAuthConfig(): GoogleConfig | null {
   const clientId = process.env.GOOGLE_CALENDAR_CLIENT_ID || process.env.GOOGLE_CLIENT_ID;
   const clientSecret = process.env.GOOGLE_CALENDAR_CLIENT_SECRET || process.env.GOOGLE_CLIENT_SECRET;
+  
+  // Fixed canonical redirect URI configured in environment or matching the canonical admin settings callback
   const redirectUri =
     process.env.GOOGLE_CALENDAR_REDIRECT_URI ||
     process.env.GOOGLE_REDIRECT_URI ||
@@ -30,9 +36,9 @@ export function getGoogleOAuthConfig(): GoogleConfig | null {
 }
 
 /**
- * Generate secure OAuth2 consent authorization URL
+ * Generate secure OAuth2 consent authorization URL bound to an approved single-use state
  */
-export function generateGoogleAuthUrl(state: string, overrideRedirectUri?: string): string {
+export function generateGoogleAuthUrl(state: string): string {
   const config = getGoogleOAuthConfig();
   if (!config) {
     throw new Error('Google OAuth credentials (GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET) are not configured.');
@@ -40,7 +46,7 @@ export function generateGoogleAuthUrl(state: string, overrideRedirectUri?: strin
 
   const params = new URLSearchParams({
     client_id: config.clientId,
-    redirect_uri: overrideRedirectUri || config.redirectUri,
+    redirect_uri: config.redirectUri,
     response_type: 'code',
     scope: GOOGLE_CALENDAR_SCOPES.join(' '),
     access_type: 'offline',
@@ -52,9 +58,9 @@ export function generateGoogleAuthUrl(state: string, overrideRedirectUri?: strin
 }
 
 /**
- * Exchange Authorization Code for Refresh and Access tokens
+ * Exchange Authorization Code for Refresh and Access tokens using the fixed redirect URI
  */
-export async function exchangeGoogleAuthCode(code: string, overrideRedirectUri?: string): Promise<{
+export async function exchangeGoogleAuthCode(code: string): Promise<{
   accountEmail: string;
   refreshToken: string;
   accessToken: string;
@@ -71,7 +77,7 @@ export async function exchangeGoogleAuthCode(code: string, overrideRedirectUri?:
       code,
       client_id: config.clientId,
       client_secret: config.clientSecret,
-      redirect_uri: overrideRedirectUri || config.redirectUri,
+      redirect_uri: config.redirectUri,
       grant_type: 'authorization_code',
     }),
   });
@@ -90,7 +96,7 @@ export async function exchangeGoogleAuthCode(code: string, overrideRedirectUri?:
     console.warn('[Google OAuth Warning] No refresh token returned. User may have already authorized without prompt=consent.');
   }
 
-  // Fetch account email
+  // Fetch and verify account email
   const userRes = await fetch(GOOGLE_USERINFO_ENDPOINT, {
     headers: { Authorization: `Bearer ${accessToken}` },
   });
@@ -99,6 +105,14 @@ export async function exchangeGoogleAuthCode(code: string, overrideRedirectUri?:
   if (userRes.ok) {
     const userData = await userRes.json();
     if (userData.email) accountEmail = userData.email;
+  }
+
+  // Verify against authorized account if configured
+  const authorizedAccount = process.env.GOOGLE_AUTHORIZED_ACCOUNT;
+  if (authorizedAccount && accountEmail.toLowerCase() !== authorizedAccount.toLowerCase()) {
+    throw new Error(
+      `Unauthorized Google account (${accountEmail}). Only the designated Laurrel account (${authorizedAccount}) is authorized.`
+    );
   }
 
   // Persist encrypted in DB
@@ -170,12 +184,13 @@ export async function getValidGoogleAccessToken(): Promise<string> {
 }
 
 /**
- * Query Google Calendar FreeBusy API to detect calendar conflicts
+ * Query Google Calendar FreeBusy API to detect calendar conflicts.
+ * Explicitly surfaces failures rather than returning an empty busy list.
  */
 export async function checkGoogleFreeBusy(
   timeMinIso: string,
   timeMaxIso: string
-): Promise<{ busyIntervals: { start: string; end: string }[] }> {
+): Promise<{ success: boolean; busyIntervals: { start: string; end: string }[]; error?: string }> {
   try {
     const accessToken = await getValidGoogleAccessToken();
     const res = await fetch(`${GOOGLE_CALENDAR_API}/freeBusy`, {
@@ -193,16 +208,25 @@ export async function checkGoogleFreeBusy(
     });
 
     if (!res.ok) {
-      console.warn('[Google FreeBusy] Failed query:', res.status);
-      return { busyIntervals: [] };
+      const errText = await res.text();
+      console.warn('[Google FreeBusy] Failed query HTTP', res.status, errText);
+      return {
+        success: false,
+        busyIntervals: [],
+        error: `Google Calendar FreeBusy query failed with HTTP ${res.status}`,
+      };
     }
 
     const data = await res.json();
     const busy = data?.calendars?.primary?.busy || [];
-    return { busyIntervals: busy };
+    return { success: true, busyIntervals: busy };
   } catch (err: any) {
-    console.warn('[Google FreeBusy Error] Skipping calendar busy check:', err.message);
-    return { busyIntervals: [] };
+    console.warn('[Google FreeBusy Error] Calendar check failed:', err.message);
+    return {
+      success: false,
+      busyIntervals: [],
+      error: err.message || 'Google Calendar FreeBusy connection failed',
+    };
   }
 }
 
@@ -218,14 +242,17 @@ export interface CreateGoogleMeetEventParams {
 
 export interface GoogleMeetEventResult {
   eventId: string;
-  joinUrl: string;
   calendarLink: string;
+  joinUrl: string | null;
+  conferenceStatus: 'ready' | 'pending_details' | 'failed';
   conferenceId?: string;
   status: string;
 }
 
 /**
- * Creates genuine Google Calendar event with Google Meet conference via conferenceDataVersion=1
+ * Creates genuine Google Calendar event with Google Meet conference via conferenceDataVersion=1.
+ * Explicitly distinguishes pending, successful, and failed conference generation states.
+ * Under NO circumstances is an htmlLink (calendar page) used as a video meeting link.
  */
 export async function createGoogleMeetEvent(
   params: CreateGoogleMeetEventParams
@@ -281,32 +308,65 @@ export async function createGoogleMeetEvent(
     throw new Error(`Google Calendar API event creation failed (HTTP ${res.status}).`);
   }
 
-  const created = await res.json();
+  let eventData = await res.json();
 
-  // Extract real Google Meet URL
-  let meetUrl = '';
-  if (created.conferenceData?.entryPoints) {
-    const videoEntry = created.conferenceData.entryPoints.find((ep: any) => ep.entryPointType === 'video');
-    if (videoEntry && videoEntry.uri) {
-      meetUrl = videoEntry.uri;
+  // Helper to extract verified video meet URL
+  const extractMeetUrl = (event: any): string | null => {
+    if (event.conferenceData?.entryPoints) {
+      const videoEntry = event.conferenceData.entryPoints.find((ep: any) => ep.entryPointType === 'video');
+      if (videoEntry && videoEntry.uri && /^https:\/\//i.test(videoEntry.uri)) {
+        return videoEntry.uri;
+      }
+    }
+    if (event.hangoutLink && /^https:\/\//i.test(event.hangoutLink)) {
+      return event.hangoutLink;
+    }
+    return null;
+  };
+
+  let meetUrl = extractMeetUrl(eventData);
+
+  // If conferenceData is pending, poll up to 3 times with brief backoff
+  if (!meetUrl && eventData.id) {
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      await new Promise((r) => setTimeout(r, attempt * 1000));
+      try {
+        const pollRes = await fetch(
+          `${GOOGLE_CALENDAR_API}/calendars/primary/events/${eventData.id}?conferenceDataVersion=1`,
+          {
+            headers: { Authorization: `Bearer ${accessToken}` },
+          }
+        );
+        if (pollRes.ok) {
+          eventData = await pollRes.json();
+          meetUrl = extractMeetUrl(eventData);
+          if (meetUrl) break;
+        }
+      } catch (pollErr: any) {
+        console.warn(`[Google Meet Poll Attempt ${attempt}] Failed:`, pollErr.message);
+      }
     }
   }
 
-  if (!meetUrl && created.hangoutLink) {
-    meetUrl = created.hangoutLink;
-  }
+  // Determine honest conference generation state
+  const conferenceStatusCode = eventData.conferenceData?.createRequest?.status?.statusCode;
+  let conferenceStatus: 'ready' | 'pending_details' | 'failed' = 'pending_details';
 
-  if (!meetUrl) {
-    console.warn('[Google Meet Warning] Event created but conferenceData uri is pending Google provisioning.');
-    meetUrl = created.htmlLink || '';
+  if (meetUrl) {
+    conferenceStatus = 'ready';
+  } else if (conferenceStatusCode === 'failed') {
+    conferenceStatus = 'failed';
+  } else {
+    conferenceStatus = 'pending_details';
   }
 
   return {
-    eventId: created.id,
-    joinUrl: meetUrl,
-    calendarLink: created.htmlLink || '',
-    conferenceId: created.conferenceData?.conferenceId,
-    status: created.status || 'confirmed',
+    eventId: eventData.id,
+    calendarLink: eventData.htmlLink || '',
+    joinUrl: meetUrl, // NULL if pending or failed. NEVER the htmlLink.
+    conferenceStatus,
+    conferenceId: eventData.conferenceData?.conferenceId,
+    status: eventData.status || 'confirmed',
   };
 }
 
@@ -321,7 +381,7 @@ export async function deleteGoogleCalendarEvent(eventId: string): Promise<boolea
       method: 'DELETE',
       headers: { Authorization: `Bearer ${accessToken}` },
     });
-    return res.ok || res.status === 404; // 404 already deleted is success
+    return res.ok || res.status === 404; // 404 already deleted is treated as success
   } catch (err: any) {
     console.warn(`[Google Event Deletion Error] Failed to delete event ${eventId}:`, err.message);
     return false;

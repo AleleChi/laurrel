@@ -4,11 +4,17 @@ const ALGORITHM = 'aes-256-gcm';
 const IV_LENGTH = 12;
 const TAG_LENGTH = 16;
 
+/**
+ * Derives a 32-byte AES key from the mandatory ENCRYPTION_SECRET.
+ * Refuses to proceed with hardcoded fallbacks in production.
+ */
 function getEncryptionKey(): Buffer {
-  const secret =
-    process.env.ENCRYPTION_SECRET ||
-    process.env.ADMIN_API_SECRET ||
-    'laurrel-services-default-secret-salt-2026';
+  const secret = process.env.ENCRYPTION_SECRET || (process.env.NODE_ENV === 'test' ? process.env.TEST_ENCRYPTION_SECRET : undefined);
+  if (!secret) {
+    throw new Error(
+      'FATAL SECURITY CONFIGURATION: Dedicated ENCRYPTION_SECRET environment variable is missing on backend. Refusing to operate encryption without dedicated secret.'
+    );
+  }
   return crypto.createHash('sha256').update(secret).digest();
 }
 
@@ -53,7 +59,8 @@ export function decryptSecure(cipherText: string): string {
 
 /**
  * Generate cryptographically secure random token for appointment self-management
+ * Uses 32 random bytes (64 hex characters) for high cryptographic entropy.
  */
 export function generateManagementToken(): string {
-  return `bk_${Date.now()}_${crypto.randomBytes(20).toString('hex')}`;
+  return `bk_${Date.now()}_${crypto.randomBytes(32).toString('hex')}`;
 }

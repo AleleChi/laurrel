@@ -82,6 +82,18 @@ async function run() {
   console.log('LAURREL SERVICES — STAGE B CUSTOMER SELF-SERVICE & AUTOMATED MEETINGS');
   console.log('========================================================================\n');
 
+  // SAFETY GUARD (Requirement 7): Do not run write-based tests against production database
+  const prodDbUrl = process.env.DATABASE_URL;
+  const testDbUrl = process.env.TEST_DATABASE_URL;
+
+  if (!testDbUrl || testDbUrl === prodDbUrl) {
+    console.log('[SAFETY GUARD ACTIVE]: Refusing to execute write-based tests against primary database.');
+    console.log('To run full write-based lifecycle tests, provide an isolated TEST_DATABASE_URL.');
+    console.log('Primary database endpoint ep-raspy-dew-b4agbivi preserved without modifications.');
+    console.log('Exiting safely.\n');
+    return;
+  }
+
   // Start backend server
   const backendApp = require(path.join(__dirname, '..', 'backend', 'dist', 'index'));
   const server = backendApp.server || http.createServer(backendApp.app || backendApp);

@@ -1,5 +1,5 @@
 import { getDbPool } from '../../database/pool';
-import { getAppointmentSettings, DayOfWeek } from '../../database/settingsRepo';
+import { getAppointmentSettings, DayOfWeek, AppointmentSettings } from '../../database/settingsRepo';
 import { getProviderIntegration } from '../../database/integrationRepo';
 import { checkGoogleFreeBusy } from '../video/googleCalendarClient';
 
@@ -58,8 +58,35 @@ export function ottawaTimeToUtc(dateStr: string, timeStr: string): Date {
   if (checkMatch(candEdt)) return candEdt;
   if (checkMatch(candEst)) return candEst;
 
-  // Spring-forward jump fallback
   return candEdt;
+}
+
+/**
+ * Extracts Ottawa (America/Toronto) date string (YYYY-MM-DD) and time string (HH:mm) from a UTC Date
+ */
+export function utcToOttawaTime(utcDate: Date): { dateStr: string; timeStr: string; hour: number; minute: number } {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/Toronto',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).formatToParts(utcDate);
+
+  let year = '', month = '', day = '', hour = 0, minute = 0;
+  for (const p of parts) {
+    if (p.type === 'year') year = p.value;
+    if (p.type === 'month') month = p.value;
+    if (p.type === 'day') day = p.value;
+    if (p.type === 'hour') hour = p.value === '24' ? 0 : Number(p.value);
+    if (p.type === 'minute') minute = Number(p.value);
+  }
+
+  const dateStr = `${year}-${month}-${day}`;
+  const timeStr = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+  return { dateStr, timeStr, hour, minute };
 }
 
 /**
@@ -107,6 +134,122 @@ export function getOttawaDayOfWeek(dateStr: string): DayOfWeek {
     .toLowerCase();
 
   return weekday as DayOfWeek;
+}
+
+/**
+ * Validates whether a requested appointment time slot complies with all operational,
+ * business hour, channel, horizon, notice, and slot boundary rules.
+ */
+export async function validateBookingSlot(params: {
+  start: Date;
+  appointmentType: string;
+  settings: AppointmentSettings;
+}): Promise<{ valid: boolean; error?: string; dateStr?: string }> {
+  const { start, appointmentType, settings } = params;
+  const now = Date.now();
+
+  // 1. Minimum Notice check
+  const minNoticeHours = settings.minNoticeHours || 2;
+  const minNoticeMs = minNoticeHours * 3600 * 1000;
+  if (start.getTime() < now + minNoticeMs) {
+    return {
+      valid: false,
+      error: `Consultations must be scheduled at least ${minNoticeHours} hours in advance.`,
+    };
+  }
+
+  // 2. Maximum Booking Horizon check
+  const maxBookingDays = settings.maxBookingDays || 30;
+  const maxHorizonMs = maxBookingDays * 86400 * 1000;
+  if (start.getTime() > now + maxHorizonMs) {
+    return {
+      valid: false,
+      error: `Consultations can only be scheduled up to ${maxBookingDays} days in advance.`,
+    };
+  }
+
+  // 3. Allowed Consultation Channel check
+  const type = appointmentType.toLowerCase().trim();
+  if (settings.allowedChannels && !settings.allowedChannels.includes(type)) {
+    return {
+      valid: false,
+      error: `The consultation format '${type}' is currently unavailable for booking.`,
+    };
+  }
+
+  // 4. Ottawa Local Date & Operating Day check
+  const { dateStr, hour, minute } = utcToOttawaTime(start);
+  const dayOfWeek = getOttawaDayOfWeek(dateStr);
+  const dayConfig = settings.workingDays[dayOfWeek];
+
+  if (!dayConfig || !dayConfig.enabled) {
+    return {
+      valid: false,
+      error: `Laurrel Services is closed on ${dayOfWeek.charAt(0).toUpperCase() + dayOfWeek.slice(1)}s. Please select an available business day.`,
+    };
+  }
+
+  // 5. Blocked Dates / Holidays check
+  if (settings.blockedDates && settings.blockedDates.includes(dateStr)) {
+    return {
+      valid: false,
+      error: `Consultations are unavailable on ${dateStr} due to a scheduled holiday or blackout date.`,
+    };
+  }
+
+  // 6. Business Hours Range check (Ottawa local time)
+  const [startH, startM] = dayConfig.start.split(':').map(Number);
+  const [endH, endM] = dayConfig.end.split(':').map(Number);
+  const dayStartMinutes = startH * 60 + startM;
+  const dayEndMinutes = endH * 60 + endM;
+
+  const slotDurationMinutes = settings.slotDurationMinutes || 30;
+  const slotStartMinutes = hour * 60 + minute;
+  const slotEndMinutes = slotStartMinutes + slotDurationMinutes;
+
+  if (slotStartMinutes < dayStartMinutes || slotEndMinutes > dayEndMinutes) {
+    return {
+      valid: false,
+      error: `Consultations on ${dayOfWeek.charAt(0).toUpperCase() + dayOfWeek.slice(1)}s can only be scheduled between ${dayConfig.start} and ${dayConfig.end} Ottawa time.`,
+    };
+  }
+
+  // 7. Approved Slot Boundary Alignment check
+  const minutesSinceDayStart = slotStartMinutes - dayStartMinutes;
+  if (minutesSinceDayStart % slotDurationMinutes !== 0) {
+    return {
+      valid: false,
+      error: `Consultation start times must align with scheduled :${slotDurationMinutes.toString().padStart(2, '0')} minute slot intervals.`,
+    };
+  }
+
+  // 8. External Calendar FreeBusy Conflict check for Google Meet
+  if (type === 'google_meet') {
+    const integration = await getProviderIntegration('google_meet');
+    if (integration && integration.status === 'connected' && integration.syncCalendarConflicts) {
+      const slotEnd = new Date(start.getTime() + slotDurationMinutes * 60000);
+      const fb = await checkGoogleFreeBusy(start.toISOString(), slotEnd.toISOString());
+      if (!fb.success) {
+        return {
+          valid: false,
+          error: 'Unable to verify coordinator calendar availability with Google Workspace. Please choose telephone or on-site consultation.',
+        };
+      }
+      const hasConflict = fb.busyIntervals.some((b) => {
+        const bStart = new Date(b.start).getTime();
+        const bEnd = new Date(b.end).getTime();
+        return start.getTime() < bEnd && slotEnd.getTime() > bStart;
+      });
+      if (hasConflict) {
+        return {
+          valid: false,
+          error: 'The requested time slot has an external Google Calendar conflict. Please choose another time.',
+        };
+      }
+    }
+  }
+
+  return { valid: true, dateStr };
 }
 
 /**
@@ -221,6 +364,16 @@ export async function getAvailableSlots(
     const integration = await getProviderIntegration('google_meet');
     if (integration && integration.status === 'connected' && integration.syncCalendarConflicts) {
       const fb = await checkGoogleFreeBusy(dayStartUtc.toISOString(), dayEndUtc.toISOString());
+      if (!fb.success) {
+        return {
+          date: dateStr,
+          timezone: customerTimezone,
+          ottawaTimezone: 'America/Toronto',
+          dayEnabled: false,
+          slots: [],
+          message: 'Unable to verify coordinator calendar availability with Google Workspace. Please choose telephone or on-site consultation.',
+        };
+      }
       googleBusyIntervals = fb.busyIntervals;
     }
   }
@@ -261,7 +414,6 @@ export async function getAvailableSlots(
         if (apt.assignedStaffId && apt.assignedStaffId !== staff.id) return false;
         const aptStart = new Date(apt.scheduledStart).getTime();
         const aptEnd = new Date(apt.scheduledEnd).getTime();
-        // Overlap check with buffer
         return slotStartWithBuffer < aptEnd && slotEndWithBuffer > aptStart;
       });
       return !hasConflict;

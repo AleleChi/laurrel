@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { requireAdminAuth, requireRole } from '../middleware/auth';
+import { getDbPool } from '../database/pool';
 import { getAppointmentSettings, updateAppointmentSettings } from '../database/settingsRepo';
 import {
   listProviderIntegrations,
@@ -14,18 +15,6 @@ import {
 import crypto from 'crypto';
 
 export const appointmentSettingsRouter = Router();
-
-// Store temporary OAuth states in memory with 10-minute expiry
-const oauthStates = new Map<string, number>();
-
-function cleanExpiredStates() {
-  const now = Date.now();
-  for (const [state, timestamp] of oauthStates.entries()) {
-    if (now - timestamp > 10 * 60 * 1000) {
-      oauthStates.delete(state);
-    }
-  }
-}
 
 // ============================================================================
 // 1. GET APPOINTMENT SETTINGS & INTEGRATIONS STATUS
@@ -45,8 +34,8 @@ appointmentSettingsRouter.get(
         integrations,
         oauthConfigured: {
           google: googleConfigured,
-          ms_teams: false,
-          zoom: false,
+          ms_teams: false, // Explicitly not automated
+          zoom: false,     // Explicitly not automated
         },
       });
     } catch (err: any) {
@@ -79,20 +68,49 @@ appointmentSettingsRouter.patch(
 );
 
 // ============================================================================
-// 3. GENERATE GOOGLE OAUTH AUTHORIZATION URL
+// 3. GENERATE GOOGLE OAUTH AUTHORIZATION URL WITH SECURE PERSISTENT STATE
 // ============================================================================
 appointmentSettingsRouter.get(
   '/api/admin/integrations/google/auth-url',
   requireAdminAuth,
   requireRole(['owner', 'admin']),
   async (req: Request, res: Response): Promise<void> => {
-    try {
-      cleanExpiredStates();
-      const state = crypto.randomBytes(24).toString('hex');
-      oauthStates.set(state, Date.now());
+    const pool = getDbPool();
+    if (!pool) {
+      res.status(500).json({ success: false, error: 'Persistence layer unavailable.' });
+      return;
+    }
 
-      const redirectUri = req.query.redirectUri as string | undefined;
-      const url = generateGoogleAuthUrl(state, redirectUri);
+    try {
+      const oauthConfig = getGoogleOAuthConfig();
+      if (!oauthConfig) {
+        res.status(400).json({
+          success: false,
+          error: 'Google OAuth credentials (GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET) are not configured on server.',
+        });
+        return;
+      }
+
+      const adminUserId = req.adminUser?.id;
+      if (!adminUserId) {
+        res.status(401).json({ success: false, error: 'Authorized admin session required.' });
+        return;
+      }
+
+      // Generate single-use high-entropy state token
+      const state = crypto.randomBytes(32).toString('hex');
+      const fixedRedirectUri = oauthConfig.redirectUri;
+
+      // Persist state in PostgreSQL (survives Render restarts and supports multi-instance backends)
+      await pool.query(
+        `
+        INSERT INTO oauth_states (state, provider, admin_user_id, redirect_uri, expires_at, used)
+        VALUES ($1, 'google_meet', $2, $3, NOW() + INTERVAL '10 minutes', FALSE)
+        `,
+        [state, adminUserId, fixedRedirectUri]
+      );
+
+      const url = generateGoogleAuthUrl(state);
 
       res.json({ success: true, url, state });
     } catch (err: any) {
@@ -103,27 +121,58 @@ appointmentSettingsRouter.get(
 );
 
 // ============================================================================
-// 4. EXCHANGE GOOGLE AUTHORIZATION CODE
+// 4. EXCHANGE GOOGLE AUTHORIZATION CODE (VALIDATE STATE & ENFORCE SECURITY)
 // ============================================================================
 appointmentSettingsRouter.post(
   '/api/admin/integrations/google/exchange',
   requireAdminAuth,
   requireRole(['owner', 'admin']),
   async (req: Request, res: Response): Promise<void> => {
-    const { code, state, redirectUri } = req.body;
+    const pool = getDbPool();
+    if (!pool) {
+      res.status(500).json({ success: false, error: 'Persistence layer unavailable.' });
+      return;
+    }
 
-    if (!code) {
+    const { code, state } = req.body;
+    const adminUserId = req.adminUser?.id;
+
+    if (!code || typeof code !== 'string') {
       res.status(400).json({ success: false, error: 'Authorization code is required.' });
       return;
     }
 
-    if (state && !oauthStates.has(state)) {
-      console.warn('[Google OAuth Warning] Unrecognized or expired OAuth state parameter.');
+    if (!state || typeof state !== 'string' || state.length < 32) {
+      res.status(400).json({ success: false, error: 'Valid OAuth state parameter is required.' });
+      return;
     }
-    if (state) oauthStates.delete(state);
 
+    // Atomic validation & consumption of state (prevents replay, enforces admin binding and expiration)
     try {
-      const result = await exchangeGoogleAuthCode(code, redirectUri);
+      const stateRes = await pool.query(
+        `
+        UPDATE oauth_states
+        SET used = TRUE
+        WHERE state = $1
+          AND provider = 'google_meet'
+          AND admin_user_id = $2
+          AND used = FALSE
+          AND expires_at > NOW()
+        RETURNING state, redirect_uri
+        `,
+        [state, adminUserId]
+      );
+
+      if (stateRes.rows.length === 0) {
+        res.status(403).json({
+          success: false,
+          error: 'Invalid, expired, or previously consumed OAuth state. Please restart authorization from Admin Settings.',
+        });
+        return;
+      }
+
+      // Exchange code using fixed server-configured redirect URI
+      const result = await exchangeGoogleAuthCode(code);
       res.json({
         success: true,
         message: 'Google Workspace Calendar & Meet connected successfully.',
@@ -166,7 +215,7 @@ appointmentSettingsRouter.get(
       res.json({ success: true, integrations });
     } catch (err: any) {
       console.error('[Integrations Status Error]:', err);
-      res.status(500).json({ success: false, error: 'Failed to retrieve provider integration statuses.' });
+      res.status(500).json({ success: false, error: 'Failed to retrieve provider status.' });
     }
   }
 );

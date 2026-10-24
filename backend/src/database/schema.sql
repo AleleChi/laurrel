@@ -389,3 +389,17 @@ CREATE TABLE IF NOT EXISTS provider_integrations (
 
 CREATE INDEX IF NOT EXISTS idx_provider_integrations_provider_name ON provider_integrations(provider_name);
 CREATE INDEX IF NOT EXISTS idx_provider_integrations_status ON provider_integrations(status);
+
+-- OAuth States for Multi-Instance CSRF Protection
+CREATE TABLE IF NOT EXISTS oauth_states (
+  state VARCHAR(128) PRIMARY KEY,
+  provider VARCHAR(64) NOT NULL,
+  admin_user_id VARCHAR(64) NOT NULL REFERENCES admin_users(id) ON DELETE CASCADE,
+  redirect_uri TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  expires_at TIMESTAMPTZ NOT NULL,
+  used BOOLEAN NOT NULL DEFAULT FALSE
+);
+
+CREATE INDEX IF NOT EXISTS idx_oauth_states_admin_user_id ON oauth_states(admin_user_id);
+CREATE INDEX IF NOT EXISTS idx_oauth_states_expires_at ON oauth_states(expires_at);

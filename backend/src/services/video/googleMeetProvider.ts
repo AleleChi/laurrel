@@ -60,10 +60,13 @@ export class GoogleMeetProvider implements IVideoMeetingProvider {
       return {
         providerType: 'google_meet',
         meetingId: result.eventId,
-        joinUrl: result.joinUrl,
+        joinUrl: result.joinUrl || undefined,
         hostUrl: result.calendarLink,
-        isAutomated: true,
-        notes: `Google Meet meeting created: ${result.joinUrl}`,
+        isAutomated: result.conferenceStatus === 'ready',
+        notes:
+          result.conferenceStatus === 'ready'
+            ? `Google Meet meeting created: ${result.joinUrl}`
+            : 'Google Calendar event created; video conference generation is pending.',
       };
     } catch (err: any) {
       console.error('[Google Meet Provider] Automated meeting creation error:', err.message);

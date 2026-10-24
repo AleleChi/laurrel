@@ -510,7 +510,9 @@ export default function AppointmentManagementPage() {
                   {/* Channel specifics */}
                   {appointment.appointmentType === 'google_meet' && (
                     <div className="mt-2">
-                      {appointment.locationOrLink ? (
+                      {appointment.locationOrLink &&
+                      /^https:\/\//i.test(appointment.locationOrLink) &&
+                      !appointment.locationOrLink.includes('calendar.google.com') ? (
                         <a
                           href={appointment.locationOrLink}
                           target="_blank"
@@ -521,7 +523,12 @@ export default function AppointmentManagementPage() {
                           <ExternalLink className="w-3.5 h-3.5" />
                         </a>
                       ) : (
-                        <p className="text-xs text-slate-600">Video meeting link will be attached shortly.</p>
+                        <div className="p-2.5 rounded-lg bg-amber-50/80 border border-amber-200/60 text-xs text-amber-800">
+                          <p className="font-semibold">Video meeting link pending coordinator setup</p>
+                          <p className="text-[11px] text-amber-700 mt-0.5">
+                            Your coordinator is finalizing the video conference details and will send an updated link prior to your consultation.
+                          </p>
+                        </div>
                       )}
                     </div>
                   )}

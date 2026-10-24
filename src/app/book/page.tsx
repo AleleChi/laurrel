@@ -149,6 +149,12 @@ export default function PublicBookingPage() {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [confirmedBooking, setConfirmedBooking] = useState<any | null>(null);
   const [managementToken, setManagementToken] = useState<string | null>(null);
+  const [logicalAttemptKey, setLogicalAttemptKey] = useState<string>('');
+
+  // Generate a stable idempotency key per logical booking attempt; regenerate only when booking parameters change
+  useEffect(() => {
+    setLogicalAttemptKey(`bk_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`);
+  }, [selectedService, selectedChannel, selectedSlot?.startUtc, customerEmail]);
 
   // Detect user's browser timezone on mount
   useEffect(() => {
@@ -242,7 +248,10 @@ export default function PublicBookingPage() {
     setSubmitError(null);
 
     try {
-      const idempKey = `bk_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
+      // Reuse stable idempotency key across retries and transient failures
+      const idempKey = logicalAttemptKey || `bk_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
+      if (!logicalAttemptKey) setLogicalAttemptKey(idempKey);
+
       const res = await fetch('/api/public/appointments/book', {
         method: 'POST',
         headers: {

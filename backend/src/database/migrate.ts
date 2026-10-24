@@ -187,6 +187,34 @@ const MIGRATION_PIPELINE: MigrationStep[] = [
       console.log('[Migration] Stage B self-service booking and provider tables created successfully.');
     },
   },
+  {
+    version: '20261024_stage_b_acceptance_corrections',
+    description: 'Add oauth_states table and conference_status column to appointments',
+    run: async (client) => {
+      await client.query(`
+        -- 1. Create oauth_states table for secure multi-instance OAuth state verification
+        CREATE TABLE IF NOT EXISTS oauth_states (
+          state VARCHAR(128) PRIMARY KEY,
+          provider VARCHAR(64) NOT NULL,
+          admin_user_id VARCHAR(64) NOT NULL REFERENCES admin_users(id) ON DELETE CASCADE,
+          redirect_uri TEXT NOT NULL,
+          created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+          expires_at TIMESTAMPTZ NOT NULL,
+          used BOOLEAN NOT NULL DEFAULT FALSE
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_oauth_states_admin_user_id ON oauth_states(admin_user_id);
+        CREATE INDEX IF NOT EXISTS idx_oauth_states_expires_at ON oauth_states(expires_at);
+
+        -- 2. Add conference_status and conference_id to appointments
+        ALTER TABLE appointments ADD COLUMN IF NOT EXISTS conference_status VARCHAR(32) DEFAULT 'none';
+        ALTER TABLE appointments ADD COLUMN IF NOT EXISTS conference_id VARCHAR(128);
+
+        CREATE INDEX IF NOT EXISTS idx_appointments_conference_status ON appointments(conference_status);
+      `);
+      console.log('[Migration] Stage B acceptance corrections tables and columns created successfully.');
+    },
+  },
 ];
 
 export async function runMigrations(): Promise<{ success: boolean; message: string; appliedCount?: number }> {
@@ -244,7 +272,7 @@ export async function runMigrations(): Promise<{ success: boolean; message: stri
           await client.query(
             'INSERT INTO schema_migrations (version, applied_at) VALUES ($1, NOW())',
             [step.version]
-          );
+      );
           newCount++;
           console.log(`[Migration] Successfully applied ${step.version}.`);
         }
