@@ -10,13 +10,13 @@ async function safeParseBackendResponse(res: Response): Promise<{ data: any; sta
     const data = JSON.parse(text);
     return { data, status: res.status };
   } catch {
+    console.error(`[Admin Gateway Error] Non-JSON backend response (HTTP ${res.status}):`, text.slice(0, 500));
     return {
       data: {
         success: false,
         error: res.ok
-          ? 'Backend service returned an unformatted response.'
-          : `Administrative backend service error (HTTP ${res.status}).`,
-        details: text.slice(0, 300),
+          ? 'Administrative service returned an unformatted response.'
+          : 'Administrative backend service is temporarily unavailable. Please retry shortly.',
       },
       status: res.status,
     };
