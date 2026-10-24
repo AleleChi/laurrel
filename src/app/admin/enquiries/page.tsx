@@ -93,6 +93,7 @@ export default function AdminEnquiriesPage() {
   const [serviceFilter, setServiceFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
 
+  const [totalDbCount, setTotalDbCount] = useState<number | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [apiError, setApiError] = useState<string | null>(null);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState<boolean>(false);
@@ -199,6 +200,7 @@ export default function AdminEnquiriesPage() {
         const enqData = await enqRes.json();
         const list: EnquiryItem[] = enqData.enquiries || [];
         setEnquiries(list);
+        setTotalDbCount(typeof enqData.total === 'number' ? enqData.total : list.length);
 
         if (initialEnquiryId) {
           const match = list.find((e) => e.id === initialEnquiryId);
@@ -363,7 +365,7 @@ export default function AdminEnquiriesPage() {
                 : 'text-zinc-600 hover:text-zinc-900'
             }`}
           >
-            Inbound Enquiries ({enquiries.length})
+            Inbound Enquiries ({totalDbCount ?? enquiries.length})
           </button>
           <button
             onClick={() => setActiveTab('handoffs')}
@@ -424,14 +426,19 @@ export default function AdminEnquiriesPage() {
             </select>
 
             {(statusFilter !== 'all' || serviceFilter !== 'all' || searchQuery.trim()) && (
-              <button
-                onClick={resetFilters}
-                title="Reset filters"
-                className="px-2.5 py-2 rounded-md bg-zinc-100 hover:bg-zinc-200 text-zinc-600 text-xs font-medium inline-flex items-center gap-1 transition-colors"
-              >
-                <FilterX className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Reset</span>
-              </button>
+              <>
+                <span className="text-[11px] text-zinc-500 font-medium px-2 py-1.5 rounded bg-zinc-100 whitespace-nowrap">
+                  Showing {filteredEnquiries.length} of {totalDbCount ?? enquiries.length}
+                </span>
+                <button
+                  onClick={resetFilters}
+                  title="Reset filters"
+                  className="px-2.5 py-2 rounded-md bg-zinc-100 hover:bg-zinc-200 text-zinc-600 text-xs font-medium inline-flex items-center gap-1 transition-colors"
+                >
+                  <FilterX className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">Reset</span>
+                </button>
+              </>
             )}
 
             <button

@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import { requireAdminAuth, requireRole } from '../middleware/auth';
 import {
   listEnquiries,
+  countEnquiries,
   getEnquiryById,
   updateEnquiryStatus,
   listAiHandoffs,
@@ -275,8 +276,7 @@ adminRouter.get(
           COUNT(*)::int as "totalEnquiries",
           COUNT(*) FILTER (WHERE status = 'new')::int as "newEnquiries",
           COUNT(*) FILTER (WHERE status = 'reviewed')::int as "reviewed",
-          COUNT(*) FILTER (WHERE status = 'scheduled')::int as "scheduled",
-          COUNT(*) FILTER (WHERE email_delivered = FALSE)::int as "failedDeliveries"
+          COUNT(*) FILTER (WHERE status = 'scheduled')::int as "scheduled"
         FROM enquiries
       `);
 
@@ -294,9 +294,29 @@ adminRouter.get(
         FROM appointments
       `);
 
-      const timelinePromise = pool.query(
-        `SELECT TO_CHAR(DATE_TRUNC('day', created_at), 'YYYY-MM-DD') as period, COUNT(*)::int as count FROM enquiries WHERE created_at >= NOW() - INTERVAL '60 days' GROUP BY 1 ORDER BY 1 ASC`
-      );
+      const timelinePromise = pool.query(`
+        WITH date_series AS (
+          SELECT generate_series(
+            (CURRENT_TIMESTAMP AT TIME ZONE 'America/Toronto')::date - INTERVAL '59 days',
+            (CURRENT_TIMESTAMP AT TIME ZONE 'America/Toronto')::date,
+            INTERVAL '1 day'
+          )::date AS day
+        ),
+        daily_counts AS (
+          SELECT
+            (created_at AT TIME ZONE 'America/Toronto')::date AS day,
+            COUNT(*)::int AS count
+          FROM enquiries
+          WHERE created_at >= (CURRENT_TIMESTAMP AT TIME ZONE 'America/Toronto' - INTERVAL '60 days')
+          GROUP BY 1
+        )
+        SELECT
+          TO_CHAR(d.day, 'YYYY-MM-DD') AS period,
+          COALESCE(c.count, 0)::int AS count
+        FROM date_series d
+        LEFT JOIN daily_counts c ON d.day = c.day
+        ORDER BY d.day ASC
+      `);
 
       const servicesBreakdownPromise = pool.query(
         `SELECT unnest(services) as service, COUNT(*)::int as count FROM enquiries GROUP BY 1 ORDER BY 2 DESC`
@@ -323,7 +343,6 @@ adminRouter.get(
         newEnquiries: enqRow.newEnquiries || 0,
         reviewed: enqRow.reviewed || 0,
         scheduled: enqRow.scheduled || 0,
-        failedDeliveries: enqRow.failedDeliveries || 0,
         pendingHandoffs: handoffRow.pendingHandoffs || 0,
         upcomingAppointments: aptRow.upcomingAppointments || 0,
         todayAppointments: aptRow.todayAppointments || 0,
@@ -348,10 +367,13 @@ adminRouter.get(
     try {
       const status = req.query.status as string | undefined;
       const service = req.query.service as string | undefined;
-      const limit = parseInt((req.query.limit as string) || '50', 10);
+      const limit = parseInt((req.query.limit as string) || '100', 10);
 
-      const enquiries = await listEnquiries({ status, service, limit });
-      res.status(200).json({ enquiries });
+      const [enquiries, total] = await Promise.all([
+        listEnquiries({ status, service, limit }),
+        countEnquiries({ status, service }),
+      ]);
+      res.status(200).json({ enquiries, total });
     } catch (err: any) {
       res.status(500).json({ error: err.message });
     }

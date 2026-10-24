@@ -58,7 +58,6 @@ interface Stats {
   newEnquiries: number;
   reviewed: number;
   scheduled: number;
-  failedDeliveries: number;
   pendingHandoffs: number;
   upcomingAppointments: number;
   todayAppointments: number;
@@ -369,6 +368,7 @@ export default function AdminOverviewPage() {
                     fontSize={11}
                     tickLine={false}
                     axisLine={{ stroke: '#E5E7EB' }}
+                    minTickGap={28}
                   />
                   <YAxis
                     stroke="#9CA3AF"
@@ -623,20 +623,6 @@ export default function AdminOverviewPage() {
                     </p>
                     <p className="text-[11px] text-zinc-500 mt-0.5">
                       Respond to customer telephone callback inquiries.
-                    </p>
-                  </div>
-                </div>
-              ) : null}
-
-              {stats?.failedDeliveries && stats.failedDeliveries > 0 ? (
-                <div className="flex items-start gap-2.5 p-2.5 rounded-md bg-amber-50/60 border border-amber-200/80">
-                  <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-                  <div className="min-w-0">
-                    <p className="font-semibold text-amber-900">
-                      {stats.failedDeliveries} email notifications need verification
-                    </p>
-                    <p className="text-[11px] text-amber-700 mt-0.5">
-                      Verify transactional email provider configuration.
                     </p>
                   </div>
                 </div>
