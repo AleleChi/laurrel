@@ -58,6 +58,10 @@ interface AppointmentItem {
   notificationSent: boolean;
   notificationSentAt?: string | null;
   cancellationReason?: string | null;
+  conferenceStatus?: string | null;
+  googleSyncStatus?: string | null;
+  googleSyncError?: string | null;
+  calendarEventId?: string | null;
   createdAt: string;
 }
 
@@ -88,6 +92,56 @@ export default function AdminAppointmentsPage() {
   const [loadingActivity, setLoadingActivity] = useState<boolean>(false);
   const [isRescheduleOpen, setIsRescheduleOpen] = useState<boolean>(false);
   const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
+  const [retryingSync, setRetryingSync] = useState<boolean>(false);
+  const [reconcilingConf, setReconcilingConf] = useState<boolean>(false);
+
+  const handleRetryGoogleSync = async (aptId: string) => {
+    try {
+      setRetryingSync(true);
+      const res = await fetch(`/api/admin/appointments/${aptId}/retry-google-sync`, {
+        method: 'POST',
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setFeedbackMessage('Google Calendar event resynced successfully.');
+        if (data.appointment) {
+          setSelectedAppointment(data.appointment);
+          setAppointments((prev) => prev.map((a) => (a.id === aptId ? data.appointment : a)));
+        }
+      } else {
+        setFeedbackMessage(data.error || 'Retry sync failed.');
+      }
+    } catch {
+      setFeedbackMessage('Network failure during retry sync.');
+    } finally {
+      setRetryingSync(false);
+      setTimeout(() => setFeedbackMessage(null), 4000);
+    }
+  };
+
+  const handleReconcileConference = async (aptId: string) => {
+    try {
+      setReconcilingConf(true);
+      const res = await fetch(`/api/admin/appointments/${aptId}/reconcile-conference`, {
+        method: 'POST',
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setFeedbackMessage(data.reconciled ? 'Video link verified and updated.' : 'Conference is still pending creation.');
+        if (data.appointment) {
+          setSelectedAppointment(data.appointment);
+          setAppointments((prev) => prev.map((a) => (a.id === aptId ? data.appointment : a)));
+        }
+      } else {
+        setFeedbackMessage(data.error || 'Conference reconciliation check failed.');
+      }
+    } catch {
+      setFeedbackMessage('Network failure during conference reconciliation.');
+    } finally {
+      setReconcilingConf(false);
+      setTimeout(() => setFeedbackMessage(null), 4000);
+    }
+  };
 
   const loadData = async () => {
     try {
@@ -249,7 +303,7 @@ export default function AdminAppointmentsPage() {
         );
       case 'rescheduled':
         return (
-          <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-purple-50 text-[#49056B] border border-purple-200/60">
+          <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-purple-50 text-[#390044] border border-purple-200/60">
             Rescheduled
           </span>
         );
@@ -338,7 +392,7 @@ export default function AdminAppointmentsPage() {
             className="p-2 rounded-md border border-zinc-200/80 bg-white text-zinc-600 hover:bg-zinc-50 transition-colors shadow-2xs"
             title="Refresh appointments"
           >
-            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-[#49056B]' : ''}`} />
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-[#390044]' : ''}`} />
           </button>
 
           <Link
@@ -353,7 +407,7 @@ export default function AdminAppointmentsPage() {
           <Link
             href="/book"
             target="_blank"
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-[#49056B] text-white hover:bg-[#390044] text-xs font-semibold shadow-2xs transition-colors"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-[#390044] text-white hover:bg-[#390044] text-xs font-semibold shadow-2xs transition-colors"
             title="Open customer-facing self-service booking page"
           >
             <ExternalLink className="w-3.5 h-3.5" />
@@ -363,7 +417,7 @@ export default function AdminAppointmentsPage() {
       </div>
 
       {feedbackMessage && (
-        <div className="p-3 rounded-md bg-purple-50 border border-purple-200 text-xs text-[#49056B] flex items-center justify-between">
+        <div className="p-3 rounded-md bg-purple-50 border border-purple-200 text-xs text-[#390044] flex items-center justify-between">
           <span>{feedbackMessage}</span>
           <button type="button" onClick={() => setFeedbackMessage(null)}>
             <X className="w-3.5 h-3.5" />
@@ -381,7 +435,7 @@ export default function AdminAppointmentsPage() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search by customer name, email, phone, or title..."
-              className="w-full pl-9 pr-4 py-2 bg-zinc-50 border border-zinc-200/80 rounded-md text-xs text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#49056B] focus:bg-white transition-all"
+              className="w-full pl-9 pr-4 py-2 bg-zinc-50 border border-zinc-200/80 rounded-md text-xs text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#390044] focus:bg-white transition-all"
             />
           </div>
 
@@ -389,7 +443,7 @@ export default function AdminAppointmentsPage() {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-3 py-2 bg-zinc-50 border border-zinc-200/80 rounded-md text-xs font-medium text-zinc-700 focus:outline-none focus:ring-2 focus:ring-[#49056B]"
+              className="px-3 py-2 bg-zinc-50 border border-zinc-200/80 rounded-md text-xs font-medium text-zinc-700 focus:outline-none focus:ring-2 focus:ring-[#390044]"
             >
               <option value="all">All Statuses</option>
               <option value="confirmed">Confirmed</option>
@@ -402,7 +456,7 @@ export default function AdminAppointmentsPage() {
             <select
               value={staffFilter}
               onChange={(e) => setStaffFilter(e.target.value)}
-              className="px-3 py-2 bg-zinc-50 border border-zinc-200/80 rounded-md text-xs font-medium text-zinc-700 focus:outline-none focus:ring-2 focus:ring-[#49056B]"
+              className="px-3 py-2 bg-zinc-50 border border-zinc-200/80 rounded-md text-xs font-medium text-zinc-700 focus:outline-none focus:ring-2 focus:ring-[#390044]"
             >
               <option value="all">All Coordinators</option>
               {staffList.map((s) => (
@@ -430,7 +484,7 @@ export default function AdminAppointmentsPage() {
       {loading ? (
         <div className="py-20 text-center text-xs text-zinc-400 bg-white rounded-md border border-zinc-200/80">
           <div className="flex flex-col items-center justify-center gap-2">
-            <RefreshCw className="w-5 h-5 text-[#49056B] animate-spin" />
+            <RefreshCw className="w-5 h-5 text-[#390044] animate-spin" />
             <span>Loading appointments schedule...</span>
           </div>
         </div>
@@ -446,7 +500,7 @@ export default function AdminAppointmentsPage() {
           {(statusFilter !== 'all' || staffFilter !== 'all' || searchQuery.trim()) && (
             <button
               onClick={resetFilters}
-              className="mt-2 text-xs font-semibold text-[#49056B] hover:underline"
+              className="mt-2 text-xs font-semibold text-[#390044] hover:underline"
             >
               Clear filters
             </button>
@@ -489,11 +543,17 @@ export default function AdminAppointmentsPage() {
                           <span className="text-[10px] font-semibold text-zinc-500 uppercase px-1.5 py-0.5 rounded bg-zinc-100 border border-zinc-200">
                             {formatAppointmentType(apt.appointmentType)}
                           </span>
+                          {apt.googleSyncStatus === 'failed' && (
+                            <span className="text-[10px] font-semibold text-rose-700 bg-rose-50 border border-rose-200 px-1.5 py-0.5 rounded flex items-center gap-1">
+                              <AlertCircle className="w-3 h-3 text-rose-600" />
+                              Sync Error
+                            </span>
+                          )}
                         </div>
 
                         <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-zinc-600">
                           <div className="inline-flex items-center gap-1.5 font-medium text-zinc-800">
-                            <Clock className="w-3.5 h-3.5 text-[#49056B]" />
+                            <Clock className="w-3.5 h-3.5 text-[#390044]" />
                             <span>
                               {formatOttawaTime(apt.scheduledStart)} – {formatOttawaTime(apt.scheduledEnd)}
                             </span>
@@ -520,7 +580,7 @@ export default function AdminAppointmentsPage() {
                             target="_blank"
                             rel="noreferrer"
                             onClick={(e) => e.stopPropagation()}
-                            className="inline-flex items-center gap-1 text-xs font-semibold text-[#49056B] hover:underline"
+                            className="inline-flex items-center gap-1 text-xs font-semibold text-[#390044] hover:underline"
                           >
                             <span>Meeting Link</span>
                             <ExternalLink className="w-3 h-3" />
@@ -578,7 +638,7 @@ export default function AdminAppointmentsPage() {
             <button
               type="button"
               onClick={() => setSelectedDate(new Date())}
-              className="text-xs font-semibold text-[#49056B] hover:underline"
+              className="text-xs font-semibold text-[#390044] hover:underline"
             >
               Today
             </button>
@@ -694,7 +754,7 @@ export default function AdminAppointmentsPage() {
                       href={selectedAppointment.locationOrLink}
                       target="_blank"
                       rel="noreferrer"
-                      className="text-xs font-semibold text-[#49056B] hover:underline inline-flex items-center gap-1"
+                      className="text-xs font-semibold text-[#390044] hover:underline inline-flex items-center gap-1"
                     >
                       <span>{selectedAppointment.locationOrLink}</span>
                       <ExternalLink className="w-3.5 h-3.5" />
@@ -704,6 +764,72 @@ export default function AdminAppointmentsPage() {
                       {selectedAppointment.locationOrLink}
                     </div>
                   )}
+                </div>
+              )}
+
+              {/* Google Calendar Synchronization & Video Reconciliation */}
+              {(selectedAppointment.googleSyncStatus || selectedAppointment.calendarEventId || selectedAppointment.appointmentType === 'google_meet') && (
+                <div className="space-y-2 pb-4 border-b border-zinc-100">
+                  <div className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">
+                    Google Calendar & Video Sync
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    {selectedAppointment.googleSyncStatus === 'synced' ? (
+                      <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                        Google Calendar Synced
+                      </span>
+                    ) : selectedAppointment.googleSyncStatus === 'failed' ? (
+                      <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-semibold bg-rose-100 text-rose-800 border border-rose-200">
+                        <AlertCircle className="w-3.5 h-3.5 text-rose-600" />
+                        Google Sync Error
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-semibold bg-zinc-100 text-zinc-600 border border-zinc-200">
+                        Sync: {selectedAppointment.googleSyncStatus || 'not_applicable'}
+                      </span>
+                    )}
+
+                    {selectedAppointment.conferenceStatus === 'pending_details' && (
+                      <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-semibold bg-amber-100 text-amber-800 border border-amber-200">
+                        <Video className="w-3.5 h-3.5 text-amber-600" />
+                        Video Link Pending
+                      </span>
+                    )}
+                  </div>
+
+                  {selectedAppointment.googleSyncError && (
+                    <div className="p-2 rounded bg-rose-50 border border-rose-200 text-xs text-rose-800">
+                      <span className="font-semibold">Sync Error: </span>
+                      <span>{selectedAppointment.googleSyncError}</span>
+                    </div>
+                  )}
+
+                  <div className="flex flex-wrap items-center gap-2 pt-1">
+                    {selectedAppointment.googleSyncStatus === 'failed' && (
+                      <button
+                        type="button"
+                        onClick={() => handleRetryGoogleSync(selectedAppointment.id)}
+                        disabled={retryingSync}
+                        className="px-2.5 py-1 rounded bg-[#390044] text-white text-xs font-semibold hover:bg-[#4d035b] transition-colors inline-flex items-center gap-1 cursor-pointer"
+                      >
+                        <RefreshCw className={`w-3 h-3 ${retryingSync ? 'animate-spin' : ''}`} />
+                        <span>Retry Google Calendar Sync</span>
+                      </button>
+                    )}
+
+                    {selectedAppointment.appointmentType === 'google_meet' && selectedAppointment.conferenceStatus === 'pending_details' && (
+                      <button
+                        type="button"
+                        onClick={() => handleReconcileConference(selectedAppointment.id)}
+                        disabled={reconcilingConf}
+                        className="px-2.5 py-1 rounded bg-amber-600 text-white text-xs font-semibold hover:bg-amber-700 transition-colors inline-flex items-center gap-1 cursor-pointer"
+                      >
+                        <RefreshCw className={`w-3 h-3 ${reconcilingConf ? 'animate-spin' : ''}`} />
+                        <span>Reconcile Video Link</span>
+                      </button>
+                    )}
+                  </div>
                 </div>
               )}
 
@@ -736,7 +862,7 @@ export default function AdminAppointmentsPage() {
                       <button
                         type="button"
                         onClick={() => setIsRescheduleOpen(true)}
-                        className="px-3 py-1.5 rounded-md bg-purple-50 text-[#49056B] font-semibold text-xs hover:bg-purple-100 transition-colors"
+                        className="px-3 py-1.5 rounded-md bg-purple-50 text-[#390044] font-semibold text-xs hover:bg-purple-100 transition-colors"
                       >
                         Reschedule
                       </button>

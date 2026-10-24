@@ -34,6 +34,16 @@ export interface AppointmentRecord {
   cancellationReason?: string | null;
   rescheduledFromId?: string | null;
   createdBy?: string | null;
+  managementToken?: string | null;
+  calendarEventId?: string | null;
+  serviceAddress?: string | null;
+  bookingSource?: string | null;
+  customerTimezone?: string | null;
+  customerNotes?: string | null;
+  conferenceStatus?: string | null;
+  conferenceId?: string | null;
+  googleSyncStatus?: string | null;
+  googleSyncError?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -118,6 +128,16 @@ function mapRowToAppointment(row: any): AppointmentRecord {
     cancellationReason: row.cancellation_reason,
     rescheduledFromId: row.rescheduled_from_id,
     createdBy: row.created_by,
+    managementToken: row.management_token,
+    calendarEventId: row.calendar_event_id,
+    serviceAddress: row.service_address,
+    bookingSource: row.booking_source,
+    customerTimezone: row.customer_timezone,
+    customerNotes: row.customer_notes,
+    conferenceStatus: row.conference_status || 'none',
+    conferenceId: row.conference_id,
+    googleSyncStatus: row.google_sync_status || 'not_applicable',
+    googleSyncError: row.google_sync_error,
     createdAt: row.created_at instanceof Date ? row.created_at.toISOString() : row.created_at,
     updatedAt: row.updated_at instanceof Date ? row.updated_at.toISOString() : row.updated_at,
   };

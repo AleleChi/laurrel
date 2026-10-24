@@ -311,6 +311,17 @@ CREATE TABLE IF NOT EXISTS appointments (
     cancellation_reason TEXT,
     rescheduled_from_id VARCHAR(32) REFERENCES appointments(id) ON DELETE SET NULL,
     created_by VARCHAR(64) REFERENCES admin_users(id) ON DELETE SET NULL,
+    management_token VARCHAR(128) UNIQUE,
+    calendar_event_id VARCHAR(255),
+    provider_connection_id VARCHAR(64),
+    service_address TEXT,
+    booking_source VARCHAR(64) DEFAULT 'admin_staff',
+    customer_timezone VARCHAR(64) DEFAULT 'America/Toronto',
+    customer_notes TEXT,
+    conference_status VARCHAR(32) DEFAULT 'none',
+    conference_id VARCHAR(128),
+    google_sync_status VARCHAR(32) DEFAULT 'not_applicable',
+    google_sync_error TEXT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -321,6 +332,11 @@ CREATE INDEX IF NOT EXISTS idx_appointments_status ON appointments(status);
 CREATE INDEX IF NOT EXISTS idx_appointments_assigned_staff_id ON appointments(assigned_staff_id);
 CREATE INDEX IF NOT EXISTS idx_appointments_idempotency_key ON appointments(idempotency_key);
 CREATE INDEX IF NOT EXISTS idx_appointments_created_at ON appointments(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_appointments_management_token ON appointments(management_token);
+CREATE INDEX IF NOT EXISTS idx_appointments_calendar_event_id ON appointments(calendar_event_id);
+CREATE INDEX IF NOT EXISTS idx_appointments_booking_source ON appointments(booking_source);
+CREATE INDEX IF NOT EXISTS idx_appointments_conference_status ON appointments(conference_status);
+CREATE INDEX IF NOT EXISTS idx_appointments_google_sync_status ON appointments(google_sync_status);
 
 CREATE TABLE IF NOT EXISTS appointment_activity (
     id VARCHAR(64) PRIMARY KEY,

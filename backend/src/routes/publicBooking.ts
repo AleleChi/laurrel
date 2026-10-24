@@ -8,6 +8,7 @@ import {
   createGoogleMeetEvent,
   deleteGoogleCalendarEvent,
   rescheduleGoogleCalendarEvent,
+  reconcileGoogleMeetConference,
 } from '../services/video/googleCalendarClient';
 import { generateIcsInvitation } from '../services/appointments/icsGenerator';
 import { getEmailProvider } from '../services/email';
@@ -54,12 +55,99 @@ function publicRateLimit(maxRequests: number, windowMs: number) {
   };
 }
 
-function getCanonicalPublicSiteUrl(): string {
+export function getCanonicalPublicSiteUrl(): string {
   const configured =
     process.env.PUBLIC_SITE_URL ||
-    process.env.NEXT_PUBLIC_SITE_URL ||
-    'https://laurrel.ca';
-  return configured.replace(/\/$/, '');
+    process.env.NEXT_PUBLIC_SITE_URL;
+
+  if (!configured || !configured.trim()) {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error(
+        'Server configuration error: PUBLIC_SITE_URL (or NEXT_PUBLIC_SITE_URL) must be explicitly configured in production for customer appointment links and calendar invitations.'
+      );
+    }
+    return 'http://localhost:3000';
+  }
+
+  return configured.trim().replace(/\/$/, '');
+}
+
+/**
+ * Reconcile pending Google Meet conference generation and notify customer when video link is ready
+ */
+export async function reconcileAndNotifyAppointment(appointmentId: string): Promise<{
+  reconciled: boolean;
+  joinUrl: string | null;
+  status: string;
+}> {
+  const pool = getDbPool();
+  if (!pool) return { reconciled: false, joinUrl: null, status: 'error' };
+
+  try {
+    const res = await pool.query(
+      `SELECT * FROM appointments WHERE id = $1 LIMIT 1`,
+      [appointmentId]
+    );
+    if (res.rows.length === 0) return { reconciled: false, joinUrl: null, status: 'not_found' };
+
+    const apt = res.rows[0];
+    if (apt.appointment_type !== 'google_meet' || !apt.calendar_event_id) {
+      return { reconciled: false, joinUrl: null, status: 'not_applicable' };
+    }
+
+    const rec = await reconcileGoogleMeetConference(apt.calendar_event_id);
+    if (rec.status === 'ready' && rec.joinUrl) {
+      await pool.query(
+        `UPDATE appointments
+         SET location_or_link = $1, conference_status = 'ready', google_sync_status = 'synced', google_sync_error = NULL, updated_at = NOW()
+         WHERE id = $2`,
+        [rec.joinUrl, apt.id]
+      );
+      await pool.query(
+        `INSERT INTO appointment_activity (id, appointment_id, action, performed_by, details)
+         VALUES ($1, $2, 'conference_reconciled', 'System Reconciliation', 'Google Meet conference link verified and updated')`,
+        [`act_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`, apt.id]
+      );
+
+      // Dispatch customer email with verified video link
+      if (apt.location_or_link !== rec.joinUrl) {
+        try {
+          const emailProvider = getEmailProvider();
+          await emailProvider.sendConferenceLinkReady({
+            appointmentId: apt.id,
+            enquiryId: apt.enquiry_id || '',
+            customerName: apt.customer_name,
+            customerEmail: apt.customer_email,
+            title: apt.title,
+            purpose: apt.purpose,
+            appointmentType: apt.appointment_type,
+            status: apt.status,
+            scheduledStart: apt.scheduled_start,
+            scheduledEnd: apt.scheduled_end,
+            durationMinutes: apt.duration_minutes || 30,
+            timezone: 'America/Toronto',
+            locationOrLink: rec.joinUrl,
+            assignedStaffName: apt.assigned_staff_name,
+          });
+        } catch (emailErr: any) {
+          console.warn('[Reconcile Email Warning]:', emailErr.message);
+        }
+      }
+
+      return { reconciled: true, joinUrl: rec.joinUrl, status: 'ready' };
+    } else if (rec.status === 'failed') {
+      await pool.query(
+        `UPDATE appointments SET conference_status = 'failed', google_sync_status = 'failed', google_sync_error = $1, updated_at = NOW() WHERE id = $2`,
+        [rec.error || 'Google Meet video provisioning failed', apt.id]
+      );
+      return { reconciled: false, joinUrl: null, status: 'failed' };
+    }
+
+    return { reconciled: false, joinUrl: null, status: rec.status };
+  } catch (err: any) {
+    console.warn('[Reconcile Appointment Error]:', err.message);
+    return { reconciled: false, joinUrl: null, status: 'error' };
+  }
 }
 
 // ============================================================================
@@ -187,11 +275,30 @@ publicBookingRouter.post(
       return;
     }
 
+    let siteUrl: string;
+    try {
+      siteUrl = getCanonicalPublicSiteUrl();
+    } catch (urlErr: any) {
+      res.status(500).json({ success: false, error: urlErr.message });
+      return;
+    }
+
     const type = (appointmentType || 'telephone').trim().toLowerCase();
     const validChannels = ['telephone', 'google_meet', 'on_site', 'in_person'];
     if (!validChannels.includes(type)) {
       res.status(400).json({ success: false, error: `Invalid consultation channel: ${type}` });
       return;
+    }
+
+    // Require non-empty customer address for on-site property consultations
+    if (type === 'on_site') {
+      if (!serviceAddress || typeof serviceAddress !== 'string' || serviceAddress.trim().length < 5) {
+        res.status(400).json({
+          success: false,
+          error: 'Property address is required for on-site consultations.',
+        });
+        return;
+      }
     }
 
     // Validate customer timezone identifier
@@ -295,6 +402,7 @@ publicBookingRouter.post(
         SELECT id, name
         FROM admin_users
         WHERE role IN ('owner', 'admin', 'operations_staff')
+          AND is_active = TRUE
         ORDER BY role = 'owner' DESC, name ASC
       `;
       const staffRes = await client.query(staffQuery);
@@ -370,7 +478,7 @@ publicBookingRouter.post(
         type === 'telephone'
           ? (customerPhone?.trim() || 'Customer telephone number')
           : type === 'on_site'
-          ? (serviceAddress?.trim() || 'Customer property location (Ottawa)')
+          ? serviceAddress.trim()
           : type === 'in_person'
           ? 'Laurrel Services Office (Ottawa, ON)'
           : null;
@@ -384,7 +492,8 @@ publicBookingRouter.post(
           customer_name, customer_email, customer_phone, location_or_link,
           assigned_staff_id, assigned_staff_name, staff_notes, notification_sent,
           idempotency_key, created_by, management_token, service_address,
-          booking_source, customer_timezone, customer_notes, conference_status
+          booking_source, customer_timezone, customer_notes, conference_status,
+          google_sync_status, google_sync_error
         )
         VALUES (
           $1, $2, $3, $4, $5, 'confirmed',
@@ -392,10 +501,13 @@ publicBookingRouter.post(
           $9, $10, $11, $12,
           $13, $14, $15, FALSE,
           $16, $13, $17, $18,
-          'public_self_service', $19, $20, $21
+          'public_self_service', $19, $20, $21,
+          $22, $23
         )
         RETURNING *
       `;
+
+      const initialGoogleSync = type === 'google_meet' ? 'pending_sync' : 'not_applicable';
 
       const aptRes = await client.query(insertAptQuery, [
         appointmentId,
@@ -419,6 +531,8 @@ publicBookingRouter.post(
         clientTz,
         customerNotes?.trim() || null,
         initialConferenceStatus,
+        initialGoogleSync,
+        null,
       ]);
 
       appointmentRecord = aptRes.rows[0];
@@ -477,6 +591,8 @@ publicBookingRouter.post(
             calendar_event_id = $2,
             conference_status = $3,
             conference_id = $4,
+            google_sync_status = 'synced',
+            google_sync_error = NULL,
             updated_at = NOW()
           WHERE id = $5
           `,
@@ -491,18 +607,27 @@ publicBookingRouter.post(
         appointmentRecord.location_or_link = meetResult.joinUrl;
         appointmentRecord.calendar_event_id = meetResult.eventId;
         appointmentRecord.conference_status = meetResult.conferenceStatus;
+        appointmentRecord.google_sync_status = 'synced';
+
+        // If conference is pending Google creation, schedule background reconciliation check
+        if (meetResult.conferenceStatus === 'pending_details' && meetResult.eventId) {
+          setTimeout(() => {
+            reconcileAndNotifyAppointment(appointmentRecord.id).catch((err) =>
+              console.warn('[Background Reconciliation Error]:', err.message)
+            );
+          }, 15000);
+        }
       } catch (meetErr: any) {
         console.error('[Public Booking Google Meet Error]:', meetErr.message);
         resolvedConferenceStatus = 'pending_details';
         await pool.query(
-          `UPDATE appointments SET conference_status = 'pending_details', updated_at = NOW() WHERE id = $1`,
-          [appointmentRecord.id]
+          `UPDATE appointments SET conference_status = 'pending_details', google_sync_status = 'failed', google_sync_error = $1, updated_at = NOW() WHERE id = $2`,
+          [meetErr.message || 'Google Calendar API event creation failed', appointmentRecord.id]
         );
       }
     }
 
     // 6. Generate RFC 5545 compliant ICS Calendar file with canonical absolute URLs
-    const siteUrl = getCanonicalPublicSiteUrl();
     const managementUrl = `${siteUrl}/book/${managementToken}`;
     const icsDescription =
       type === 'google_meet' && finalJoinUrl
@@ -619,7 +744,10 @@ publicBookingRouter.get(
           customer_timezone AS "customerTimezone",
           assigned_staff_name AS "assignedStaffName",
           cancellation_reason AS "cancellationReason",
-          conference_status AS "conferenceStatus"
+          conference_status AS "conferenceStatus",
+          calendar_event_id AS "calendarEventId",
+          google_sync_status AS "googleSyncStatus",
+          google_sync_error AS "googleSyncError"
         FROM appointments
         WHERE management_token = $1
         LIMIT 1
@@ -631,7 +759,23 @@ publicBookingRouter.get(
         return;
       }
 
-      res.json({ success: true, appointment: rows[0] });
+      const apt = rows[0];
+
+      // If Google Meet conference is pending, perform immediate live reconciliation
+      if (
+        apt.appointmentType === 'google_meet' &&
+        apt.conferenceStatus === 'pending_details' &&
+        apt.calendarEventId
+      ) {
+        const recResult = await reconcileAndNotifyAppointment(apt.id);
+        if (recResult.reconciled && recResult.joinUrl) {
+          apt.locationOrLink = recResult.joinUrl;
+          apt.conferenceStatus = 'ready';
+          apt.googleSyncStatus = 'synced';
+        }
+      }
+
+      res.json({ success: true, appointment: apt });
     } catch (err: any) {
       console.error('[Manage Appointment Lookup Error]:', err);
       res.status(500).json({ success: false, error: 'Failed to load appointment details.' });
@@ -775,11 +919,37 @@ publicBookingRouter.post(
 
       await client.query('COMMIT');
 
-      // 5. Update Google Calendar event if exists
+      // 5. Update Google Calendar event if exists (detect failures and track status)
       if (currentApt.calendar_event_id) {
-        rescheduleGoogleCalendarEvent(currentApt.calendar_event_id, newStart.toISOString(), newEnd.toISOString()).catch(
-          (err) => console.warn('[Reschedule Google Sync Warning]:', err.message)
-        );
+        try {
+          const syncRes = await rescheduleGoogleCalendarEvent(
+            currentApt.calendar_event_id,
+            newStart.toISOString(),
+            newEnd.toISOString()
+          );
+          if (syncRes.success) {
+            await pool.query(
+              `UPDATE appointments SET google_sync_status = 'synced', google_sync_error = NULL, updated_at = NOW() WHERE id = $1`,
+              [currentApt.id]
+            );
+          } else {
+            await pool.query(
+              `UPDATE appointments SET google_sync_status = 'failed', google_sync_error = $1, updated_at = NOW() WHERE id = $2`,
+              [syncRes.error || 'Google Calendar reschedule failed', currentApt.id]
+            );
+            await pool.query(
+              `INSERT INTO appointment_activity (id, appointment_id, action, performed_by, details)
+               VALUES ($1, $2, 'google_sync_failed', 'System Sync', $3)`,
+              [`act_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`, currentApt.id, syncRes.error || 'Google Calendar reschedule failed']
+            );
+          }
+        } catch (syncErr: any) {
+          console.warn('[Reschedule Google Sync Warning]:', syncErr.message);
+          await pool.query(
+            `UPDATE appointments SET google_sync_status = 'failed', google_sync_error = $1, updated_at = NOW() WHERE id = $2`,
+            [syncErr.message, currentApt.id]
+          );
+        }
       }
 
       // 6. Send Customer Reschedule Notification
@@ -882,11 +1052,33 @@ publicBookingRouter.post(
         [`act_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`, apt.id, cancelReason]
       );
 
-      // Cancel Google Calendar event if exists
+      // Cancel Google Calendar event if exists (detect failures and track status)
       if (apt.calendar_event_id) {
-        deleteGoogleCalendarEvent(apt.calendar_event_id).catch((err) =>
-          console.warn('[Cancel Google Sync Warning]:', err.message)
-        );
+        try {
+          const syncRes = await deleteGoogleCalendarEvent(apt.calendar_event_id);
+          if (syncRes.success) {
+            await pool.query(
+              `UPDATE appointments SET google_sync_status = 'synced', google_sync_error = NULL, updated_at = NOW() WHERE id = $1`,
+              [apt.id]
+            );
+          } else {
+            await pool.query(
+              `UPDATE appointments SET google_sync_status = 'failed', google_sync_error = $1, updated_at = NOW() WHERE id = $2`,
+              [syncRes.error || 'Google Calendar event deletion failed', apt.id]
+            );
+            await pool.query(
+              `INSERT INTO appointment_activity (id, appointment_id, action, performed_by, details)
+               VALUES ($1, $2, 'google_sync_failed', 'System Sync', $3)`,
+              [`act_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`, apt.id, syncRes.error || 'Google Calendar event deletion failed']
+            );
+          }
+        } catch (syncErr: any) {
+          console.warn('[Cancel Google Sync Warning]:', syncErr.message);
+          await pool.query(
+            `UPDATE appointments SET google_sync_status = 'failed', google_sync_error = $1, updated_at = NOW() WHERE id = $2`,
+            [syncErr.message, apt.id]
+          );
+        }
       }
 
       // Send Customer Cancellation Notification

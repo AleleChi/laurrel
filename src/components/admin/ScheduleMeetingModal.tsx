@@ -344,7 +344,7 @@ export default function ScheduleMeetingModal({
                 required
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                className="w-full px-3 py-2 rounded-md bg-zinc-50 border border-zinc-200/80 text-xs text-zinc-900 placeholder:text-zinc-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#49056B] transition-all"
+                className="w-full px-3 py-2 rounded-md bg-zinc-50 border border-zinc-200/80 text-xs text-zinc-900 placeholder:text-zinc-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#390044] transition-all"
                 placeholder="e.g. Residential Move Consultation"
               />
             </div>
@@ -357,7 +357,7 @@ export default function ScheduleMeetingModal({
                 type="text"
                 value={purpose}
                 onChange={(e) => setPurpose(e.target.value)}
-                className="w-full px-3 py-2 rounded-md bg-zinc-50 border border-zinc-200/80 text-xs text-zinc-900 placeholder:text-zinc-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#49056B] transition-all"
+                className="w-full px-3 py-2 rounded-md bg-zinc-50 border border-zinc-200/80 text-xs text-zinc-900 placeholder:text-zinc-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#390044] transition-all"
                 placeholder="Brief purpose of the consultation"
               />
             </div>
@@ -375,8 +375,8 @@ export default function ScheduleMeetingModal({
                   { type: 'in_person', label: 'In-Person', icon: User },
                   { type: 'on_site', label: 'On-Site Assessment', icon: MapPin },
                   { type: 'google_meet', label: 'Google Meet', icon: Video },
-                  { type: 'ms_teams', label: 'Teams', icon: Video },
-                  { type: 'zoom', label: 'Zoom', icon: Video },
+                  { type: 'ms_teams', label: 'Teams (In Dev)', icon: Video },
+                  { type: 'zoom', label: 'Zoom (In Dev)', icon: Video },
                 ] as const
               ).map((item) => {
                 const Icon = item.icon;
@@ -388,11 +388,11 @@ export default function ScheduleMeetingModal({
                     onClick={() => setAppointmentType(item.type)}
                     className={`flex items-center gap-2 p-2.5 rounded-md border text-xs font-medium text-left transition-all ${
                       isSelected
-                        ? 'border-[#49056B] bg-[#49056B]/10 text-[#49056B] font-semibold'
+                        ? 'border-[#390044] bg-[#390044]/10 text-[#390044] font-semibold'
                         : 'border-zinc-200/80 hover:border-zinc-300 text-zinc-700 bg-white'
                     }`}
                   >
-                    <Icon className={`w-3.5 h-3.5 ${isSelected ? 'text-[#49056B]' : 'text-zinc-400'}`} />
+                    <Icon className={`w-3.5 h-3.5 ${isSelected ? 'text-[#390044]' : 'text-zinc-400'}`} />
                     <span className="truncate">{item.label}</span>
                   </button>
                 );
@@ -455,7 +455,7 @@ export default function ScheduleMeetingModal({
                 required
                 value={dateStr}
                 onChange={(e) => setDateStr(e.target.value)}
-                className="w-full px-3 py-2 rounded-md bg-zinc-50 border border-zinc-200/80 text-xs text-zinc-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#49056B]"
+                className="w-full px-3 py-2 rounded-md bg-zinc-50 border border-zinc-200/80 text-xs text-zinc-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#390044]"
               />
             </div>
 
@@ -468,7 +468,7 @@ export default function ScheduleMeetingModal({
                 required
                 value={timeStr}
                 onChange={(e) => setTimeStr(e.target.value)}
-                className="w-full px-3 py-2 rounded-md bg-zinc-50 border border-zinc-200/80 text-xs text-zinc-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#49056B]"
+                className="w-full px-3 py-2 rounded-md bg-zinc-50 border border-zinc-200/80 text-xs text-zinc-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#390044]"
               />
             </div>
 
@@ -479,7 +479,7 @@ export default function ScheduleMeetingModal({
               <select
                 value={durationMinutes}
                 onChange={(e) => setDurationMinutes(parseInt(e.target.value, 10))}
-                className="w-full px-3 py-2 rounded-md bg-zinc-50 border border-zinc-200/80 text-xs text-zinc-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#49056B]"
+                className="w-full px-3 py-2 rounded-md bg-zinc-50 border border-zinc-200/80 text-xs text-zinc-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#390044]"
               >
                 <option value={15}>15 minutes</option>
                 <option value={30}>30 minutes</option>
@@ -504,7 +504,7 @@ export default function ScheduleMeetingModal({
               required
               value={selectedStaffId}
               onChange={(e) => setSelectedStaffId(e.target.value)}
-              className="w-full px-3 py-2 rounded-md bg-zinc-50 border border-zinc-200/80 text-xs text-zinc-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#49056B]"
+              className="w-full px-3 py-2 rounded-md bg-zinc-50 border border-zinc-200/80 text-xs text-zinc-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#390044]"
             >
               {staffList.map((s) => (
                 <option key={s.id} value={s.id}>
@@ -531,7 +531,7 @@ export default function ScheduleMeetingModal({
               value={locationOrLink}
               onChange={(e) => setLocationOrLink(e.target.value)}
               placeholder="e.g. https://meet.google.com/xxx-xxxx-xxx or Customer Address"
-              className="w-full px-3 py-2 rounded-md bg-zinc-50 border border-zinc-200/80 text-xs text-zinc-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#49056B]"
+              className="w-full px-3 py-2 rounded-md bg-zinc-50 border border-zinc-200/80 text-xs text-zinc-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#390044]"
             />
           </div>
 
@@ -546,7 +546,7 @@ export default function ScheduleMeetingModal({
                 value={rescheduleReason}
                 onChange={(e) => setRescheduleReason(e.target.value)}
                 placeholder="e.g. Customer requested afternoon time instead"
-                className="w-full px-3 py-2 rounded-md bg-zinc-50 border border-zinc-200/80 text-xs text-zinc-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#49056B]"
+                className="w-full px-3 py-2 rounded-md bg-zinc-50 border border-zinc-200/80 text-xs text-zinc-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#390044]"
               />
             </div>
           )}
@@ -561,7 +561,7 @@ export default function ScheduleMeetingModal({
               value={staffNotes}
               onChange={(e) => setStaffNotes(e.target.value)}
               placeholder="Private notes for coordinator and crew..."
-              className="w-full px-3 py-2 rounded-md bg-zinc-50 border border-zinc-200/80 text-xs text-zinc-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#49056B]"
+              className="w-full px-3 py-2 rounded-md bg-zinc-50 border border-zinc-200/80 text-xs text-zinc-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#390044]"
             />
           </div>
 
@@ -572,7 +572,7 @@ export default function ScheduleMeetingModal({
               id="notifyCustomer"
               checked={notifyCustomer}
               onChange={(e) => setNotifyCustomer(e.target.checked)}
-              className="w-4 h-4 rounded text-[#49056B] focus:ring-[#49056B] border-zinc-300"
+              className="w-4 h-4 rounded text-[#390044] focus:ring-[#390044] border-zinc-300"
             />
             <label htmlFor="notifyCustomer" className="text-xs text-zinc-700">
               Send transactional notification email to customer ({resolvedCustomer.email})
@@ -592,7 +592,7 @@ export default function ScheduleMeetingModal({
             <button
               type="submit"
               disabled={isSubmitting || Boolean(conflictWarning)}
-              className="px-4 py-2 rounded-md bg-[#49056B] text-white text-xs font-semibold hover:bg-[#390044] transition-colors disabled:opacity-50 inline-flex items-center gap-2"
+              className="px-4 py-2 rounded-md bg-[#390044] text-white text-xs font-semibold hover:bg-[#390044] transition-colors disabled:opacity-50 inline-flex items-center gap-2"
             >
               {isSubmitting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
               <span>{isReschedule ? 'Confirm Reschedule' : 'Save Consultation'}</span>

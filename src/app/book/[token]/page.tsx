@@ -523,11 +523,22 @@ export default function AppointmentManagementPage() {
                           <ExternalLink className="w-3.5 h-3.5" />
                         </a>
                       ) : (
-                        <div className="p-2.5 rounded-lg bg-amber-50/80 border border-amber-200/60 text-xs text-amber-800">
-                          <p className="font-semibold">Video meeting link pending coordinator setup</p>
-                          <p className="text-[11px] text-amber-700 mt-0.5">
-                            Your coordinator is finalizing the video conference details and will send an updated link prior to your consultation.
-                          </p>
+                        <div className="p-3.5 rounded-xl bg-amber-50/80 border border-amber-200/70 text-xs text-amber-900 space-y-2.5">
+                          <div>
+                            <p className="font-semibold text-amber-900">Video meeting link pending Google setup</p>
+                            <p className="text-[11px] text-amber-700 mt-0.5">
+                              Your Google Meet video conference link is currently being provisioned. Once verified by Google Workspace, you will receive an updated email confirmation. You can also check status directly:
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => fetchAppointment()}
+                            disabled={loading}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#390044] text-white font-semibold text-xs hover:bg-[#4d035b] transition-colors cursor-pointer shadow-sm"
+                          >
+                            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+                            <span>Check Video Link Status</span>
+                          </button>
                         </div>
                       )}
                     </div>

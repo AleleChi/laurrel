@@ -215,6 +215,19 @@ const MIGRATION_PIPELINE: MigrationStep[] = [
       console.log('[Migration] Stage B acceptance corrections tables and columns created successfully.');
     },
   },
+  {
+    version: '20261024_stage_b_google_sync_tracking',
+    description: 'Add google_sync_status and google_sync_error columns to appointments',
+    run: async (client) => {
+      await client.query(`
+        ALTER TABLE appointments ADD COLUMN IF NOT EXISTS google_sync_status VARCHAR(32) DEFAULT 'not_applicable';
+        ALTER TABLE appointments ADD COLUMN IF NOT EXISTS google_sync_error TEXT;
+
+        CREATE INDEX IF NOT EXISTS idx_appointments_google_sync_status ON appointments(google_sync_status);
+      `);
+      console.log('[Migration] Stage B Google sync tracking columns created successfully.');
+    },
+  },
 ];
 
 export async function runMigrations(): Promise<{ success: boolean; message: string; appliedCount?: number }> {

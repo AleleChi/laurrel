@@ -373,18 +373,22 @@ export async function createGoogleMeetEvent(
 /**
  * Delete event from Google Calendar on consultation cancellation
  */
-export async function deleteGoogleCalendarEvent(eventId: string): Promise<boolean> {
-  if (!eventId) return false;
+export async function deleteGoogleCalendarEvent(eventId: string): Promise<{ success: boolean; error?: string }> {
+  if (!eventId) return { success: false, error: 'No Google Calendar event ID associated with appointment.' };
   try {
     const accessToken = await getValidGoogleAccessToken();
     const res = await fetch(`${GOOGLE_CALENDAR_API}/calendars/primary/events/${eventId}`, {
       method: 'DELETE',
       headers: { Authorization: `Bearer ${accessToken}` },
     });
-    return res.ok || res.status === 404; // 404 already deleted is treated as success
+    if (res.ok || res.status === 404) {
+      return { success: true };
+    }
+    const errBody = await res.text();
+    return { success: false, error: `Google Calendar event deletion failed (HTTP ${res.status}): ${errBody}` };
   } catch (err: any) {
     console.warn(`[Google Event Deletion Error] Failed to delete event ${eventId}:`, err.message);
-    return false;
+    return { success: false, error: err.message };
   }
 }
 
@@ -395,8 +399,8 @@ export async function rescheduleGoogleCalendarEvent(
   eventId: string,
   newStartIso: string,
   newEndIso: string
-): Promise<boolean> {
-  if (!eventId) return false;
+): Promise<{ success: boolean; error?: string }> {
+  if (!eventId) return { success: false, error: 'No Google Calendar event ID associated with appointment.' };
   try {
     const accessToken = await getValidGoogleAccessToken();
     const res = await fetch(`${GOOGLE_CALENDAR_API}/calendars/primary/events/${eventId}`, {
@@ -410,9 +414,79 @@ export async function rescheduleGoogleCalendarEvent(
         end: { dateTime: newEndIso, timeZone: 'America/Toronto' },
       }),
     });
-    return res.ok;
+    if (res.ok) {
+      return { success: true };
+    }
+    const errBody = await res.text();
+    return { success: false, error: `Google Calendar event reschedule failed (HTTP ${res.status}): ${errBody}` };
   } catch (err: any) {
     console.warn(`[Google Event Reschedule Error] Failed to update event ${eventId}:`, err.message);
-    return false;
+    return { success: false, error: err.message };
+  }
+}
+
+/**
+ * Reconcile pending Google Meet conference generation and retrieve verified video join URL
+ */
+export async function reconcileGoogleMeetConference(calendarEventId: string): Promise<{
+  status: 'ready' | 'pending_details' | 'failed';
+  joinUrl: string | null;
+  conferenceId?: string;
+  error?: string;
+}> {
+  if (!calendarEventId) {
+    return { status: 'failed', joinUrl: null, error: 'No calendar event ID provided' };
+  }
+  try {
+    const accessToken = await getValidGoogleAccessToken();
+    const res = await fetch(
+      `${GOOGLE_CALENDAR_API}/calendars/primary/events/${calendarEventId}?conferenceDataVersion=1`,
+      {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      }
+    );
+    if (!res.ok) {
+      const errText = await res.text();
+      return {
+        status: 'pending_details',
+        joinUrl: null,
+        error: `Google Calendar event fetch failed (HTTP ${res.status}): ${errText}`,
+      };
+    }
+
+    const eventData = await res.json();
+    let meetUrl: string | null = null;
+    if (eventData.conferenceData?.entryPoints) {
+      const videoEntry = eventData.conferenceData.entryPoints.find((ep: any) => ep.entryPointType === 'video');
+      if (videoEntry && videoEntry.uri && /^https:\/\//i.test(videoEntry.uri)) {
+        meetUrl = videoEntry.uri;
+      }
+    }
+    if (!meetUrl && eventData.hangoutLink && /^https:\/\//i.test(eventData.hangoutLink)) {
+      meetUrl = eventData.hangoutLink;
+    }
+
+    const conferenceStatusCode = eventData.conferenceData?.createRequest?.status?.statusCode;
+    let status: 'ready' | 'pending_details' | 'failed' = 'pending_details';
+    if (meetUrl) {
+      status = 'ready';
+    } else if (conferenceStatusCode === 'failed') {
+      status = 'failed';
+    } else {
+      status = 'pending_details';
+    }
+
+    return {
+      status,
+      joinUrl: meetUrl,
+      conferenceId: eventData.conferenceData?.conferenceId,
+    };
+  } catch (err: any) {
+    console.warn('[Reconcile Google Conference Error]:', err.message);
+    return {
+      status: 'pending_details',
+      joinUrl: null,
+      error: err.message,
+    };
   }
 }
