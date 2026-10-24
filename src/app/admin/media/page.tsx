@@ -54,13 +54,19 @@ export default function MediaLibraryPage() {
       params.set('sort', sort);
 
       const res = await fetch(`/api/admin/media?${params.toString()}`);
-      const data = await res.json();
-
-      if (!res.ok || !data.success) {
-        throw new Error(data.error || 'Failed to load media assets.');
+      let data: any = null;
+      try {
+        const text = await res.text();
+        data = text ? JSON.parse(text) : null;
+      } catch {
+        throw new Error('Media service returned an unreadable response. Please check network connectivity.');
       }
 
-      setAssets(data.data || []);
+      if (!res.ok || !data?.success) {
+        throw new Error(data?.error || `Unable to load media assets (HTTP ${res.status}).`);
+      }
+
+      setAssets(Array.isArray(data?.data) ? data.data : []);
     } catch (err: any) {
       setError(err.message || 'Error communicating with media API.');
     } finally {
@@ -76,12 +82,16 @@ export default function MediaLibraryPage() {
   const handleAssetClick = async (asset: MediaAsset) => {
     try {
       const res = await fetch(`/api/admin/media/${asset.id}`);
-      const data = await res.json();
-      if (data.success) {
-        setSelectedAsset(data.data);
-      } else {
-        setSelectedAsset(asset);
+      if (res.ok) {
+        const text = await res.text();
+        const data = text ? JSON.parse(text) : null;
+        if (data?.success && data?.data) {
+          setSelectedAsset(data.data);
+          setIsDrawerOpen(true);
+          return;
+        }
       }
+      setSelectedAsset(asset);
     } catch {
       setSelectedAsset(asset);
     }

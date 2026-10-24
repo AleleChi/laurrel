@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { Logo } from '@/components/ui/Logo';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard,
@@ -153,15 +154,8 @@ export default function AdminLayout({
         className="min-h-screen flex items-center justify-center bg-[#F8F7F4]"
       >
         <div className="flex flex-col items-center gap-3">
-          <div className="relative h-9 w-40 motion-safe:animate-pulse">
-            <Image
-              src="/assets/brand/laurrel-logo-primary.png"
-              alt="Laurrel Services"
-              fill
-              sizes="160px"
-              className="object-contain"
-              priority
-            />
+          <div className="motion-safe:animate-pulse">
+            <Logo priority />
           </div>
           <p className="text-[11px] font-semibold tracking-wider uppercase text-zinc-400">
             Loading Operations Portal...
@@ -222,20 +216,13 @@ export default function AdminLayout({
         {/* Brand Header */}
         <div className="h-16 px-5 border-b border-zinc-200/80 flex items-center justify-between">
           {!sidebarCollapsed ? (
-            <Link href="/" target="_blank" className="relative h-8 w-36 select-none block">
-              <Image
-                src="/assets/brand/laurrel-logo-primary.png"
-                alt="Laurrel Services"
-                fill
-                sizes="144px"
-                className="object-contain object-left"
-                priority
-              />
+            <Link href="/admin" className="select-none block">
+              <Logo priority />
             </Link>
           ) : (
-            <div className="w-10 h-10 rounded-md bg-[#49056B] flex items-center justify-center text-white font-bold text-sm tracking-wider">
-              L
-            </div>
+            <Link href="/admin" className="select-none flex items-center justify-center w-10 h-10">
+              <Logo variant="mark" priority />
+            </Link>
           )}
 
           <button
@@ -360,15 +347,9 @@ export default function AdminLayout({
           />
           <div className="relative w-72 max-w-[85vw] bg-white h-full flex flex-col border-r border-zinc-200 shadow-xl z-10">
             <div className="h-16 px-5 border-b border-zinc-200/80 flex items-center justify-between">
-              <div className="relative h-7 w-32 select-none">
-                <Image
-                  src="/assets/brand/laurrel-logo-primary.png"
-                  alt="Laurrel Services"
-                  fill
-                  sizes="128px"
-                  className="object-contain object-left"
-                />
-              </div>
+              <Link href="/admin" className="select-none block">
+                <Logo priority />
+              </Link>
               <button
                 onClick={() => setMobileMenuOpen(false)}
                 className="p-1.5 rounded-md text-zinc-400 hover:text-zinc-700 hover:bg-zinc-100"

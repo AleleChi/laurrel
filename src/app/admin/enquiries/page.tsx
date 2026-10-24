@@ -37,6 +37,8 @@ import {
   formatServiceParamValue,
   formatOttawaDate,
   formatOttawaTimeRange,
+  formatOttawaAppointmentDate,
+  formatOttawaAppointmentTimeRange,
   formatAppointmentType,
   formatAppointmentStatus,
 } from '@/lib/utils/formatters';
@@ -843,88 +845,162 @@ export default function AdminEnquiriesPage() {
                   </div>
                 ) : (
                   <div className="space-y-2.5">
-                    {enquiryAppointments.map((apt) => (
-                      <div
-                        key={apt.id}
-                        className="p-3 rounded-md bg-zinc-50 border border-zinc-200/80 space-y-2 text-xs"
-                      >
-                        <div className="flex items-center justify-between">
-                          <span className="font-semibold text-zinc-900">{apt.title}</span>
-                          {(() => {
-                            const statusInfo = formatAppointmentStatus(apt.status);
-                            return (
-                              <span className={`px-2 py-0.5 rounded text-[10px] font-semibold border ${statusInfo.bg} ${statusInfo.color}`}>
-                                {statusInfo.label}
-                              </span>
-                            );
-                          })()}
-                        </div>
+                    {enquiryAppointments.map((apt) => {
+                      const isPhone = apt.appointmentType === 'telephone';
+                      const isVideo = ['google_meet', 'ms_teams', 'zoom'].includes(apt.appointmentType);
+                      const isSiteOrPerson = ['on_site', 'in_person'].includes(apt.appointmentType);
 
-                        <div className="text-zinc-600 space-y-1 text-[11px]">
-                          <div>
-                            Mode: <span className="font-medium capitalize">{formatAppointmentType(apt.appointmentType)}</span>
-                            {apt.locationOrLink && (
-                              <span className="ml-2 font-mono text-[10px] text-zinc-500">
-                                ({apt.locationOrLink})
-                              </span>
-                            )}
-                          </div>
-                          <div>
-                            Time: <span className="font-medium">{formatOttawaDate(apt.scheduledStart)} at {formatOttawaTimeRange(apt.scheduledStart, apt.scheduledEnd)}</span>
-                          </div>
-                          {apt.assignedStaffName && (
-                            <div>
-                              Coordinator: <span className="font-medium">{apt.assignedStaffName}</span>
+                      const rawLoc = apt.locationOrLink?.trim() || '';
+                      const isPlaceholderPhone =
+                        !rawLoc ||
+                        /phone number to be confirmed/i.test(rawLoc) ||
+                        /customer telephone number/i.test(rawLoc) ||
+                        /telephone call to customer/i.test(rawLoc);
+
+                      const resolvedPhone = !isPlaceholderPhone ? rawLoc : (selectedEnquiry?.customer?.phone?.trim() || null);
+                      const hasValidVideoUrl = isVideo && (rawLoc.startsWith('http://') || rawLoc.startsWith('https://'));
+                      const coordinator = apt.assignedStaffName?.trim() || 'Coordinator not assigned';
+
+                      return (
+                        <div
+                          key={apt.id}
+                          className="p-4 rounded-xl bg-white border border-zinc-200/90 shadow-2xs space-y-3.5 transition-all"
+                        >
+                          {/* Card Header: Title & Status */}
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="min-w-0">
+                              <h4 className="text-sm font-semibold text-zinc-900 leading-snug">
+                                {apt.title}
+                              </h4>
+                              <p className="text-xs text-zinc-500 mt-0.5">
+                                {formatAppointmentType(apt.appointmentType)}
+                              </p>
                             </div>
-                          )}
-                        </div>
+                            {(() => {
+                              const statusInfo = formatAppointmentStatus(apt.status);
+                              return (
+                                <span
+                                  className={`shrink-0 px-2.5 py-1 rounded-full text-[11px] font-semibold border ${statusInfo.bg} ${statusInfo.color}`}
+                                >
+                                  {statusInfo.label}
+                                </span>
+                              );
+                            })()}
+                          </div>
 
-                        {/* Action buttons */}
-                        <div className="flex items-center gap-2 pt-1 border-t border-zinc-200/60">
-                          {apt.status === 'pending' && (
-                            <button
-                              onClick={() => handleUpdateAppointmentStatus(apt.id, 'confirmed')}
-                              className="px-2 py-1 rounded bg-emerald-50 text-emerald-700 hover:bg-emerald-100 font-semibold text-[10px] transition-colors"
-                            >
-                              Confirm
-                            </button>
-                          )}
-                          {apt.status === 'confirmed' && (
-                            <button
-                              onClick={() => handleUpdateAppointmentStatus(apt.id, 'completed')}
-                              className="px-2 py-1 rounded bg-zinc-100 text-zinc-700 hover:bg-zinc-200 font-semibold text-[10px] transition-colors"
-                            >
-                              Mark Completed
-                            </button>
-                          )}
-                          {apt.status !== 'cancelled' && apt.status !== 'completed' && (
-                            <>
+                          {/* Date and Time: Clean 2-line Ottawa schedule */}
+                          <div className="p-3 rounded-lg bg-zinc-50 border border-zinc-200/60 space-y-1 text-xs">
+                            <div className="font-semibold text-zinc-900 flex items-center gap-2">
+                              <Calendar className="w-4 h-4 text-[#49056B] shrink-0" />
+                              <span>{formatOttawaAppointmentDate(apt.scheduledStart)}</span>
+                            </div>
+                            <div className="text-zinc-600 pl-6 font-normal">
+                              {formatOttawaAppointmentTimeRange(apt.scheduledStart, apt.scheduledEnd)}
+                            </div>
+                          </div>
+
+                          {/* Meeting Details / Location / Phone */}
+                          <div className="space-y-1.5 text-xs text-zinc-600">
+                            {isPhone && (
+                              <div>
+                                {resolvedPhone ? (
+                                  <div className="flex items-center gap-2 text-zinc-800">
+                                    <Phone className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
+                                    <span>Customer phone: <span className="font-medium text-zinc-900">{resolvedPhone}</span></span>
+                                  </div>
+                                ) : (
+                                  <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-amber-50 border border-amber-200/80 text-amber-800 text-[11px] font-medium">
+                                    <AlertCircle className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                                    <span>Customer phone number required</span>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+
+                            {isVideo && (
+                              <div>
+                                {hasValidVideoUrl ? (
+                                  <a
+                                    href={rawLoc}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-[#49056B] text-white hover:bg-[#390044] text-xs font-semibold transition-colors shadow-2xs"
+                                  >
+                                    <span>Join Meeting</span>
+                                    <ExternalLink className="w-3.5 h-3.5" />
+                                  </a>
+                                ) : (
+                                  <div className="text-xs text-zinc-400 italic">
+                                    Meeting link will be provided once meeting is confirmed.
+                                  </div>
+                                )}
+                              </div>
+                            )}
+
+                            {isSiteOrPerson && rawLoc && !isPlaceholderPhone && (
+                              <div className="flex items-start gap-2 text-zinc-700">
+                                <MapPin className="w-3.5 h-3.5 text-zinc-400 shrink-0 mt-0.5" />
+                                <span className="font-medium">{rawLoc}</span>
+                              </div>
+                            )}
+
+                            {/* Coordinator attribution */}
+                            <div className="flex items-center gap-2 pt-1 text-xs">
+                              <User className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
+                              <span className="text-zinc-500">Coordinator:</span>
+                              <span className={apt.assignedStaffName ? 'font-medium text-zinc-900' : 'text-zinc-400 italic'}>
+                                {coordinator}
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Action Buttons */}
+                          <div className="flex flex-wrap items-center gap-2 pt-2.5 border-t border-zinc-100">
+                            {apt.status === 'pending' && (
                               <button
-                                onClick={() => {
-                                  setRescheduleAppointmentId(apt.id);
-                                  setIsScheduleModalOpen(true);
-                                }}
-                                className="px-2 py-1 rounded bg-purple-50 text-[#49056B] hover:bg-purple-100 font-semibold text-[10px] transition-colors"
+                                onClick={() => handleUpdateAppointmentStatus(apt.id, 'confirmed')}
+                                className="px-2.5 py-1 rounded-md bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200/80 font-semibold text-xs transition-colors"
                               >
-                                Reschedule
+                                Confirm
                               </button>
+                            )}
+                            {apt.status === 'confirmed' && (
                               <button
-                                onClick={() => handleCancelAppointment(apt.id)}
-                                className="px-2 py-1 rounded bg-red-50 text-red-700 hover:bg-red-100 font-semibold text-[10px] transition-colors"
+                                onClick={() => handleUpdateAppointmentStatus(apt.id, 'completed')}
+                                className="px-2.5 py-1 rounded-md bg-zinc-100 text-zinc-700 hover:bg-zinc-200 font-semibold text-xs transition-colors"
                               >
-                                Cancel
+                                Mark Completed
                               </button>
-                            </>
-                          )}
-                          <button
-                            onClick={() => handleResendInvite(apt.id)}
-                            className="px-2 py-1 rounded bg-zinc-100 text-zinc-600 hover:bg-zinc-200 font-medium text-[10px] ml-auto transition-colors"
-                          >
-                            Resend Email
-                          </button>
+                            )}
+                            {apt.status !== 'cancelled' && apt.status !== 'completed' && (
+                              <>
+                                <button
+                                  onClick={() => {
+                                    setRescheduleAppointmentId(apt.id);
+                                    setIsScheduleModalOpen(true);
+                                  }}
+                                  className="px-2.5 py-1 rounded-md bg-purple-50 text-[#49056B] hover:bg-purple-100 border border-purple-200/80 font-semibold text-xs transition-colors"
+                                >
+                                  Reschedule
+                                </button>
+                                <button
+                                  onClick={() => handleCancelAppointment(apt.id)}
+                                  className="px-2.5 py-1 rounded-md bg-red-50 text-red-700 hover:bg-red-100 border border-red-200/80 font-semibold text-xs transition-colors"
+                                >
+                                  Cancel
+                                </button>
+                              </>
+                            )}
+                            <button
+                              onClick={() => handleResendInvite(apt.id)}
+                              className="px-2.5 py-1 rounded-md bg-zinc-50 text-zinc-600 hover:bg-zinc-100 border border-zinc-200/80 font-medium text-xs ml-auto transition-colors"
+                            >
+                              Resend Email
+                            </button>
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </div>

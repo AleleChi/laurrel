@@ -192,6 +192,68 @@ export function formatOttawaDateTime(dateValue: string | Date | null | undefined
   }).format(d);
 }
 
+/**
+ * Format appointment date matching Canadian business standard:
+ * "Saturday, 24 October 2026"
+ */
+export function formatOttawaAppointmentDate(dateValue: string | Date | null | undefined): string {
+  if (!dateValue) return '—';
+  const d = typeof dateValue === 'string' ? new Date(dateValue) : dateValue;
+  if (isNaN(d.getTime())) return String(dateValue);
+
+  return new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'America/Toronto',
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  }).format(d);
+}
+
+/**
+ * Format appointment time range matching Canadian business standard:
+ * "11:00–11:30 AM · Ottawa time"
+ */
+export function formatOttawaAppointmentTimeRange(
+  startValue: string | Date | null | undefined,
+  endValue: string | Date | null | undefined
+): string {
+  if (!startValue || !endValue) return '—';
+  const start = typeof startValue === 'string' ? new Date(startValue) : startValue;
+  const end = typeof endValue === 'string' ? new Date(endValue) : endValue;
+  if (isNaN(start.getTime()) || isNaN(end.getTime())) return '—';
+
+  const fmt = (d: Date) => {
+    const parts = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'America/Toronto',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+    }).formatToParts(d);
+    let hour = '';
+    let min = '';
+    let dayPeriod = '';
+    for (const p of parts) {
+      if (p.type === 'hour') hour = p.value;
+      if (p.type === 'minute') min = p.value;
+      if (p.type === 'dayPeriod') dayPeriod = p.value.toUpperCase();
+    }
+    return { hour, min, dayPeriod, time: hour + ':' + min };
+  };
+
+  const sp = fmt(start);
+  const ep = fmt(end);
+
+  let range = '';
+  if (sp.dayPeriod === ep.dayPeriod) {
+    range = sp.time + '–' + ep.time + ' ' + ep.dayPeriod;
+  } else {
+    range = sp.time + ' ' + sp.dayPeriod + ' – ' + ep.time + ' ' + ep.dayPeriod;
+  }
+
+  return range + ' · Ottawa time';
+}
+
 export function formatOttawaTimeRange(
   startValue: string | Date,
   endValue: string | Date

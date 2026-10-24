@@ -75,11 +75,24 @@ async function run() {
 
     // 6. Enquiry Drawer Open Desktop
     console.log('Opening Enquiry Drawer and capturing Desktop...');
-    const firstRow = await page.$('tbody tr:first-child');
-    if (firstRow) {
-      await firstRow.click();
-      await new Promise((r) => setTimeout(r, 1200));
+    // Find row for Alele Chi (which contains consultations) or fallback to firstRow
+    const aleleRow = await page.evaluateHandle(() => {
+      const rows = Array.from(document.querySelectorAll('tbody tr'));
+      return rows.find((r) => r.innerText.includes('Alele Chi')) || rows[0];
+    });
+
+    if (aleleRow && aleleRow.asElement()) {
+      await aleleRow.asElement().click();
+      await new Promise((r) => setTimeout(r, 2000));
       await take('redesign-07-enquiry-drawer-desktop.png', { width: 1440, height: 900 });
+
+      // Scroll drawer down to show Scheduled Consultations in detail
+      await page.evaluate(() => {
+        const drawerScroll = document.querySelector('div.overflow-y-auto');
+        if (drawerScroll) drawerScroll.scrollTop = 420;
+      });
+      await new Promise((r) => setTimeout(r, 800));
+      await take('redesign-07b-consultations-drawer-detail.png', { width: 1440, height: 900 });
 
       // 7. Schedule Modal from Drawer
       console.log('Opening Schedule Modal from Drawer and capturing Desktop...');
@@ -92,6 +105,9 @@ async function run() {
         await scheduleBtn.asElement().click();
         await new Promise((r) => setTimeout(r, 1000));
         await take('redesign-10-schedule-modal-desktop.png', { width: 1440, height: 900 });
+        // Close modal
+        await page.keyboard.press('Escape');
+        await new Promise((r) => setTimeout(r, 500));
       }
     }
 
