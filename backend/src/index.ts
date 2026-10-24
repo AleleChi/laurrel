@@ -9,6 +9,8 @@ import { adminRouter } from './routes/admin';
 import { cmsRouter } from './routes/cms';
 import { mediaRouter } from './routes/media';
 import { appointmentsRouter } from './routes/appointments';
+import { publicBookingRouter } from './routes/publicBooking';
+import { appointmentSettingsRouter } from './routes/appointmentSettings';
 import { runMigrations } from './database/migrate';
 import { bootstrapOwnerAccount } from './database/adminRepo';
 import { syncHistoricalEnquiries } from './database/syncData';
@@ -93,6 +95,8 @@ app.use(adminRouter);
 app.use(cmsRouter);
 app.use(mediaRouter);
 app.use(appointmentsRouter);
+app.use(publicBookingRouter);
+app.use(appointmentSettingsRouter);
 
 // Root informational endpoint
 app.get('/', (_req, res) => {

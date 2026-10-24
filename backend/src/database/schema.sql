@@ -348,3 +348,44 @@ CREATE TABLE IF NOT EXISTS appointment_notifications (
 CREATE INDEX IF NOT EXISTS idx_appointment_notifications_appointment_id ON appointment_notifications(appointment_id);
 CREATE INDEX IF NOT EXISTS idx_appointment_notifications_sent_at ON appointment_notifications(sent_at DESC);
 
+
+-- 10. Appointment Settings Table (Stage B)
+CREATE TABLE IF NOT EXISTS appointment_settings (
+    id VARCHAR(32) PRIMARY KEY DEFAULT 'default',
+    working_days JSONB NOT NULL DEFAULT '{
+      "monday": {"enabled": true, "start": "08:00", "end": "18:00"},
+      "tuesday": {"enabled": true, "start": "08:00", "end": "18:00"},
+      "wednesday": {"enabled": true, "start": "08:00", "end": "18:00"},
+      "thursday": {"enabled": true, "start": "08:00", "end": "18:00"},
+      "friday": {"enabled": true, "start": "08:00", "end": "18:00"},
+      "saturday": {"enabled": true, "start": "09:00", "end": "16:00"},
+      "sunday": {"enabled": false, "start": "09:00", "end": "16:00"}
+    }'::jsonb,
+    buffer_minutes INT NOT NULL DEFAULT 15,
+    min_notice_hours INT NOT NULL DEFAULT 2,
+    max_booking_days INT NOT NULL DEFAULT 30,
+    slot_duration_minutes INT NOT NULL DEFAULT 30,
+    allowed_channels JSONB NOT NULL DEFAULT '["telephone", "on_site", "in_person", "google_meet"]'::jsonb,
+    auto_confirm BOOLEAN NOT NULL DEFAULT TRUE,
+    blocked_dates JSONB NOT NULL DEFAULT '[]'::jsonb,
+    channel_instructions JSONB NOT NULL DEFAULT '{}'::jsonb,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_by VARCHAR(64) REFERENCES admin_users(id) ON DELETE SET NULL
+);
+
+-- 11. Provider Integrations Table (Stage B)
+CREATE TABLE IF NOT EXISTS provider_integrations (
+    id VARCHAR(64) PRIMARY KEY,
+    provider_name VARCHAR(64) NOT NULL,
+    status VARCHAR(32) NOT NULL DEFAULT 'disconnected',
+    account_email VARCHAR(255),
+    encrypted_credentials TEXT,
+    sync_calendar_conflicts BOOLEAN NOT NULL DEFAULT TRUE,
+    last_synced_at TIMESTAMPTZ,
+    last_error TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_provider_integrations_provider_name ON provider_integrations(provider_name);
+CREATE INDEX IF NOT EXISTS idx_provider_integrations_status ON provider_integrations(status);

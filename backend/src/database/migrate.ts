@@ -111,6 +111,82 @@ const MIGRATION_PIPELINE: MigrationStep[] = [
       console.log('[Migration] Appointments tables and indexes created successfully.');
     },
   },
+  {
+    version: '20261024_stage_b_self_service_booking_and_integrations',
+    description: 'Add appointment_settings, provider_integrations, and self-service booking columns',
+    run: async (client) => {
+      await client.query(`
+        -- 1. Make enquiry_id nullable to support direct public bookings
+        ALTER TABLE appointments ALTER COLUMN enquiry_id DROP NOT NULL;
+
+        -- 2. Add self-service booking & provider tracking columns to appointments
+        ALTER TABLE appointments ADD COLUMN IF NOT EXISTS management_token VARCHAR(128) UNIQUE;
+        ALTER TABLE appointments ADD COLUMN IF NOT EXISTS calendar_event_id VARCHAR(255);
+        ALTER TABLE appointments ADD COLUMN IF NOT EXISTS provider_connection_id VARCHAR(64);
+        ALTER TABLE appointments ADD COLUMN IF NOT EXISTS service_address TEXT;
+        ALTER TABLE appointments ADD COLUMN IF NOT EXISTS booking_source VARCHAR(64) DEFAULT 'admin_staff';
+        ALTER TABLE appointments ADD COLUMN IF NOT EXISTS customer_timezone VARCHAR(64) DEFAULT 'America/Toronto';
+        ALTER TABLE appointments ADD COLUMN IF NOT EXISTS customer_notes TEXT;
+
+        CREATE INDEX IF NOT EXISTS idx_appointments_management_token ON appointments(management_token);
+        CREATE INDEX IF NOT EXISTS idx_appointments_calendar_event_id ON appointments(calendar_event_id);
+        CREATE INDEX IF NOT EXISTS idx_appointments_booking_source ON appointments(booking_source);
+
+        -- 3. Create appointment_settings table
+        CREATE TABLE IF NOT EXISTS appointment_settings (
+          id VARCHAR(32) PRIMARY KEY DEFAULT 'default',
+          working_days JSONB NOT NULL DEFAULT '{
+            "monday": {"enabled": true, "start": "08:00", "end": "18:00"},
+            "tuesday": {"enabled": true, "start": "08:00", "end": "18:00"},
+            "wednesday": {"enabled": true, "start": "08:00", "end": "18:00"},
+            "thursday": {"enabled": true, "start": "08:00", "end": "18:00"},
+            "friday": {"enabled": true, "start": "08:00", "end": "18:00"},
+            "saturday": {"enabled": true, "start": "09:00", "end": "16:00"},
+            "sunday": {"enabled": false, "start": "09:00", "end": "16:00"}
+          }'::jsonb,
+          buffer_minutes INT NOT NULL DEFAULT 15,
+          min_notice_hours INT NOT NULL DEFAULT 2,
+          max_booking_days INT NOT NULL DEFAULT 30,
+          slot_duration_minutes INT NOT NULL DEFAULT 30,
+          allowed_channels JSONB NOT NULL DEFAULT '["telephone", "on_site", "in_person", "google_meet"]'::jsonb,
+          auto_confirm BOOLEAN NOT NULL DEFAULT TRUE,
+          blocked_dates JSONB NOT NULL DEFAULT '[]'::jsonb,
+          channel_instructions JSONB NOT NULL DEFAULT '{}'::jsonb,
+          updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+          updated_by VARCHAR(64) REFERENCES admin_users(id) ON DELETE SET NULL
+        );
+
+        INSERT INTO appointment_settings (id)
+        VALUES ('default')
+        ON CONFLICT (id) DO NOTHING;
+
+        -- 4. Create provider_integrations table
+        CREATE TABLE IF NOT EXISTS provider_integrations (
+          id VARCHAR(64) PRIMARY KEY,
+          provider_name VARCHAR(64) NOT NULL,
+          status VARCHAR(32) NOT NULL DEFAULT 'disconnected',
+          account_email VARCHAR(255),
+          encrypted_credentials TEXT,
+          sync_calendar_conflicts BOOLEAN NOT NULL DEFAULT TRUE,
+          last_synced_at TIMESTAMPTZ,
+          last_error TEXT,
+          created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+          updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_provider_integrations_provider_name ON provider_integrations(provider_name);
+        CREATE INDEX IF NOT EXISTS idx_provider_integrations_status ON provider_integrations(status);
+
+        INSERT INTO provider_integrations (id, provider_name, status)
+        VALUES 
+          ('prov_google_meet', 'google_meet', 'disconnected'),
+          ('prov_ms_teams', 'ms_teams', 'disconnected'),
+          ('prov_zoom', 'zoom', 'disconnected')
+        ON CONFLICT (id) DO NOTHING;
+      `);
+      console.log('[Migration] Stage B self-service booking and provider tables created successfully.');
+    },
+  },
 ];
 
 export async function runMigrations(): Promise<{ success: boolean; message: string; appliedCount?: number }> {

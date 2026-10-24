@@ -23,6 +23,7 @@ import {
   FileText,
   CalendarPlus,
   FilterX,
+  Settings,
 } from 'lucide-react';
 import {
   formatOttawaDate,
@@ -339,6 +340,25 @@ export default function AdminAppointmentsPage() {
           >
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-[#49056B]' : ''}`} />
           </button>
+
+          <Link
+            href="/admin/appointments/settings"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-zinc-200/80 bg-white text-zinc-700 hover:text-zinc-900 hover:bg-zinc-50 text-xs font-semibold shadow-2xs transition-colors"
+            title="Configure Ottawa schedule and availability rules"
+          >
+            <Settings className="w-3.5 h-3.5 text-zinc-500" />
+            <span>Settings</span>
+          </Link>
+
+          <Link
+            href="/book"
+            target="_blank"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-[#49056B] text-white hover:bg-[#390044] text-xs font-semibold shadow-2xs transition-colors"
+            title="Open customer-facing self-service booking page"
+          >
+            <ExternalLink className="w-3.5 h-3.5" />
+            <span>Public Booking</span>
+          </Link>
         </div>
       </div>
 
