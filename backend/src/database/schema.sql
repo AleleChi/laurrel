@@ -322,6 +322,9 @@ CREATE TABLE IF NOT EXISTS appointments (
     conference_id VARCHAR(128),
     google_sync_status VARCHAR(32) DEFAULT 'not_applicable',
     google_sync_error TEXT,
+    conference_retry_count INT NOT NULL DEFAULT 0,
+    conference_next_retry_at TIMESTAMPTZ,
+    conference_reconciled_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -337,6 +340,7 @@ CREATE INDEX IF NOT EXISTS idx_appointments_calendar_event_id ON appointments(ca
 CREATE INDEX IF NOT EXISTS idx_appointments_booking_source ON appointments(booking_source);
 CREATE INDEX IF NOT EXISTS idx_appointments_conference_status ON appointments(conference_status);
 CREATE INDEX IF NOT EXISTS idx_appointments_google_sync_status ON appointments(google_sync_status);
+CREATE INDEX IF NOT EXISTS idx_appointments_reconciliation_queue ON appointments(conference_status, conference_next_retry_at) WHERE conference_status = 'pending_details';
 
 CREATE TABLE IF NOT EXISTS appointment_activity (
     id VARCHAR(64) PRIMARY KEY,
@@ -385,6 +389,7 @@ CREATE TABLE IF NOT EXISTS appointment_settings (
     auto_confirm BOOLEAN NOT NULL DEFAULT TRUE,
     blocked_dates JSONB NOT NULL DEFAULT '[]'::jsonb,
     channel_instructions JSONB NOT NULL DEFAULT '{}'::jsonb,
+    office_address TEXT DEFAULT NULL,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_by VARCHAR(64) REFERENCES admin_users(id) ON DELETE SET NULL
 );
@@ -419,3 +424,12 @@ CREATE TABLE IF NOT EXISTS oauth_states (
 
 CREATE INDEX IF NOT EXISTS idx_oauth_states_admin_user_id ON oauth_states(admin_user_id);
 CREATE INDEX IF NOT EXISTS idx_oauth_states_expires_at ON oauth_states(expires_at);
+
+-- 13. Public Shared Rate Limits (Stage B)
+CREATE TABLE IF NOT EXISTS public_rate_limits (
+  key VARCHAR(160) PRIMARY KEY,
+  count INT NOT NULL,
+  reset_at TIMESTAMPTZ NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_public_rate_limits_reset_at ON public_rate_limits(reset_at);

@@ -44,6 +44,9 @@ export interface AppointmentRecord {
   conferenceId?: string | null;
   googleSyncStatus?: string | null;
   googleSyncError?: string | null;
+  conferenceRetryCount?: number;
+  conferenceNextRetryAt?: string | null;
+  conferenceReconciledAt?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -138,6 +141,9 @@ function mapRowToAppointment(row: any): AppointmentRecord {
     conferenceId: row.conference_id,
     googleSyncStatus: row.google_sync_status || 'not_applicable',
     googleSyncError: row.google_sync_error,
+    conferenceRetryCount: row.conference_retry_count !== undefined && row.conference_retry_count !== null ? Number(row.conference_retry_count) : 0,
+    conferenceNextRetryAt: row.conference_next_retry_at instanceof Date ? row.conference_next_retry_at.toISOString() : (row.conference_next_retry_at || null),
+    conferenceReconciledAt: row.conference_reconciled_at instanceof Date ? row.conference_reconciled_at.toISOString() : (row.conference_reconciled_at || null),
     createdAt: row.created_at instanceof Date ? row.created_at.toISOString() : row.created_at,
     updatedAt: row.updated_at instanceof Date ? row.updated_at.toISOString() : row.updated_at,
   };

@@ -228,6 +228,34 @@ const MIGRATION_PIPELINE: MigrationStep[] = [
       console.log('[Migration] Stage B Google sync tracking columns created successfully.');
     },
   },
+  {
+    version: '20261024_stage_b_final_integration_acceptance',
+    description: 'Add durable reconciliation queue, verified office location, and shared rate limits',
+    run: async (client) => {
+      await client.query(`
+        -- 1. Durable Google Meet reconciliation tracking
+        ALTER TABLE appointments ADD COLUMN IF NOT EXISTS conference_retry_count INT NOT NULL DEFAULT 0;
+        ALTER TABLE appointments ADD COLUMN IF NOT EXISTS conference_next_retry_at TIMESTAMPTZ;
+        ALTER TABLE appointments ADD COLUMN IF NOT EXISTS conference_reconciled_at TIMESTAMPTZ;
+
+        CREATE INDEX IF NOT EXISTS idx_appointments_reconciliation_queue 
+          ON appointments(conference_status, conference_next_retry_at) 
+          WHERE conference_status = 'pending_details';
+
+        -- 2. Verified office location on appointment_settings
+        ALTER TABLE appointment_settings ADD COLUMN IF NOT EXISTS office_address TEXT DEFAULT NULL;
+
+        -- 3. Shared rate limiting store for multi-instance deployments
+        CREATE TABLE IF NOT EXISTS public_rate_limits (
+          key VARCHAR(160) PRIMARY KEY,
+          count INT NOT NULL,
+          reset_at TIMESTAMPTZ NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS idx_public_rate_limits_reset_at ON public_rate_limits(reset_at);
+      `);
+      console.log('[Migration] Stage B final integration acceptance tables and columns created successfully.');
+    },
+  },
 ];
 
 export async function runMigrations(): Promise<{ success: boolean; message: string; appliedCount?: number }> {

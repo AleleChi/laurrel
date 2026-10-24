@@ -46,6 +46,7 @@ interface AppointmentSettings {
   maxBookingDays: number;
   slotDurationMinutes: number;
   allowedChannels: string[];
+  officeAddress?: string | null;
   autoConfirm: boolean;
   blockedDates: string[];
   channelInstructions: Record<string, string>;
@@ -517,6 +518,49 @@ export default function AppointmentSettingsPage() {
                 </label>
               );
             })}
+          </div>
+
+          {/* Verified Office Address Setting */}
+          <div className="mt-4 p-4 rounded-lg bg-zinc-50 border border-zinc-200/90 space-y-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <Building className="w-4 h-4 text-[#49056B]" />
+                <span className="text-xs font-bold text-zinc-900">Verified Office Location for In-Person Consultations</span>
+              </div>
+              <span
+                className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold border ${
+                  Boolean(settings.officeAddress && settings.officeAddress.trim().length >= 10)
+                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                    : 'bg-amber-50 text-amber-700 border-amber-200'
+                }`}
+              >
+                {Boolean(settings.officeAddress && settings.officeAddress.trim().length >= 10)
+                  ? 'Location Verified & Active'
+                  : 'Unconfigured — Office Consultations Disabled'}
+              </span>
+            </div>
+
+            <p className="text-[11px] text-zinc-500 leading-relaxed">
+              Laurrel Services operates without walk-in appointments unless an approved business premises address is recorded below.
+              When left blank or under 10 characters, in-person office bookings are strictly blocked on the public booking portal to protect customers.
+              (Note: On-site property assessments are unaffected and use the customer&apos;s Ottawa address).
+            </p>
+
+            <div>
+              <label className="block text-[11px] font-medium text-zinc-700 mb-1">
+                Official Business Meeting Address
+              </label>
+              <div className="relative">
+                <input
+                  type="text"
+                  value={settings.officeAddress || ''}
+                  onChange={(e) => setSettings({ ...settings, officeAddress: e.target.value })}
+                  placeholder="e.g., 150 Elgin Street, Suite 800, Ottawa, ON K2P 1L4"
+                  className="w-full pl-9 pr-3 py-2 bg-white border border-zinc-200 rounded-md text-xs text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-1 focus:ring-[#49056B] transition-all"
+                />
+                <MapPin className="w-4 h-4 text-zinc-400 absolute left-3 top-2.5 pointer-events-none" />
+              </div>
+            </div>
           </div>
         </div>
 

@@ -8,50 +8,148 @@ import {
   createGoogleMeetEvent,
   deleteGoogleCalendarEvent,
   rescheduleGoogleCalendarEvent,
-  reconcileGoogleMeetConference,
 } from '../services/video/googleCalendarClient';
+import { claimAndReconcileAppointment } from '../services/video/reconciliationService';
 import { generateIcsInvitation } from '../services/appointments/icsGenerator';
 import { getEmailProvider } from '../services/email';
 
 export const publicBookingRouter = Router();
 
 // ============================================================================
-// RATE LIMITING MIDDLEWARE
+// CLIENT RESOLUTION & SHARED RATE LIMITING
 // ============================================================================
-interface RateLimitEntry {
+
+export function resolveClientIp(req: Request): string {
+  const gatewaySecret = process.env.INTERNAL_GATEWAY_SECRET || process.env.GATEWAY_SECRET;
+  const reqSecret = req.headers['x-gateway-secret'];
+
+  // 1. Authenticated header forwarded from trusted Next.js Netlify gateway
+  if (gatewaySecret && reqSecret === gatewaySecret && req.headers['x-laurrel-client-ip']) {
+    return (req.headers['x-laurrel-client-ip'] as string).trim();
+  }
+
+  // 2. Netlify cryptographically-verified edge client IP
+  if (req.headers['x-nf-client-connection-ip']) {
+    return (req.headers['x-nf-client-connection-ip'] as string).trim();
+  }
+
+  // 3. Fallback to gateway header if no gateway secret is enforced
+  if (req.headers['x-laurrel-client-ip']) {
+    return (req.headers['x-laurrel-client-ip'] as string).trim();
+  }
+
+  // 4. Express req.ip (when trust proxy is configured)
+  if (req.ip) {
+    return req.ip;
+  }
+
+  return req.socket.remoteAddress || '127.0.0.1';
+}
+
+interface MemoryRateLimitEntry {
   count: number;
   resetAt: number;
 }
-const rateLimitStore = new Map<string, RateLimitEntry>();
+const memoryRateLimitStore = new Map<string, MemoryRateLimitEntry>();
+
+function checkMemoryRateLimit(
+  key: string,
+  maxRequests: number,
+  windowMs: number
+): { allowed: boolean; count: number; retryAfterSec?: number } {
+  const now = Date.now();
+  const entry = memoryRateLimitStore.get(key);
+
+  if (!entry || entry.resetAt < now) {
+    memoryRateLimitStore.set(key, { count: 1, resetAt: now + windowMs });
+    return { allowed: true, count: 1 };
+  }
+
+  if (entry.count >= maxRequests) {
+    const retryAfterSec = Math.max(1, Math.ceil((entry.resetAt - now) / 1000));
+    return { allowed: false, count: entry.count, retryAfterSec };
+  }
+
+  entry.count++;
+  return { allowed: true, count: entry.count };
+}
+
+export async function checkSharedRateLimit(
+  key: string,
+  maxRequests: number,
+  windowMs: number
+): Promise<{ allowed: boolean; count: number; retryAfterSec?: number }> {
+  if (process.env.NODE_ENV === 'test') {
+    return { allowed: true, count: 1 };
+  }
+
+  const pool = getDbPool();
+  if (!pool) {
+    return checkMemoryRateLimit(key, maxRequests, windowMs);
+  }
+
+  const now = new Date();
+  const resetAt = new Date(now.getTime() + windowMs);
+
+  try {
+    const res = await pool.query(
+      `
+      INSERT INTO public_rate_limits (key, count, reset_at)
+      VALUES ($1, 1, $2)
+      ON CONFLICT (key) DO UPDATE
+      SET
+        count = CASE
+          WHEN public_rate_limits.reset_at <= NOW() THEN 1
+          ELSE public_rate_limits.count + 1
+        END,
+        reset_at = CASE
+          WHEN public_rate_limits.reset_at <= NOW() THEN $2
+          ELSE public_rate_limits.reset_at
+        END
+      RETURNING count, reset_at
+      `,
+      [key, resetAt]
+    );
+
+    const row = res.rows[0];
+    const count = Number(row.count);
+    const rowResetAt = new Date(row.reset_at);
+
+    if (count > maxRequests) {
+      const retryAfterSec = Math.max(1, Math.ceil((rowResetAt.getTime() - now.getTime()) / 1000));
+      return { allowed: false, count, retryAfterSec };
+    }
+
+    return { allowed: true, count };
+  } catch (err: any) {
+    console.warn('[Shared Rate Limit Warning]:', err.message);
+    return checkMemoryRateLimit(key, maxRequests, windowMs);
+  }
+}
 
 function publicRateLimit(maxRequests: number, windowMs: number) {
-  return (req: Request, res: Response, next: NextFunction): void => {
-    // Exclude automated test suites from rate limits
+  return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     if (process.env.NODE_ENV === 'test') {
       next();
       return;
     }
 
-    const clientIp =
-      (req.headers['x-forwarded-for'] as string)?.split(',')[0].trim() ||
-      req.socket.remoteAddress ||
-      'unknown';
+    const clientIp = resolveClientIp(req);
     const key = `${req.path}:${clientIp}`;
-    const now = Date.now();
-    const entry = rateLimitStore.get(key);
 
-    if (!entry || entry.resetAt < now) {
-      rateLimitStore.set(key, { count: 1, resetAt: now + windowMs });
-      next();
-    } else if (entry.count >= maxRequests) {
+    const limitResult = await checkSharedRateLimit(key, maxRequests, windowMs);
+    if (!limitResult.allowed) {
+      if (limitResult.retryAfterSec) {
+        res.setHeader('Retry-After', limitResult.retryAfterSec.toString());
+      }
       res.status(429).json({
         success: false,
         error: 'Too many booking requests from this connection. Please wait a few moments before trying again.',
       });
-    } else {
-      entry.count++;
-      next();
+      return;
     }
+
+    next();
   };
 }
 
@@ -72,83 +170,7 @@ export function getCanonicalPublicSiteUrl(): string {
   return configured.trim().replace(/\/$/, '');
 }
 
-/**
- * Reconcile pending Google Meet conference generation and notify customer when video link is ready
- */
-export async function reconcileAndNotifyAppointment(appointmentId: string): Promise<{
-  reconciled: boolean;
-  joinUrl: string | null;
-  status: string;
-}> {
-  const pool = getDbPool();
-  if (!pool) return { reconciled: false, joinUrl: null, status: 'error' };
 
-  try {
-    const res = await pool.query(
-      `SELECT * FROM appointments WHERE id = $1 LIMIT 1`,
-      [appointmentId]
-    );
-    if (res.rows.length === 0) return { reconciled: false, joinUrl: null, status: 'not_found' };
-
-    const apt = res.rows[0];
-    if (apt.appointment_type !== 'google_meet' || !apt.calendar_event_id) {
-      return { reconciled: false, joinUrl: null, status: 'not_applicable' };
-    }
-
-    const rec = await reconcileGoogleMeetConference(apt.calendar_event_id);
-    if (rec.status === 'ready' && rec.joinUrl) {
-      await pool.query(
-        `UPDATE appointments
-         SET location_or_link = $1, conference_status = 'ready', google_sync_status = 'synced', google_sync_error = NULL, updated_at = NOW()
-         WHERE id = $2`,
-        [rec.joinUrl, apt.id]
-      );
-      await pool.query(
-        `INSERT INTO appointment_activity (id, appointment_id, action, performed_by, details)
-         VALUES ($1, $2, 'conference_reconciled', 'System Reconciliation', 'Google Meet conference link verified and updated')`,
-        [`act_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`, apt.id]
-      );
-
-      // Dispatch customer email with verified video link
-      if (apt.location_or_link !== rec.joinUrl) {
-        try {
-          const emailProvider = getEmailProvider();
-          await emailProvider.sendConferenceLinkReady({
-            appointmentId: apt.id,
-            enquiryId: apt.enquiry_id || '',
-            customerName: apt.customer_name,
-            customerEmail: apt.customer_email,
-            title: apt.title,
-            purpose: apt.purpose,
-            appointmentType: apt.appointment_type,
-            status: apt.status,
-            scheduledStart: apt.scheduled_start,
-            scheduledEnd: apt.scheduled_end,
-            durationMinutes: apt.duration_minutes || 30,
-            timezone: 'America/Toronto',
-            locationOrLink: rec.joinUrl,
-            assignedStaffName: apt.assigned_staff_name,
-          });
-        } catch (emailErr: any) {
-          console.warn('[Reconcile Email Warning]:', emailErr.message);
-        }
-      }
-
-      return { reconciled: true, joinUrl: rec.joinUrl, status: 'ready' };
-    } else if (rec.status === 'failed') {
-      await pool.query(
-        `UPDATE appointments SET conference_status = 'failed', google_sync_status = 'failed', google_sync_error = $1, updated_at = NOW() WHERE id = $2`,
-        [rec.error || 'Google Meet video provisioning failed', apt.id]
-      );
-      return { reconciled: false, joinUrl: null, status: 'failed' };
-    }
-
-    return { reconciled: false, joinUrl: null, status: rec.status };
-  } catch (err: any) {
-    console.warn('[Reconcile Appointment Error]:', err.message);
-    return { reconciled: false, joinUrl: null, status: 'error' };
-  }
-}
 
 // ============================================================================
 // 1. PUBLIC CONFIGURATION
@@ -165,6 +187,9 @@ publicBookingRouter.get(
         googleIntegration?.status === 'connected' &&
         Boolean(googleIntegration.credentials?.refreshToken);
 
+      const hasOfficeAddress = Boolean(settings.officeAddress && settings.officeAddress.trim().length >= 10);
+      const isOfficeConsultationActive = settings.allowedChannels.includes('in_person') && hasOfficeAddress;
+
       res.json({
         success: true,
         allowedChannels: settings.allowedChannels,
@@ -173,6 +198,8 @@ publicBookingRouter.get(
         maxBookingDays: settings.maxBookingDays,
         timeZone: 'America/Toronto',
         isGoogleMeetActive,
+        isOfficeConsultationActive,
+        officeAddress: isOfficeConsultationActive ? settings.officeAddress : null,
         channelInstructions: settings.channelInstructions,
       });
     } catch (err: any) {
@@ -206,6 +233,22 @@ publicBookingRouter.get(
       } catch {
         res.status(400).json({ success: false, error: 'Invalid customer timezone identifier.' });
         return;
+      }
+
+      if (appointmentType === 'in_person') {
+        const settings = await getAppointmentSettings();
+        const hasOffice = Boolean(settings.officeAddress && settings.officeAddress.trim().length >= 10);
+        if (!settings.allowedChannels.includes('in_person') || !hasOffice) {
+          res.json({
+            success: true,
+            dayEnabled: false,
+            slots: [],
+            message: 'Office consultations are currently unavailable as no approved business meeting location is configured.',
+            date,
+            timeZone: 'America/Toronto',
+          });
+          return;
+        }
       }
 
       const result = await getAvailableSlots(date, appointmentType, customerTimezone);
@@ -290,6 +333,19 @@ publicBookingRouter.post(
       return;
     }
 
+    // Check customer email rate limit to prevent flood targeting
+    const emailLimit = await checkSharedRateLimit(`book:email:${customerEmail.toLowerCase().trim()}`, 5, 600000);
+    if (!emailLimit.allowed) {
+      if (emailLimit.retryAfterSec) {
+        res.setHeader('Retry-After', emailLimit.retryAfterSec.toString());
+      }
+      res.status(429).json({
+        success: false,
+        error: 'Too many consultation booking attempts for this email address. Please wait a few minutes before trying again.',
+      });
+      return;
+    }
+
     // Require non-empty customer address for on-site property consultations
     if (type === 'on_site') {
       if (!serviceAddress || typeof serviceAddress !== 'string' || serviceAddress.trim().length < 5) {
@@ -311,6 +367,18 @@ publicBookingRouter.post(
     }
 
     const settings = await getAppointmentSettings();
+
+    // Require verified office meeting location for in-person consultations
+    if (type === 'in_person') {
+      const hasOffice = Boolean(settings.officeAddress && settings.officeAddress.trim().length >= 10);
+      if (!settings.allowedChannels.includes('in_person') || !hasOffice) {
+        res.status(400).json({
+          success: false,
+          error: 'Office consultations are currently unavailable as no approved business meeting location is configured. Please select Telephone, Google Meet, or an On-Site property assessment.',
+        });
+        return;
+      }
+    }
 
     // Check Google Meet Active Provider Status
     if (type === 'google_meet') {
@@ -480,7 +548,7 @@ publicBookingRouter.post(
           : type === 'on_site'
           ? serviceAddress.trim()
           : type === 'in_person'
-          ? 'Laurrel Services Office (Ottawa, ON)'
+          ? settings.officeAddress!.trim()
           : null;
 
       const initialConferenceStatus = type === 'google_meet' ? 'pending_details' : 'none';
@@ -493,7 +561,7 @@ publicBookingRouter.post(
           assigned_staff_id, assigned_staff_name, staff_notes, notification_sent,
           idempotency_key, created_by, management_token, service_address,
           booking_source, customer_timezone, customer_notes, conference_status,
-          google_sync_status, google_sync_error
+          google_sync_status, google_sync_error, conference_retry_count, conference_next_retry_at
         )
         VALUES (
           $1, $2, $3, $4, $5, 'confirmed',
@@ -502,7 +570,7 @@ publicBookingRouter.post(
           $13, $14, $15, FALSE,
           $16, $13, $17, $18,
           'public_self_service', $19, $20, $21,
-          $22, $23
+          $22, $23, $24, $25
         )
         RETURNING *
       `;
@@ -533,6 +601,8 @@ publicBookingRouter.post(
         initialConferenceStatus,
         initialGoogleSync,
         null,
+        0,
+        type === 'google_meet' ? new Date(Date.now() + 15000) : null,
       ]);
 
       appointmentRecord = aptRes.rows[0];
@@ -609,13 +679,11 @@ publicBookingRouter.post(
         appointmentRecord.conference_status = meetResult.conferenceStatus;
         appointmentRecord.google_sync_status = 'synced';
 
-        // If conference is pending Google creation, schedule background reconciliation check
+        // If conference is pending Google creation, queue durable background reconciliation
         if (meetResult.conferenceStatus === 'pending_details' && meetResult.eventId) {
-          setTimeout(() => {
-            reconcileAndNotifyAppointment(appointmentRecord.id).catch((err) =>
-              console.warn('[Background Reconciliation Error]:', err.message)
-            );
-          }, 15000);
+          claimAndReconcileAppointment(appointmentRecord.id, 'Self-Service Booking Initializer').catch((err) =>
+            console.warn('[Initial Reconciliation Warning]:', err.message)
+          );
         }
       } catch (meetErr: any) {
         console.error('[Public Booking Google Meet Error]:', meetErr.message);
@@ -761,13 +829,13 @@ publicBookingRouter.get(
 
       const apt = rows[0];
 
-      // If Google Meet conference is pending, perform immediate live reconciliation
+      // If Google Meet conference is pending, perform immediate durable reconciliation
       if (
         apt.appointmentType === 'google_meet' &&
         apt.conferenceStatus === 'pending_details' &&
         apt.calendarEventId
       ) {
-        const recResult = await reconcileAndNotifyAppointment(apt.id);
+        const recResult = await claimAndReconcileAppointment(apt.id, 'Customer Portal Visit');
         if (recResult.reconciled && recResult.joinUrl) {
           apt.locationOrLink = recResult.joinUrl;
           apt.conferenceStatus = 'ready';

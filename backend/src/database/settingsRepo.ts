@@ -26,6 +26,7 @@ export interface AppointmentSettings {
   autoConfirm: boolean;
   blockedDates: string[];
   channelInstructions: Record<string, string>;
+  officeAddress?: string | null;
   updatedAt: string;
   updatedBy?: string | null;
 }
@@ -40,7 +41,7 @@ export const DEFAULT_WORKING_DAYS: Record<DayOfWeek, WorkingDaySchedule> = {
   sunday: { enabled: false, start: '09:00', end: '16:00' },
 };
 
-export const DEFAULT_ALLOWED_CHANNELS = ['telephone', 'on_site', 'in_person', 'google_meet'];
+export const DEFAULT_ALLOWED_CHANNELS = ['telephone', 'on_site', 'google_meet'];
 
 export async function getAppointmentSettings(): Promise<AppointmentSettings> {
   const pool = getDbPool();
@@ -60,6 +61,7 @@ export async function getAppointmentSettings(): Promise<AppointmentSettings> {
       auto_confirm AS "autoConfirm",
       blocked_dates AS "blockedDates",
       channel_instructions AS "channelInstructions",
+      office_address AS "officeAddress",
       updated_at AS "updatedAt",
       updated_by AS "updatedBy"
     FROM appointment_settings
@@ -87,6 +89,7 @@ export async function getAppointmentSettings(): Promise<AppointmentSettings> {
       auto_confirm AS "autoConfirm",
       blocked_dates AS "blockedDates",
       channel_instructions AS "channelInstructions",
+      office_address AS "officeAddress",
       updated_at AS "updatedAt",
       updated_by AS "updatedBy"
   `;
@@ -118,6 +121,7 @@ export async function updateAppointmentSettings(
   const autoConfirm = data.autoConfirm !== undefined ? data.autoConfirm : current.autoConfirm;
   const blockedDates = data.blockedDates ? JSON.stringify(data.blockedDates) : JSON.stringify(current.blockedDates);
   const channelInstructions = data.channelInstructions ? JSON.stringify(data.channelInstructions) : JSON.stringify(current.channelInstructions);
+  const officeAddress = data.officeAddress !== undefined ? data.officeAddress : (current.officeAddress || null);
 
   const query = `
     UPDATE appointment_settings
@@ -131,8 +135,9 @@ export async function updateAppointmentSettings(
       auto_confirm = $7,
       blocked_dates = $8,
       channel_instructions = $9,
+      office_address = $10,
       updated_at = NOW(),
-      updated_by = $10
+      updated_by = $11
     WHERE id = 'default'
     RETURNING
       id,
@@ -145,6 +150,7 @@ export async function updateAppointmentSettings(
       auto_confirm AS "autoConfirm",
       blocked_dates AS "blockedDates",
       channel_instructions AS "channelInstructions",
+      office_address AS "officeAddress",
       updated_at AS "updatedAt",
       updated_by AS "updatedBy"
   `;
@@ -159,6 +165,7 @@ export async function updateAppointmentSettings(
     autoConfirm,
     blockedDates,
     channelInstructions,
+    officeAddress,
     userId || null,
   ]);
 

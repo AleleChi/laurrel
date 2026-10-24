@@ -1,5 +1,35 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+function buildForwardHeaders(req: NextRequest): Record<string, string> {
+  // Extract verified client IP from Netlify edge or proxy chain
+  const clientIp =
+    req.headers.get('x-nf-client-connection-ip') ||
+    req.headers.get('x-real-ip') ||
+    req.headers.get('x-forwarded-for')?.split(',')[0].trim() ||
+    '';
+
+  const forwardHeaders: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
+
+  if (clientIp) {
+    forwardHeaders['X-Laurrel-Client-IP'] = clientIp;
+    forwardHeaders['X-Forwarded-For'] = req.headers.get('x-forwarded-for') || clientIp;
+  }
+
+  const gatewaySecret = process.env.INTERNAL_GATEWAY_SECRET || process.env.GATEWAY_SECRET;
+  if (gatewaySecret) {
+    forwardHeaders['X-Gateway-Secret'] = gatewaySecret;
+  }
+
+  const idempKey = req.headers.get('idempotency-key') || req.headers.get('x-idempotency-key');
+  if (idempKey) {
+    forwardHeaders['Idempotency-Key'] = idempKey;
+  }
+
+  return forwardHeaders;
+}
+
 export async function GET(req: NextRequest, { params }: { params: { slug: string[] } }) {
   const backendUrl = process.env.BACKEND_API_URL || process.env.API_BASE_URL || 'http://localhost:5000';
   const path = params.slug.join('/');
@@ -7,8 +37,10 @@ export async function GET(req: NextRequest, { params }: { params: { slug: string
   const target = `${backendUrl.replace(/\/$/, '')}/api/public/${path}${search}`;
 
   try {
+    const forwardHeaders = buildForwardHeaders(req);
     const res = await fetch(target, {
       cache: 'no-store',
+      headers: forwardHeaders,
     });
 
     const contentType = res.headers.get('content-type') || '';
@@ -50,14 +82,7 @@ export async function POST(req: NextRequest, { params }: { params: { slug: strin
 
   try {
     const body = await req.json().catch(() => ({}));
-    const forwardHeaders: Record<string, string> = {
-      'Content-Type': 'application/json',
-    };
-
-    const idempKey = req.headers.get('idempotency-key') || req.headers.get('x-idempotency-key');
-    if (idempKey) {
-      forwardHeaders['Idempotency-Key'] = idempKey;
-    }
+    const forwardHeaders = buildForwardHeaders(req);
 
     const res = await fetch(target, {
       method: 'POST',

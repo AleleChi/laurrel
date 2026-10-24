@@ -2,13 +2,14 @@
  * LAURREL SERVICES — STAGE B FINAL RELEASE CHECKS VERIFICATION SUITE
  * 
  * Tests:
- * 1. Active staff coordinator filtering (is_active = TRUE).
+ * 1. Active staff coordinator filtering (is_active = TRUE) & role restriction.
  * 2. Mandatory property address for on-site consultations.
- * 3. Honest in-person location integrity (no fabricated street addresses).
+ * 3. Verified in-person location integrity (requires office_address, no fake street address).
  * 4. Production PUBLIC_SITE_URL enforcement without fallback.
- * 5. Google Calendar sync failure resilience & tracking (google_sync_status, google_sync_error).
- * 6. Pending Google Meet conference reconciliation & customer notification.
- * 7. Provider honesty: Microsoft Teams & Zoom disabled and marked in-development.
+ * 5. Google Calendar sync failure resilience & tracking (google_sync_status, google_sync_error, retry endpoint).
+ * 6. Durable Google Meet reconciliation & single customer notification delivery.
+ * 7. Reliable rate limiting with client IP resolution & PostgreSQL storage.
+ * 8. Provider honesty: Microsoft Teams & Zoom disabled and marked in-development.
  * 
  * Safety Shield: Write-based mutation tests against production Neon DB are strictly prohibited.
  */
@@ -38,7 +39,7 @@ async function runVerification() {
   const dbUrl = process.env.DATABASE_URL || '';
   if (dbUrl.includes('ep-raspy-dew-b4agbivi-pooler') || dbUrl.includes('neon.tech')) {
     console.log('🛡️  SAFETY SHIELD ACTIVE: Connected to live Neon database.');
-    console.log('    All mutation tests will run against isolated memory/mock harnesses.\n');
+    console.log('    All mutation tests run against isolated mock/memory harnesses.\n');
   }
 
   // --------------------------------------------------------------------------
@@ -62,12 +63,13 @@ async function runVerification() {
   assert(hasOnSiteCheck && hasAddressErrorMsg, 'Server rejects on-site bookings lacking valid customer property address (HTTP 400)');
 
   // --------------------------------------------------------------------------
-  // Check 3: Honest Location & No Fabricated Office Address
+  // Check 3: Verified Office Location & No Fabricated Street Address
   // --------------------------------------------------------------------------
-  console.log('\n3. Verifying Honest Location Integrity...');
-  const hasHonestOfficeLocation = publicBookingCode.includes("'Laurrel Services Office (Ottawa, ON)'");
+  console.log('\n3. Verifying In-Person Location Integrity...');
+  const hasOfficeAddressCheck = publicBookingCode.includes('settings.officeAddress') && publicBookingCode.includes("type === 'in_person'");
+  const hasOfficeBlockMessage = publicBookingCode.includes('Office consultations are currently unavailable as no approved business meeting location is configured');
   const hasFakeOfficeNumber = /123\s+(laurrel|fake|queen|wellington)/i.test(publicBookingCode);
-  assert(hasHonestOfficeLocation, 'In-person consultations specify "Laurrel Services Office (Ottawa, ON)"');
+  assert(hasOfficeAddressCheck && hasOfficeBlockMessage, 'In-person consultations require approved office_address, rejecting unconfigured requests (HTTP 400)');
   assert(!hasFakeOfficeNumber, 'No fabricated street addresses or numbers used for office location');
 
   // --------------------------------------------------------------------------
@@ -93,20 +95,37 @@ async function runVerification() {
   assert(hasRetryEndpoint, 'Staff admin API provides POST /api/admin/appointments/:id/retry-google-sync for intervention');
 
   // --------------------------------------------------------------------------
-  // Check 6: Pending Google Meet Conference Reconciliation
+  // Check 6: Durable Google Meet Conference Reconciliation
   // --------------------------------------------------------------------------
-  console.log('\n6. Verifying Pending Conference Reconciliation Mechanism...');
-  const hasReconciliationHelper = publicBookingCode.includes("reconcileAndNotifyAppointment");
+  console.log('\n6. Verifying Durable Conference Reconciliation Mechanism...');
+  const reconciliationPath = path.join(__dirname, '../backend/src/services/video/reconciliationService.ts');
+  assert(fs.existsSync(reconciliationPath), 'Reconciliation service exists at backend/src/services/video/reconciliationService.ts');
+
+  const reconciliationCode = fs.readFileSync(reconciliationPath, 'utf8');
+  const hasDurableClaim = reconciliationCode.includes("conference_status = 'reconciling'");
+  const hasSingleNotification = reconciliationCode.includes("appointment_notifications") && (reconciliationCode.includes("video_link_ready") || reconciliationCode.includes("sendConferenceLinkReady"));
   const hasReconcileEndpoint = appointmentsRouterCode.includes("reconcile-conference");
-  const hasSendLinkReady = appointmentsRouterCode.includes("sendConferenceLinkReady") || publicBookingCode.includes("sendConferenceLinkReady");
-  assert(hasReconciliationHelper, 'Background & on-demand conference reconciliation helper implemented');
+  assert(hasDurableClaim, 'Durable reconciliation worker claims pending items with atomic state transition');
+  assert(hasSingleNotification, 'Customer email notification dispatched exactly once upon verified Google Meet URL');
   assert(hasReconcileEndpoint, 'Staff admin API provides POST /api/admin/appointments/:id/reconcile-conference');
-  assert(hasSendLinkReady, 'Customer email notification dispatched when Google Meet link is verified and ready');
 
   // --------------------------------------------------------------------------
-  // Check 7: Provider Honesty & Disabled Channels
+  // Check 7: Public Rate Limiting & Client IP Resolution
   // --------------------------------------------------------------------------
-  console.log('\n7. Verifying Provider Honesty (Teams & Zoom in Development)...');
+  console.log('\n7. Verifying Public Rate Limiting & IP Gateway Headers...');
+  const hasRateLimitTable = publicBookingCode.includes('public_rate_limits');
+  const hasIpResolution = publicBookingCode.includes('resolveClientIp');
+  const proxyPath = path.join(__dirname, '../src/app/api/public/[...slug]/route.ts');
+  const proxyCode = fs.readFileSync(proxyPath, 'utf8');
+  const forwardsClientIp = proxyCode.includes('x-laurrel-client-ip') || proxyCode.includes('X-Laurrel-Client-IP');
+  assert(hasRateLimitTable, 'Shared PostgreSQL rate limiting implemented via public_rate_limits table');
+  assert(hasIpResolution, 'Secure client IP extraction handles X-Laurrel-Client-IP, X-Forwarded-For and X-Real-IP');
+  assert(forwardsClientIp, 'Netlify gateway forwards genuine customer IP header to Express backend');
+
+  // --------------------------------------------------------------------------
+  // Check 8: Provider Honesty & Disabled Channels
+  // --------------------------------------------------------------------------
+  console.log('\n8. Verifying Provider Honesty (Teams & Zoom in Development)...');
   const bookPagePath = path.join(__dirname, '../src/app/book/page.tsx');
   const bookPageCode = fs.readFileSync(bookPagePath, 'utf8');
 

@@ -44,6 +44,8 @@ interface PublicConfig {
   maxBookingDays: number;
   timeZone: string;
   isGoogleMeetActive: boolean;
+  isOfficeConsultationActive?: boolean;
+  officeAddress?: string | null;
   channelInstructions: Record<string, string>;
 }
 
@@ -198,6 +200,9 @@ export default function PublicBookingPage() {
           const data = await res.json();
           if (data.success) {
             setConfig(data);
+            if (!data.isOfficeConsultationActive && selectedChannel === 'in_person') {
+              setSelectedChannel('telephone');
+            }
           }
         }
       } catch (err) {
@@ -551,7 +556,9 @@ export default function PublicBookingPage() {
                 // Channel availability check
                 const isGoogleMeetOffline =
                   ch.id === 'google_meet' && Boolean(config && !config.isGoogleMeetActive);
-                const isDisabled = ch.disabled || isGoogleMeetOffline;
+                const isOfficeUnavailable =
+                  ch.id === 'in_person' && Boolean(config && !config.isOfficeConsultationActive);
+                const isDisabled = ch.disabled || isGoogleMeetOffline || isOfficeUnavailable;
 
                 return (
                   <button
@@ -581,9 +588,11 @@ export default function PublicBookingPage() {
                           <Icon className="w-5 h-5" />
                         </div>
                         <span className={`text-[10px] font-semibold px-2 py-0.5 rounded ${
-                          ch.disabled ? 'bg-amber-100 text-amber-800 border border-amber-200' : 'bg-zinc-100 text-zinc-500'
+                          ch.disabled || isOfficeUnavailable
+                            ? 'bg-amber-100 text-amber-800 border border-amber-200'
+                            : 'bg-zinc-100 text-zinc-500'
                         }`}>
-                          {ch.badge}
+                          {isOfficeUnavailable ? 'Unavailable' : ch.badge}
                         </span>
                       </div>
                       <h3 className="text-sm font-bold text-zinc-900 leading-snug">{ch.title}</h3>
@@ -596,7 +605,19 @@ export default function PublicBookingPage() {
                         <span>Google Meet offline — please select Telephone or On-Site assessment.</span>
                       </div>
                     )}
-                    {ch.disabled && (
+                    {isOfficeUnavailable && (
+                      <div className="mt-3 text-[11px] font-medium text-amber-800 bg-amber-50/80 p-2 rounded border border-amber-200 flex items-center gap-1.5">
+                        <AlertCircle className="w-3.5 h-3.5 shrink-0 text-amber-600" />
+                        <span>Office consultations are temporarily unavailable (no verified meeting location configured). Please select Telephone, Google Meet, or On-Site assessment.</span>
+                      </div>
+                    )}
+                    {ch.id === 'in_person' && config?.isOfficeConsultationActive && config.officeAddress && (
+                      <div className="mt-3 text-[11px] text-zinc-600 bg-zinc-50 p-2 rounded border border-zinc-200 flex items-start gap-1.5">
+                        <MapPin className="w-3.5 h-3.5 shrink-0 text-[#390044] mt-0.5" />
+                        <span>Location: {config.officeAddress}</span>
+                      </div>
+                    )}
+                    {ch.disabled && !isOfficeUnavailable && (
                       <div className="mt-3 text-[11px] font-medium text-amber-800 bg-amber-50/80 p-2 rounded border border-amber-200 flex items-center gap-1.5">
                         <AlertCircle className="w-3.5 h-3.5 shrink-0 text-amber-600" />
                         <span>Channel in active development — coming soon.</span>
@@ -1030,6 +1051,20 @@ export default function PublicBookingPage() {
                 <div>
                   <span className="text-zinc-500 font-medium">Service Location</span>
                   <div className="font-bold text-zinc-900 text-sm mt-0.5">{serviceAddress}</div>
+                </div>
+              )}
+
+              {selectedChannel === 'in_person' && config?.officeAddress && (
+                <div>
+                  <span className="text-zinc-500 font-medium">Laurrel Consultation Office</span>
+                  <div className="font-bold text-zinc-900 text-sm mt-0.5">{config.officeAddress}</div>
+                </div>
+              )}
+
+              {selectedChannel === 'in_person' && config?.officeAddress && (
+                <div>
+                  <span className="text-zinc-500 font-medium">Laurrel Consultation Office</span>
+                  <div className="font-bold text-zinc-900 text-sm mt-0.5">{config.officeAddress}</div>
                 </div>
               )}
 

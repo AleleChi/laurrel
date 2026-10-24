@@ -21,7 +21,7 @@ import {
   deleteGoogleCalendarEvent,
   createGoogleMeetEvent,
 } from '../services/video/googleCalendarClient';
-import { reconcileAndNotifyAppointment } from './publicBooking';
+import { claimAndReconcileAppointment } from '../services/video/reconciliationService';
 
 export const appointmentsRouter = Router();
 
@@ -818,7 +818,7 @@ appointmentsRouter.post(
   async (req: Request, res: Response) => {
     try {
       const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
-      const result = await reconcileAndNotifyAppointment(id);
+      const result = await claimAndReconcileAppointment(id, req.adminUser?.name || 'Staff Administrator');
       const appointment = await getAppointmentById(id);
       res.json({ success: true, ...result, appointment });
     } catch (err: any) {
