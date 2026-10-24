@@ -1,6 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminSessionFromRequest } from '@/lib/auth/session';
 
+async function safeParseBackendResponse(res: Response): Promise<{ data: any; status: number }> {
+  const text = await res.text();
+  if (!text || text.trim() === '') {
+    return { data: { success: res.ok }, status: res.status };
+  }
+  try {
+    const data = JSON.parse(text);
+    return { data, status: res.status };
+  } catch {
+    console.error(`[Admin Gateway Error] Non-JSON backend response (HTTP ${res.status}):`, text.slice(0, 500));
+    return {
+      data: {
+        success: false,
+        error: res.ok
+          ? 'Administrative service returned an unformatted response.'
+          : 'Administrative backend service is temporarily unavailable. Please retry shortly.',
+      },
+      status: res.status,
+    };
+  }
+}
+
+
 export async function GET(req: NextRequest, { params }: { params: { slug: string[] } }) {
   const session = getAdminSessionFromRequest(req);
 
@@ -26,8 +49,8 @@ export async function GET(req: NextRequest, { params }: { params: { slug: string
       cache: 'no-store',
     });
 
-    const data = await res.json();
-    return NextResponse.json(data, { status: res.status });
+    const { data, status } = await safeParseBackendResponse(res);
+    return NextResponse.json(data, { status });
   } catch (err: any) {
     console.error(`[Admin Gateway Error] Failed to reach backend at ${target}:`, err.message);
     return NextResponse.json(
@@ -65,8 +88,8 @@ export async function PATCH(req: NextRequest, { params }: { params: { slug: stri
       body: JSON.stringify(body),
     });
 
-    const data = await res.json();
-    return NextResponse.json(data, { status: res.status });
+    const { data, status } = await safeParseBackendResponse(res);
+    return NextResponse.json(data, { status });
   } catch (err: any) {
     console.error(`[Admin Gateway Error] Failed PATCH to backend at ${target}:`, err.message);
     return NextResponse.json(
@@ -122,8 +145,8 @@ export async function POST(req: NextRequest, { params }: { params: { slug: strin
       body: bodyData,
     });
 
-    const data = await res.json();
-    return NextResponse.json(data, { status: res.status });
+    const { data, status } = await safeParseBackendResponse(res);
+    return NextResponse.json(data, { status });
   } catch (err: any) {
     console.error(`[Admin Gateway Error] Failed POST to backend at ${target}:`, err.message);
     return NextResponse.json(
@@ -157,8 +180,8 @@ export async function DELETE(req: NextRequest, { params }: { params: { slug: str
       },
     });
 
-    const data = await res.json();
-    return NextResponse.json(data, { status: res.status });
+    const { data, status } = await safeParseBackendResponse(res);
+    return NextResponse.json(data, { status });
   } catch (err: any) {
     console.error(`[Admin Gateway Error] Failed DELETE to backend at ${target}:`, err.message);
     return NextResponse.json(

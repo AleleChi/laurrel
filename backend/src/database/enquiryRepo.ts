@@ -258,8 +258,9 @@ export async function getEnquiryById(id: string): Promise<EnquiryRecord | null> 
           })),
         };
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('[PostgreSQL getEnquiryById Error]:', err);
+      throw new Error(`Database error retrieving enquiry ${id}: ${err.message}`);
     }
   }
 
@@ -272,6 +273,46 @@ export async function getEnquiryById(id: string): Promise<EnquiryRecord | null> 
   } catch (e) {}
 
   return null;
+}
+
+/**
+ * Counts total enquiries matching optional status or service filter
+ */
+export async function countEnquiries(filter?: { status?: string; service?: string }): Promise<number> {
+  const pool = getDbPool();
+  if (pool) {
+    try {
+      let query = 'SELECT COUNT(*)::int as count FROM enquiries';
+      const conditions: string[] = [];
+      const values: any[] = [];
+
+      if (filter?.status) {
+        values.push(filter.status);
+        conditions.push(`status = $${values.length}`);
+      }
+
+      if (filter?.service) {
+        values.push(filter.service);
+        conditions.push(`$${values.length} = ANY(services)`);
+      }
+
+      if (conditions.length > 0) {
+        query += ' WHERE ' + conditions.join(' AND ');
+      }
+
+      const res = await pool.query(query, values);
+      return res.rows[0]?.count || 0;
+    } catch (err: any) {
+      console.error('[PostgreSQL countEnquiries Error]:', err);
+      throw new Error(`Database error counting enquiries: ${err.message}`);
+    }
+  }
+
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error('Database service is not configured in production environment.');
+  }
+
+  return 0;
 }
 
 /**
@@ -324,9 +365,14 @@ export async function listEnquiries(filter?: { status?: string; service?: string
         createdAt: row.created_at,
         updatedAt: row.updated_at,
       }));
-    } catch (err) {
+    } catch (err: any) {
       console.error('[PostgreSQL listEnquiries Error]:', err);
+      throw new Error(`Database error retrieving enquiries: ${err.message}`);
     }
+  }
+
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error('Database service is not configured in production environment.');
   }
 
   try {

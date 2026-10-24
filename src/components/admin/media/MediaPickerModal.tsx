@@ -82,42 +82,40 @@ export function MediaPickerModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs">
-      <div className="bg-white rounded-2xl shadow-2xl border border-black/[0.08] w-full max-w-4xl h-[82vh] flex flex-col overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-2xs p-4">
+      <div className="bg-white rounded-md border border-zinc-200 shadow-xl w-full max-w-4xl overflow-hidden flex flex-col h-[85vh]">
         {/* Header */}
-        <div className="px-6 py-4 border-b border-black/[0.06] flex items-center justify-between bg-zinc-50/60">
+        <div className="px-6 py-4 border-b border-zinc-200/80 flex items-center justify-between bg-zinc-50/70">
           <div>
-            <h2 className="text-base font-bold text-zinc-900 tracking-tight">{title}</h2>
-            <p className="text-xs text-zinc-400">Choose from existing library assets or upload a new asset.</p>
+            <h2 className="text-sm font-bold text-zinc-900 tracking-tight">{title}</h2>
+            <p className="text-xs text-zinc-500 mt-0.5">Select an asset from Cloudflare R2</p>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-900 hover:bg-black/5 transition-colors cursor-pointer"
+            className="p-1.5 rounded-md text-zinc-400 hover:text-zinc-700 hover:bg-zinc-100 transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Filters & Actions Bar */}
-        <div className="px-6 py-3 border-b border-black/[0.06] bg-white flex flex-col sm:flex-row items-center justify-between gap-3">
-          <div className="flex items-center gap-3 w-full sm:w-auto">
-            {/* Search */}
-            <div className="relative flex-1 sm:w-64">
-              <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
+        {/* Toolbar */}
+        <div className="p-4 border-b border-zinc-200/80 bg-white flex flex-col sm:flex-row items-center justify-between gap-3">
+          <div className="flex items-center gap-2 w-full sm:w-auto flex-1">
+            <div className="relative flex-1 max-w-sm">
+              <Search className="w-4 h-4 absolute left-3 top-2.5 text-zinc-400" />
               <input
                 type="text"
-                placeholder="Search assets..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full pl-8 pr-3 py-1.5 bg-[#F8F7F4] border border-black/10 rounded-lg text-xs text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#49056B]"
+                placeholder="Search media assets..."
+                className="w-full pl-9 pr-3 py-1.5 bg-zinc-50 border border-zinc-200/80 rounded-md text-xs text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#49056B]"
               />
             </div>
 
-            {/* Folder Filter */}
             <select
               value={folder}
               onChange={(e) => setFolder(e.target.value)}
-              className="px-3 py-1.5 bg-[#F8F7F4] border border-black/10 rounded-lg text-xs text-zinc-900 focus:outline-none focus:ring-2 focus:ring-[#49056B]"
+              className="px-3 py-1.5 bg-zinc-50 border border-zinc-200/80 rounded-md text-xs text-zinc-800 focus:outline-none focus:ring-2 focus:ring-[#49056B]"
             >
               <option value="all">All Folders</option>
               <option value="hero">Hero</option>
@@ -131,7 +129,7 @@ export function MediaPickerModal({
 
           <button
             onClick={() => setIsUploadOpen(true)}
-            className="w-full sm:w-auto px-3.5 py-1.5 rounded-lg bg-[#49056B] text-white text-xs font-semibold hover:bg-[#5B0785] transition-colors flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
+            className="w-full sm:w-auto px-3.5 py-1.5 rounded-md bg-[#49056B] text-white text-xs font-semibold hover:bg-[#390044] transition-colors flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs"
           >
             <UploadCloud className="w-3.5 h-3.5" />
             <span>Upload New</span>
@@ -139,14 +137,14 @@ export function MediaPickerModal({
         </div>
 
         {/* Media Grid */}
-        <div className="flex-1 overflow-y-auto p-6 bg-[#F8F7F4]/40">
+        <div className="flex-1 overflow-y-auto p-5 bg-zinc-50/40">
           {loading ? (
-            <div className="h-64 flex flex-col items-center justify-center gap-3">
-              <div className="w-6 h-6 border-2 border-[#49056B]/30 border-t-[#49056B] rounded-full animate-spin" />
-              <span className="text-xs text-zinc-400">Loading library assets...</span>
+            <div className="h-64 flex flex-col items-center justify-center gap-2 text-zinc-400 text-xs">
+              <div className="w-5 h-5 border-2 border-[#49056B]/30 border-t-[#49056B] rounded-full animate-spin" />
+              <span>Loading media assets...</span>
             </div>
           ) : assets.length === 0 ? (
-            <div className="h-64 flex flex-col items-center justify-center text-center p-6 border border-dashed border-zinc-200 rounded-xl bg-white">
+            <div className="h-64 flex flex-col items-center justify-center text-center p-6 border border-dashed border-zinc-200 rounded-md bg-white">
               <ImageIcon className="w-8 h-8 text-zinc-300 mb-2" />
               <p className="text-xs font-bold text-zinc-700">No media assets found</p>
               <p className="text-[11px] text-zinc-400 mt-1 max-w-sm">
@@ -160,7 +158,7 @@ export function MediaPickerModal({
               </button>
             </div>
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3.5">
               {assets.map((asset) => {
                 const isSelected = selectedAsset?.id === asset.id;
                 const isCurrent = asset.publicUrl === currentAssetUrl;
@@ -169,14 +167,14 @@ export function MediaPickerModal({
                   <div
                     key={asset.id}
                     onClick={() => setSelectedAsset(asset)}
-                    className={`group relative rounded-[10px] border overflow-hidden cursor-pointer bg-white transition-all flex flex-col ${
+                    className={`group relative rounded-md border overflow-hidden cursor-pointer bg-white transition-all flex flex-col shadow-2xs ${
                       isSelected
-                        ? 'border-[#49056B] ring-2 ring-[#49056B]/25 shadow-xs'
-                        : 'border-black/[0.08] hover:border-black/25'
+                        ? 'border-[#49056B] ring-2 ring-[#49056B]/25'
+                        : 'border-zinc-200/80 hover:border-zinc-300'
                     }`}
                   >
                     {/* Thumbnail box */}
-                    <div className="aspect-[4/3] bg-zinc-100 relative overflow-hidden flex items-center justify-center border-b border-black/[0.04]">
+                    <div className="aspect-[4/3] bg-zinc-100 relative overflow-hidden flex items-center justify-center border-b border-zinc-100">
                       {asset.assetType === 'video' ? (
                         <div className="relative w-full h-full flex items-center justify-center bg-zinc-950">
                           {asset.thumbnailUrl ? (
@@ -208,9 +206,9 @@ export function MediaPickerModal({
                         </div>
                       )}
 
-                      {/* Currently in use quiet tag */}
+                      {/* Active tag */}
                       {isCurrent && !isSelected && (
-                        <div className="absolute top-2 left-2 text-[9px] font-medium text-emerald-800 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200/80">
+                        <div className="absolute top-2 left-2 text-[9px] font-semibold text-emerald-800 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200/80">
                           Active
                         </div>
                       )}
@@ -218,12 +216,12 @@ export function MediaPickerModal({
 
                     {/* Metadata Card Footer */}
                     <div className="p-2.5 flex-1 flex flex-col justify-between">
-                      <p className="text-xs font-medium text-zinc-900 truncate" title={asset.originalFilename}>
+                      <h4 className="text-xs font-semibold text-zinc-900 truncate" title={asset.originalFilename}>
                         {asset.originalFilename}
-                      </p>
-                      <div className="flex items-center gap-1.5 mt-1 text-[11px] text-zinc-400">
-                        <span>{asset.width && asset.height ? `${asset.width}×${asset.height}` : asset.mimeType?.split('/')[1]?.toUpperCase() || 'FILE'}</span>
-                        <span>·</span>
+                      </h4>
+                      <div className="flex items-center gap-1.5 mt-1 text-[10px] text-zinc-400">
+                        <span className="uppercase">{asset.assetType}</span>
+                        <span>•</span>
                         <span>{formatFileSize(asset.fileSize)}</span>
                       </div>
                     </div>
@@ -234,55 +232,43 @@ export function MediaPickerModal({
           )}
         </div>
 
-        {/* Footer with Selected Asset Summary & Confirm */}
-        <div className="px-6 py-4 border-t border-black/[0.06] bg-white flex flex-col sm:flex-row items-center justify-between gap-3">
-          <div className="flex items-center gap-3 w-full sm:w-auto">
+        {/* Footer Actions */}
+        <div className="px-6 py-3.5 border-t border-zinc-200/80 bg-zinc-50 flex items-center justify-between">
+          <div className="text-xs text-zinc-500">
             {selectedAsset ? (
-              <div className="flex items-center gap-2.5">
-                <div className="w-10 h-8 rounded-md overflow-hidden bg-zinc-100 border border-black/10 shrink-0">
-                  <img
-                    src={selectedAsset.thumbnailUrl || selectedAsset.publicUrl}
-                    alt=""
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <div className="text-xs truncate max-w-[280px]">
-                  <p className="font-semibold text-zinc-900 truncate">{selectedAsset.originalFilename}</p>
-                  <p className="text-[10px] text-zinc-400 truncate">{selectedAsset.altText || 'No alt text'}</p>
-                </div>
-              </div>
+              <span className="truncate max-w-md block">
+                Selected: <strong className="text-zinc-900">{selectedAsset.originalFilename}</strong>
+              </span>
             ) : (
-              <span className="text-xs text-zinc-400 italic">Select an asset above to apply</span>
+              'Select an asset to continue'
             )}
           </div>
 
-          <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+          <div className="flex items-center gap-2.5">
             <button
               onClick={onClose}
-              className="px-4 py-2 rounded-xl text-xs font-semibold text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100 transition-colors cursor-pointer"
+              className="px-3.5 py-1.5 border border-zinc-200 rounded-md text-xs font-semibold text-zinc-700 hover:bg-zinc-100 transition-colors"
             >
               Cancel
             </button>
             <button
-              id="confirm-media-selection-btn"
               onClick={handleConfirm}
               disabled={!selectedAsset}
-              className="px-5 py-2 rounded-xl bg-[#49056B] text-white text-xs font-semibold hover:bg-[#5B0785] transition-all shadow-xs disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1.5 cursor-pointer"
+              className="px-4 py-1.5 rounded-md bg-[#49056B] text-white text-xs font-semibold hover:bg-[#390044] transition-colors disabled:opacity-50 shadow-2xs"
             >
-              <Check className="w-4 h-4" />
-              <span>Confirm Selection</span>
+              Use Selected Asset
             </button>
           </div>
         </div>
-
-        {/* Upload Modal nested */}
-        <MediaUploadModal
-          isOpen={isUploadOpen}
-          onClose={() => setIsUploadOpen(false)}
-          onSuccess={handleUploadSuccess}
-          allowedType={allowedType}
-        />
       </div>
+
+      {/* Embedded Upload Modal */}
+      <MediaUploadModal
+        isOpen={isUploadOpen}
+        onClose={() => setIsUploadOpen(false)}
+        onSuccess={handleUploadSuccess}
+        defaultFolder={folder !== 'all' ? folder : 'general'}
+      />
     </div>
   );
 }

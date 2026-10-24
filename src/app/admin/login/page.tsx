@@ -40,28 +40,22 @@ export default function AdminLoginPage() {
       if (!res.ok || !data.success) {
         setIsLoading(false);
         if (res.status === 423) {
-          // Account locked
           setErrorMessage(
             data.error ||
               'Account is temporarily locked due to multiple failed login attempts. Please try again later or reset your password.'
           );
         } else if (res.status === 503) {
-          // Service temporarily unavailable
           setErrorMessage('Sign-in is temporarily unavailable. Please try again shortly.');
-        } else if (res.status === 401 || res.status === 400) {
-          // Invalid credentials
-          setErrorMessage('Unable to sign in. Check your email and password.');
         } else {
-          setErrorMessage('Unable to sign in. Check your email and password.');
+          setErrorMessage('Unable to sign in. Please verify your email and password.');
         }
         return;
       }
 
-      // Successful login
       router.push('/admin');
       router.refresh();
     } catch (err) {
-      setErrorMessage('Sign-in is temporarily unavailable. Please try again shortly.');
+      setErrorMessage('Sign-in is temporarily unavailable. Please check server status.');
       setIsLoading(false);
     }
   };
@@ -70,10 +64,10 @@ export default function AdminLoginPage() {
     <main className="min-h-screen flex items-center justify-center bg-[#F8F7F4] px-4 py-12 font-sans antialiased text-[#202024]">
       <div className="w-full max-w-[400px]">
         {/* Top return link */}
-        <div className="mb-5">
+        <div className="mb-4">
           <Link
             href="/"
-            className="inline-flex items-center gap-1.5 text-xs font-medium text-zinc-500 hover:text-zinc-900 transition-colors"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-zinc-500 hover:text-[#49056B] transition-colors"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
             <span>Return to Public Website</span>
@@ -81,21 +75,21 @@ export default function AdminLoginPage() {
         </div>
 
         {/* Refined Login Card */}
-        <div className="bg-white rounded-2xl p-7 sm:p-9 border border-black/[0.08] shadow-xs">
-          {/* Logo & Heading - Clean, editorial, no decorative pills */}
-          <div className="flex flex-col items-center text-center mb-7">
-            <Link href="/" className="relative h-9 w-40 mb-3 select-none block">
+        <div className="bg-white rounded-md p-6 sm:p-8 border border-zinc-200/80 shadow-2xs">
+          {/* Logo & Heading */}
+          <div className="flex flex-col items-center text-center mb-6">
+            <Link href="/" className="relative h-8 w-36 mb-3 select-none block">
               <Image
                 src="/assets/brand/laurrel-logo-primary.png"
                 alt="Laurrel Services"
                 fill
-                sizes="160px"
+                sizes="144px"
                 className="object-contain"
                 priority
               />
             </Link>
-            <h1 className="text-lg font-bold tracking-tight text-zinc-900">
-              Operations Portal
+            <h1 className="text-base font-bold tracking-tight text-zinc-900">
+              Operations Portal Sign In
             </h1>
             <p className="text-xs text-zinc-500 mt-0.5">
               Authorized Laurrel administrative access
@@ -106,7 +100,7 @@ export default function AdminLoginPage() {
           {errorMessage && (
             <div
               role="alert"
-              className="mb-5 p-3 rounded-lg bg-red-50/80 border border-red-200/80 text-xs text-red-800 leading-relaxed flex items-start gap-2"
+              className="mb-4 p-3 rounded-md bg-red-50 border border-red-200 text-xs text-red-800 leading-relaxed flex items-start gap-2"
             >
               <span className="font-semibold shrink-0 text-red-700">Notice:</span>
               <span>{errorMessage}</span>
@@ -118,7 +112,7 @@ export default function AdminLoginPage() {
             <div>
               <label
                 htmlFor="admin-email"
-                className="block text-xs font-semibold text-zinc-700 mb-1.5"
+                className="block text-xs font-semibold text-zinc-700 mb-1"
               >
                 Administrator Email
               </label>
@@ -132,14 +126,14 @@ export default function AdminLoginPage() {
                   required
                   autoFocus
                   autoComplete="email"
-                  className="w-full px-3.5 py-2.5 bg-[#F8F7F4] border border-black/10 rounded-[10px] text-xs text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#49056B] focus:border-transparent transition-all"
+                  className="w-full px-3 py-2 bg-zinc-50 border border-zinc-200/80 rounded-md text-xs text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#49056B] focus:bg-white transition-all"
                 />
                 <Mail className="w-4 h-4 text-zinc-400 absolute right-3 top-2.5 pointer-events-none" />
               </div>
             </div>
 
             <div>
-              <div className="flex items-center justify-between mb-1.5">
+              <div className="flex items-center justify-between mb-1">
                 <label
                   htmlFor="admin-password"
                   className="block text-xs font-semibold text-zinc-700"
@@ -148,7 +142,7 @@ export default function AdminLoginPage() {
                 </label>
                 <Link
                   href="/admin/forgot-password"
-                  className="text-xs text-[#49056B] hover:text-[#5B0785] font-medium transition-colors"
+                  className="text-xs text-[#49056B] hover:underline font-semibold transition-colors"
                 >
                   Forgot password?
                 </Link>
@@ -162,13 +156,13 @@ export default function AdminLoginPage() {
                   placeholder="••••••••••••"
                   required
                   autoComplete="current-password"
-                  className="w-full px-3.5 py-2.5 pr-10 bg-[#F8F7F4] border border-black/10 rounded-[10px] text-xs text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#49056B] focus:border-transparent transition-all"
+                  className="w-full px-3 py-2 pr-10 bg-zinc-50 border border-zinc-200/80 rounded-md text-xs text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#49056B] focus:bg-white transition-all"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   aria-label={showPassword ? 'Hide password' : 'Show password'}
-                  className="absolute right-2.5 top-2.5 p-0.5 text-zinc-400 hover:text-zinc-800 transition-colors focus:outline-none"
+                  className="absolute right-2.5 top-2 p-0.5 text-zinc-400 hover:text-zinc-800 transition-colors focus:outline-none"
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
@@ -179,7 +173,7 @@ export default function AdminLoginPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full mt-2 py-2.5 px-4 rounded-[10px] bg-[#49056B] text-white text-xs font-semibold shadow-xs hover:bg-[#5B0785] focus:outline-none focus:ring-2 focus:ring-[#49056B] focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
+              className="w-full mt-2 py-2 px-4 rounded-md bg-[#49056B] text-white text-xs font-semibold hover:bg-[#390044] focus:outline-none focus:ring-2 focus:ring-[#49056B] focus:ring-offset-2 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
             >
               {isLoading ? (
                 <>
@@ -196,8 +190,8 @@ export default function AdminLoginPage() {
           </form>
 
           {/* Footer note */}
-          <div className="mt-7 pt-5 border-t border-black/[0.06] text-center">
-            <p className="text-[10px] text-zinc-400 tracking-wider uppercase font-medium">
+          <div className="mt-6 pt-4 border-t border-zinc-100 text-center">
+            <p className="text-[10px] text-zinc-400 tracking-wider uppercase font-semibold">
               Laurrel Services • Ottawa Operations
             </p>
           </div>

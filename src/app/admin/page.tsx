@@ -6,31 +6,64 @@ import {
   ArrowRight,
   RefreshCw,
   AlertCircle,
-  CheckCircle2,
   Clock,
   PhoneCall,
   Inbox,
   CalendarDays,
-  Calendar,
+  ExternalLink,
+  ChevronRight,
+  User,
+  MapPin,
+  CheckCircle2,
 } from 'lucide-react';
 import {
+  ResponsiveContainer,
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  Tooltip,
+  CartesianGrid,
+  BarChart,
+  Bar,
+  Cell,
+  PieChart,
+  Pie,
+} from 'recharts';
+import {
   formatCanadianDate,
-  formatEnquirySource,
   formatOttawaDate,
   formatOttawaTime,
   formatAppointmentType,
   formatAppointmentStatus,
 } from '@/lib/utils/formatters';
 
+interface TimelinePoint {
+  period: string;
+  count: number;
+}
+
+interface ServiceBreakdownItem {
+  service: string;
+  count: number;
+}
+
+interface StatusBreakdownItem {
+  status: string;
+  count: number;
+}
+
 interface Stats {
   totalEnquiries: number;
   newEnquiries: number;
   reviewed: number;
   scheduled: number;
-  failedDeliveries: number;
   pendingHandoffs: number;
-  upcomingAppointments?: number;
-  todayAppointments?: number;
+  upcomingAppointments: number;
+  todayAppointments: number;
+  timeline?: TimelinePoint[];
+  servicesBreakdown?: ServiceBreakdownItem[];
+  statusBreakdown?: StatusBreakdownItem[];
 }
 
 interface AppointmentItem {
@@ -72,6 +105,11 @@ export default function AdminOverviewPage() {
   const [loading, setLoading] = useState<boolean>(true);
   const [refreshing, setRefreshing] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
+  const [mounted, setMounted] = useState<boolean>(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const loadOverviewData = async () => {
     try {
@@ -114,34 +152,84 @@ export default function AdminOverviewPage() {
     loadOverviewData();
   }, []);
 
-  // Clean, restrained status presentation without decorative dots or badge-heavy styling
-  const renderStatus = (status: string) => {
+  const renderStatusBadge = (status: string) => {
     switch (status) {
       case 'new':
-        return <span className="text-xs font-semibold text-[#FE6000]">New Lead</span>;
+        return (
+          <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-orange-50 text-[#FE6000] border border-orange-200/60">
+            Awaiting Review
+          </span>
+        );
       case 'reviewed':
-        return <span className="text-xs font-medium text-zinc-700">Reviewed</span>;
+        return (
+          <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-zinc-100 text-zinc-700 border border-zinc-200">
+            Reviewed
+          </span>
+        );
       case 'quoted':
-        return <span className="text-xs font-medium text-[#49056B]">Quoted</span>;
+        return (
+          <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-purple-50 text-[#49056B] border border-purple-200/60">
+            Quoted
+          </span>
+        );
       case 'scheduled':
-        return <span className="text-xs font-medium text-emerald-700">Scheduled</span>;
+        return (
+          <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200/60">
+            Scheduled
+          </span>
+        );
       case 'closed':
-        return <span className="text-xs text-zinc-400">Closed</span>;
+        return (
+          <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-zinc-50 text-zinc-400 border border-zinc-200/60">
+            Closed
+          </span>
+        );
       default:
-        return <span className="text-xs text-zinc-500 capitalize">{status}</span>;
+        return (
+          <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-zinc-100 text-zinc-600 capitalize">
+            {status}
+          </span>
+        );
     }
+  };
+
+  // Format Timeline points for chart display
+  const timelineChartData = (stats?.timeline || []).map((t) => {
+    try {
+      const parts = t.period.split('-');
+      const date = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+      return {
+        label: date.toLocaleDateString('en-CA', { month: 'short', day: 'numeric' }),
+        count: t.count,
+        rawDate: t.period,
+      };
+    } catch {
+      return { label: t.period, count: t.count, rawDate: t.period };
+    }
+  });
+
+  const serviceChartData = (stats?.servicesBreakdown || []).map((s) => ({
+    name: s.service.charAt(0).toUpperCase() + s.service.slice(1),
+    count: s.count,
+  }));
+
+  const SERVICE_COLORS: Record<string, string> = {
+    Moving: '#49056B',
+    Cleaning: '#FE6000',
+    Storage: '#2563EB',
+    General: '#6B7280',
   };
 
   return (
     <div className="space-y-6">
-      {/* Editorial Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-2">
+      {/* Top Page Header (Canadian Business Restraint) */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-1">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-zinc-900">
-            Business Operations Overview
+            Overview
           </h1>
-          <p className="text-sm text-zinc-500 mt-1">
-            Real-time status of inbound service requests, customer enquiries, and customer follow-ups.
+          <p className="text-xs text-zinc-500 mt-0.5">
+            Operations summary and active customer dispatch for Ottawa, Ontario.
           </p>
         </div>
 
@@ -149,309 +237,398 @@ export default function AdminOverviewPage() {
           <button
             onClick={loadOverviewData}
             disabled={refreshing}
-            className="inline-flex items-center gap-2 px-3 py-2 rounded-[10px] bg-white border border-black/10 text-xs font-medium text-zinc-700 hover:bg-black/[0.02] hover:text-zinc-900 transition-colors shadow-2xs disabled:opacity-60"
+            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md bg-white border border-zinc-200/80 text-xs font-semibold text-zinc-700 hover:bg-zinc-50 transition-colors shadow-2xs disabled:opacity-60"
           >
-            <RefreshCw className={`w-3.5 h-3.5 text-zinc-400 ${refreshing ? 'animate-spin' : ''}`} />
-            <span>{refreshing ? 'Refreshing' : 'Refresh'}</span>
+            <RefreshCw className={`w-3.5 h-3.5 text-zinc-500 ${refreshing ? 'animate-spin' : ''}`} />
+            <span>{refreshing ? 'Refreshing...' : 'Refresh'}</span>
           </button>
-
-          <Link
-            href="/admin/enquiries"
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-[10px] bg-[#49056B] text-white text-xs font-semibold hover:bg-[#5B0785] transition-all shadow-2xs"
-          >
-            <span>All Enquiries</span>
-            <ArrowRight className="w-3.5 h-3.5 text-orange-400" />
-          </Link>
         </div>
       </div>
 
       {error && (
-        <div className="p-4 rounded-xl bg-amber-50/70 border border-amber-200/80 text-xs text-amber-900 flex items-center justify-between">
+        <div className="p-3.5 rounded-md bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-center justify-between">
           <div className="flex items-center gap-2">
             <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
             <span>{error}</span>
           </div>
           <button
             onClick={loadOverviewData}
-            className="font-semibold underline hover:text-amber-800"
+            className="text-amber-800 font-semibold underline hover:no-underline ml-4"
           >
             Retry
           </button>
         </div>
       )}
 
-      {/* Simplified, Calm KPI Metric Row - No loud decorative circles */}
+      {/* 1. TOP PERFORMANCE SUMMARY — Compact, Sophisticated KPI Panels (WowDash Style) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Metric 1: Total Recorded */}
-        <div className="bg-white rounded-xl p-5 border border-black/[0.06] shadow-xs flex flex-col justify-between">
-          <div className="text-xs font-medium text-zinc-500 tracking-wide uppercase">
-            Total Inbound
-          </div>
-          <div className="my-2.5">
-            <div className="text-3xl font-semibold text-zinc-900 tracking-tight">
-              {loading ? '—' : stats?.totalEnquiries ?? 0}
+        {/* KPI 1: Total Enquiries */}
+        <div className="bg-white p-4 rounded-md border border-zinc-200/80 shadow-2xs hover:border-zinc-300 transition-colors">
+          <div className="flex items-center justify-between text-zinc-500 mb-2">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-500">
+              Total Inbound Enquiries
+            </span>
+            <div className="w-8 h-8 rounded-md bg-zinc-100 text-zinc-600 flex items-center justify-center">
+              <Inbox className="w-4 h-4" />
             </div>
-            <p className="text-xs text-zinc-400 mt-0.5">Recorded in database</p>
           </div>
-          <div className="text-[11px] text-zinc-400">All channels combined</div>
+          <div className="text-2xl font-bold text-zinc-900 tracking-tight">
+            {stats ? stats.totalEnquiries : '—'}
+          </div>
+          <p className="text-[11px] text-zinc-500 mt-1">
+            All-time customer quote requests
+          </p>
         </div>
 
-        {/* Metric 2: Action Required */}
-        <div className="bg-white rounded-xl p-5 border border-black/[0.06] shadow-xs flex flex-col justify-between border-l-3 border-l-[#FE6000]">
-          <div className="text-xs font-medium text-[#FE6000] tracking-wide uppercase">
-            Action Required
-          </div>
-          <div className="my-2.5">
-            <div className="text-3xl font-semibold text-[#FE6000] tracking-tight">
-              {loading ? '—' : stats?.newEnquiries ?? 0}
+        {/* KPI 2: Awaiting Review */}
+        <div className="bg-white p-4 rounded-md border border-zinc-200/80 shadow-2xs hover:border-zinc-300 transition-colors">
+          <div className="flex items-center justify-between text-zinc-500 mb-2">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-500">
+              Awaiting Review
+            </span>
+            <div className="w-8 h-8 rounded-md bg-orange-50 text-[#FE6000] flex items-center justify-center">
+              <Clock className="w-4 h-4" />
             </div>
-            <p className="text-xs text-zinc-500 mt-0.5">Awaiting first review</p>
           </div>
-          <div className="text-[11px] text-zinc-400">&lt; 2-hour response goal</div>
+          <div className="text-2xl font-bold text-[#FE6000] tracking-tight">
+            {stats ? stats.newEnquiries : '—'}
+          </div>
+          <p className="text-[11px] text-zinc-500 mt-1">
+            New leads requiring coordinator review
+          </p>
         </div>
 
-        {/* Metric 3: Pipeline */}
-        <div className="bg-white rounded-xl p-5 border border-black/[0.06] shadow-xs flex flex-col justify-between">
-          <div className="text-xs font-medium text-zinc-500 tracking-wide uppercase">
-            In Pipeline
-          </div>
-          <div className="my-2.5">
-            <div className="text-3xl font-semibold text-zinc-900 tracking-tight">
-              {loading ? '—' : (stats?.reviewed ?? 0) + (stats?.scheduled ?? 0)}
+        {/* KPI 3: Upcoming Consultations */}
+        <div className="bg-white p-4 rounded-md border border-zinc-200/80 shadow-2xs hover:border-zinc-300 transition-colors">
+          <div className="flex items-center justify-between text-zinc-500 mb-2">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-500">
+              Upcoming Consultations
+            </span>
+            <div className="w-8 h-8 rounded-md bg-purple-50 text-[#49056B] flex items-center justify-center">
+              <CalendarDays className="w-4 h-4" />
             </div>
-            <p className="text-xs text-zinc-400 mt-0.5">Reviewed or scheduled</p>
           </div>
-          <div className="text-[11px] text-zinc-400">
-            {stats?.reviewed ?? 0} reviewed • {stats?.scheduled ?? 0} scheduled
+          <div className="text-2xl font-bold text-[#49056B] tracking-tight">
+            {stats ? stats.upcomingAppointments : '—'}
           </div>
+          <p className="text-[11px] text-zinc-500 mt-1">
+            Scheduled consultations in Ottawa
+          </p>
         </div>
 
-        {/* Metric 4: Customer Follow-ups */}
-        <div className="bg-white rounded-xl p-5 border border-black/[0.06] shadow-xs flex flex-col justify-between">
-          <div className="text-xs font-medium text-zinc-500 tracking-wide uppercase">
-            Customer Follow-ups
-          </div>
-          <div className="my-2.5">
-            <div className="text-3xl font-semibold text-zinc-900 tracking-tight">
-              {loading ? '—' : stats?.pendingHandoffs ?? 0}
+        {/* KPI 4: Callback Requests */}
+        <div className="bg-white p-4 rounded-md border border-zinc-200/80 shadow-2xs hover:border-zinc-300 transition-colors">
+          <div className="flex items-center justify-between text-zinc-500 mb-2">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-500">
+              Callback Requests
+            </span>
+            <div className="w-8 h-8 rounded-md bg-blue-50 text-blue-600 flex items-center justify-center">
+              <PhoneCall className="w-4 h-4" />
             </div>
-            <p className="text-xs text-zinc-400 mt-0.5">Requests awaiting staff follow-up</p>
           </div>
-          <div className="text-[11px] text-zinc-400">Callback & inquiry follow-ups</div>
+          <div className="text-2xl font-bold text-zinc-900 tracking-tight">
+            {stats ? stats.pendingHandoffs : '—'}
+          </div>
+          <p className="text-[11px] text-zinc-500 mt-1">
+            Customer phone callbacks requested
+          </p>
         </div>
       </div>
 
-      {/* Executive Operational Overview - Coherent control surface, no boxes inside boxes */}
-      <div className="bg-white rounded-xl border border-black/[0.06] shadow-xs p-6">
-        <div className="flex items-center justify-between pb-4 border-b border-black/[0.06]">
-          <div>
-            <h2 className="text-sm font-semibold text-zinc-900">Operational Priority Checklist</h2>
-            <p className="text-xs text-zinc-500 mt-0.5">Key daily touchpoints requiring lead coordinator response.</p>
-          </div>
-          <span className="text-[11px] text-zinc-400 font-medium">Daily Target: 100% Qualified</span>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-black/[0.06] pt-4">
-          {/* Column 1 */}
-          <div className="py-3 md:py-0 md:pr-6">
-            <div className="flex items-center justify-between mb-1.5">
-              <span className="text-xs font-semibold text-zinc-800">Unreviewed Inquiries</span>
-              <span className="text-xs font-bold text-[#FE6000]">{stats?.newEnquiries ?? 0}</span>
+      {/* 2. MIDDLE OPERATIONAL REPORTING — Primary Chart Area (Real Authenticated Data) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* Main Chart: Inbound Activity Timeline (8 cols) */}
+        <div className="lg:col-span-8 bg-white p-5 rounded-md border border-zinc-200/80 shadow-2xs">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="text-sm font-bold text-zinc-900">Enquiry Activity Over Time</h2>
+              <p className="text-[11px] text-zinc-500 mt-0.5">
+                Verified daily volume of customer enquiries across Ottawa
+              </p>
             </div>
-            <p className="text-xs text-zinc-500 leading-relaxed">
-              {(stats?.newEnquiries ?? 0) > 0
-                ? `${stats?.newEnquiries} customer lead(s) require qualification and estimate dispatch.`
-                : 'All inbound quote requests have been reviewed and processed.'}
-            </p>
-            <Link
-              href="/admin/enquiries?status=new"
-              className="inline-flex items-center gap-1 text-xs font-medium text-[#49056B] hover:text-[#5B0785] mt-2.5 transition-colors"
-            >
-              <span>Review pending leads</span>
-              <ArrowRight className="w-3 h-3" />
-            </Link>
-          </div>
-
-          {/* Column 2 */}
-          <div className="py-3 md:py-0 md:px-6">
-            <div className="flex items-center justify-between mb-1.5">
-              <span className="text-xs font-semibold text-zinc-800">Customer Callback Requests</span>
-              <span className="text-xs font-bold text-zinc-900">{stats?.pendingHandoffs ?? 0}</span>
-            </div>
-            <p className="text-xs text-zinc-500 leading-relaxed">
-              {(stats?.pendingHandoffs ?? 0) > 0
-                ? `${stats?.pendingHandoffs} visitor chat session(s) awaiting telephone or email follow-up.`
-                : 'No pending callback requests requiring follow-up.'}
-            </p>
-            <Link
-              href="/admin/enquiries"
-              className="inline-flex items-center gap-1 text-xs font-medium text-[#49056B] hover:text-[#5B0785] mt-2.5 transition-colors"
-            >
-              <span>View callback requests</span>
-              <ArrowRight className="w-3 h-3" />
-            </Link>
-          </div>
-
-          {/* Column 3 */}
-          <div className="py-3 md:py-0 md:pl-6">
-            <div className="flex items-center justify-between mb-1.5">
-              <span className="text-xs font-semibold text-zinc-800">
-                {(stats?.failedDeliveries ?? 0) > 0
-                  ? 'Email Notifications Needing Attention'
-                  : 'Dispatch Notifications'}
-              </span>
-              <span className={`text-xs font-medium ${(stats?.failedDeliveries ?? 0) > 0 ? 'text-amber-600 font-bold' : 'text-emerald-600'}`}>
-                {(stats?.failedDeliveries ?? 0) > 0 ? `${stats?.failedDeliveries} Alert` : 'Active'}
-              </span>
-            </div>
-            <p className="text-xs text-zinc-500 leading-relaxed">
-              {(stats?.failedDeliveries ?? 0) === 0
-                ? 'Outbound email notifications operational. Zero delivery failures logged.'
-                : `${stats?.failedDeliveries} email notification(s) needing attention.`}
-            </p>
-            <span className="inline-block text-[11px] text-zinc-400 mt-2.5">
-              Automated logging enabled
+            <span className="text-[11px] font-medium px-2 py-0.5 rounded bg-zinc-100 text-zinc-600">
+              Last 60 Days
             </span>
           </div>
+
+          <div className="h-64 w-full">
+            {mounted && timelineChartData.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={timelineChartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="purpleGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#49056B" stopOpacity={0.2} />
+                      <stop offset="95%" stopColor="#49056B" stopOpacity={0.0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
+                  <XAxis
+                    dataKey="label"
+                    stroke="#9CA3AF"
+                    fontSize={11}
+                    tickLine={false}
+                    axisLine={{ stroke: '#E5E7EB' }}
+                    minTickGap={28}
+                  />
+                  <YAxis
+                    stroke="#9CA3AF"
+                    fontSize={11}
+                    tickLine={false}
+                    axisLine={false}
+                    allowDecimals={false}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: '#FFFFFF',
+                      borderColor: '#E5E7EB',
+                      borderRadius: '6px',
+                      fontSize: '12px',
+                      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)',
+                    }}
+                    labelStyle={{ fontWeight: 600, color: '#111827' }}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="count"
+                    stroke="#49056B"
+                    strokeWidth={2}
+                    fillOpacity={1}
+                    fill="url(#purpleGradient)"
+                    name="Enquiries"
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-full flex items-center justify-center text-xs text-zinc-400">
+                {loading ? 'Loading enquiry activity...' : 'No historical enquiry activity recorded in this period.'}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Secondary Chart: Service Demand Breakdown (4 cols) */}
+        <div className="lg:col-span-4 bg-white p-5 rounded-md border border-zinc-200/80 shadow-2xs flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-sm font-bold text-zinc-900">Service Demand</h2>
+              <span className="text-[11px] font-medium text-zinc-400">By Service Type</span>
+            </div>
+
+            {serviceChartData.length > 0 ? (
+              <div className="space-y-3.5 my-2">
+                {serviceChartData.map((item) => {
+                  const total = stats?.totalEnquiries || 1;
+                  const pct = Math.round((item.count / total) * 100);
+                  const color = SERVICE_COLORS[item.name] || '#6B7280';
+                  return (
+                    <div key={item.name} className="space-y-1">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="font-semibold text-zinc-800">{item.name}</span>
+                        <span className="text-zinc-500 font-medium">
+                          {item.count} ({pct}%)
+                        </span>
+                      </div>
+                      <div className="w-full h-2 rounded bg-zinc-100 overflow-hidden">
+                        <div
+                          className="h-full rounded"
+                          style={{ width: `${Math.min(pct, 100)}%`, backgroundColor: color }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="h-44 flex items-center justify-center text-xs text-zinc-400">
+                {loading ? 'Loading service breakdown...' : 'No service data available.'}
+              </div>
+            )}
+          </div>
+
+          <div className="pt-4 border-t border-zinc-100 flex items-center justify-between text-[11px] text-zinc-500">
+            <span>Primary Focus: Ottawa & Region</span>
+            <Link
+              href="/admin/enquiries"
+              className="text-[#49056B] font-semibold hover:underline inline-flex items-center gap-1"
+            >
+              <span>View Enquiries</span>
+              <ArrowRight className="w-3 h-3" />
+            </Link>
+          </div>
         </div>
       </div>
 
-      {/* Upcoming Customer Consultations */}
-      <div className="bg-white rounded-xl border border-black/[0.06] shadow-xs overflow-hidden">
-        <div className="px-6 py-4 border-b border-black/[0.06] flex items-center justify-between">
-          <div>
-            <h2 className="text-sm font-semibold text-zinc-900">Upcoming Customer Consultations</h2>
-            <p className="text-xs text-zinc-500 mt-0.5">
-              Scheduled calls, property assessments, and video meetings in Ottawa local time.
-            </p>
-          </div>
-          <Link
-            href="/admin/appointments"
-            className="text-xs font-semibold text-[#49056B] hover:text-[#5B0785] inline-flex items-center gap-1 transition-colors"
-          >
-            <span>View Calendar</span>
-            <ArrowRight className="w-3.5 h-3.5" />
-          </Link>
-        </div>
-
-        <div className="p-6">
-          {upcomingAppointments.length === 0 ? (
-            <div className="py-6 text-center text-xs text-zinc-400">
-              No upcoming consultations scheduled. Consultations booked via customer enquiries will appear here.
+      {/* 3. BOTTOM ACTIONABLE WORK — CRM Data Table & Upcoming Schedule */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* Recent Inbound Enquiries Table (8 cols) */}
+        <div className="lg:col-span-8 bg-white rounded-md border border-zinc-200/80 shadow-2xs overflow-hidden">
+          <div className="p-4 sm:p-5 border-b border-zinc-200/80 flex items-center justify-between">
+            <div>
+              <h2 className="text-sm font-bold text-zinc-900">Recent Customer Enquiries</h2>
+              <p className="text-[11px] text-zinc-500 mt-0.5">
+                Latest customer submissions awaiting assessment or dispatch
+              </p>
             </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-              {upcomingAppointments.map((apt) => {
-                const statusBadge = formatAppointmentStatus(apt.status);
-                return (
-                  <Link
-                    key={apt.id}
-                    href="/admin/appointments"
-                    className="p-3.5 rounded-xl border border-black/[0.06] bg-zinc-50/60 hover:bg-zinc-50 hover:border-[#49056B]/20 transition-all flex flex-col justify-between space-y-2.5"
-                  >
-                    <div>
-                      <div className="flex items-center justify-between gap-2 mb-1.5">
-                        <span
-                          className={`px-2 py-0.5 rounded text-[10px] font-bold border uppercase tracking-wider ${statusBadge.color} ${statusBadge.bg}`}
-                        >
-                          {statusBadge.label}
-                        </span>
-                        <span className="text-[11px] text-zinc-400 font-medium">
-                          {formatAppointmentType(apt.appointmentType)}
-                        </span>
-                      </div>
-                      <div className="text-xs font-bold text-zinc-900 truncate">{apt.title}</div>
-                      <div className="text-[11px] text-zinc-500">{apt.customerName}</div>
-                    </div>
-
-                    <div className="pt-2 border-t border-black/[0.04] text-[11px] text-zinc-600 flex items-center justify-between">
-                      <span className="font-medium text-[#49056B]">
-                        {formatOttawaDate(apt.scheduledStart)} · {formatOttawaTime(apt.scheduledStart)}
-                      </span>
-                      <span>{apt.durationMinutes}m</span>
-                    </div>
-                  </Link>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Recent Enquiries Table - Editorial, calm typography */}
-      <div className="bg-white rounded-xl border border-black/[0.06] shadow-xs overflow-hidden">
-        <div className="px-6 py-4 border-b border-black/[0.06] flex items-center justify-between">
-          <div>
-            <h2 className="text-sm font-semibold text-zinc-900">Recent Customer Inquiries</h2>
-            <p className="text-xs text-zinc-500 mt-0.5">
-              Latest submissions received via website estimate forms and contact routes.
-            </p>
+            <Link
+              href="/admin/enquiries"
+              className="text-xs font-semibold text-[#49056B] hover:text-[#390044] inline-flex items-center gap-1"
+            >
+              <span>View All ({stats ? stats.totalEnquiries : 0})</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
           </div>
-          <Link
-            href="/admin/enquiries"
-            className="text-xs font-semibold text-[#49056B] hover:text-[#5B0785] inline-flex items-center gap-1 transition-colors"
-          >
-            <span>View All ({stats?.totalEnquiries ?? 0})</span>
-            <ArrowRight className="w-3.5 h-3.5" />
-          </Link>
-        </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse text-xs">
-            <thead>
-              <tr className="bg-zinc-50/60 border-b border-black/[0.06] text-zinc-400 font-semibold uppercase tracking-wider text-[10px]">
-                <th className="py-3 px-6">Reference</th>
-                <th className="py-3 px-6">Customer</th>
-                <th className="py-3 px-6">Services</th>
-                <th className="py-3 px-6">Location</th>
-                <th className="py-3 px-6">Status</th>
-                <th className="py-3 px-6 text-right">Action</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-black/[0.04]">
-              {recentEnquiries.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="py-10 text-center text-zinc-400">
-                    {loading ? 'Loading records...' : 'No enquiries found.'}
-                  </td>
-                </tr>
-              ) : (
-                recentEnquiries.map((enq) => (
-                  <tr key={enq.id} className="hover:bg-zinc-50/60 transition-colors">
-                    <td className="py-3.5 px-6 text-zinc-500 text-[11px]">
-                      <div className="font-semibold text-zinc-900 tracking-tight">{enq.id}</div>
-                      <div className="text-zinc-500 text-[10px]">
-                        {formatCanadianDate(enq.createdAt)} · {formatEnquirySource(enq.source)}
-                      </div>
-                    </td>
-                    <td className="py-3.5 px-6">
-                      <div className="font-medium text-zinc-900">{enq.customer.name}</div>
-                      <div className="text-zinc-400 text-[11px]">{enq.customer.email}</div>
-                    </td>
-                    <td className="py-3.5 px-6">
-                      <span className="text-xs text-zinc-700 capitalize font-medium">
-                        {enq.services.join(' • ')}
-                      </span>
-                    </td>
-                    <td className="py-3.5 px-6 text-zinc-600">
-                      {enq.serviceLocation || 'Ottawa, ON'}
-                    </td>
-                    <td className="py-3.5 px-6">
-                      {renderStatus(enq.status)}
-                    </td>
-                    <td className="py-3.5 px-6 text-right">
-                      <Link
-                        href={`/admin/enquiries?id=${enq.id}`}
-                        className="inline-flex items-center text-xs font-semibold text-[#49056B] hover:text-[#FE6000] transition-colors"
-                      >
-                        Inspect
-                      </Link>
-                    </td>
+          <div className="overflow-x-auto">
+            {recentEnquiries.length > 0 ? (
+              <table className="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr className="bg-zinc-50/80 border-b border-zinc-200/80 text-[11px] font-bold uppercase tracking-wider text-zinc-500">
+                    <th className="py-2.5 px-4">Customer</th>
+                    <th className="py-2.5 px-4">Services</th>
+                    <th className="py-2.5 px-4 hidden sm:table-cell">Received</th>
+                    <th className="py-2.5 px-4">Status</th>
+                    <th className="py-2.5 px-4 text-right">Action</th>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                </thead>
+                <tbody className="divide-y divide-zinc-100">
+                  {recentEnquiries.map((enq) => (
+                    <tr
+                      key={enq.id}
+                      className="hover:bg-zinc-50/70 transition-colors group"
+                    >
+                      <td className="py-3 px-4">
+                        <div className="font-semibold text-zinc-900">{enq.customer.name}</div>
+                        <div className="text-[11px] text-zinc-500 truncate max-w-[180px]">
+                          {enq.customer.email}
+                        </div>
+                      </td>
+                      <td className="py-3 px-4">
+                        <div className="flex flex-wrap gap-1">
+                          {enq.services.map((svc) => (
+                            <span
+                              key={svc}
+                              className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-zinc-100 text-zinc-700 capitalize"
+                            >
+                              {svc}
+                            </span>
+                          ))}
+                        </div>
+                      </td>
+                      <td className="py-3 px-4 text-zinc-500 hidden sm:table-cell">
+                        {formatCanadianDate(enq.createdAt)}
+                      </td>
+                      <td className="py-3 px-4">
+                        {renderStatusBadge(enq.status)}
+                      </td>
+                      <td className="py-3 px-4 text-right">
+                        <Link
+                          href={`/admin/enquiries?id=${enq.id}`}
+                          className="inline-flex items-center gap-1 text-xs font-semibold text-[#49056B] hover:text-[#390044] px-2 py-1 rounded hover:bg-purple-50 transition-colors"
+                        >
+                          <span>Review</span>
+                          <ChevronRight className="w-3.5 h-3.5" />
+                        </Link>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : (
+              <div className="p-8 text-center text-xs text-zinc-400">
+                {loading ? 'Loading customer enquiries...' : 'No enquiries found.'}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Upcoming Consultations & Attention (4 cols) */}
+        <div className="lg:col-span-4 space-y-6">
+          {/* Upcoming Consultations Box */}
+          <div className="bg-white p-4 sm:p-5 rounded-md border border-zinc-200/80 shadow-2xs">
+            <div className="flex items-center justify-between mb-3 pb-2 border-b border-zinc-100">
+              <h2 className="text-sm font-bold text-zinc-900">Upcoming Consultations</h2>
+              <Link
+                href="/admin/appointments"
+                className="text-xs font-semibold text-[#49056B] hover:underline"
+              >
+                Schedule
+              </Link>
+            </div>
+
+            {upcomingAppointments.length > 0 ? (
+              <div className="space-y-3">
+                {upcomingAppointments.map((apt) => (
+                  <div
+                    key={apt.id}
+                    className="p-3 rounded-md bg-zinc-50/70 border border-zinc-200/60 text-xs space-y-1 hover:border-zinc-300 transition-colors"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="font-semibold text-zinc-900 truncate pr-2">
+                        {apt.title}
+                      </span>
+                      <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-white border border-zinc-200 text-zinc-700 capitalize shrink-0">
+                        {apt.status}
+                      </span>
+                    </div>
+                    <div className="text-zinc-600 text-[11px]">
+                      Customer: {apt.customerName}
+                    </div>
+                    <div className="flex items-center gap-2 text-[11px] text-zinc-500 pt-0.5">
+                      <Clock className="w-3 h-3 text-zinc-400" />
+                      <span>{formatOttawaDate(apt.scheduledStart)} at {formatOttawaTime(apt.scheduledStart)}</span>
+                    </div>
+                    {apt.assignedStaffName && (
+                      <div className="text-[10px] text-zinc-400">
+                        Staff: {apt.assignedStaffName}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="py-6 text-center text-xs text-zinc-400">
+                No consultations currently scheduled.
+              </div>
+            )}
+          </div>
+
+          {/* Restrained Needs Attention Section */}
+          <div className="bg-white p-4 sm:p-5 rounded-md border border-zinc-200/80 shadow-2xs">
+            <div className="flex items-center justify-between mb-3 pb-2 border-b border-zinc-100">
+              <h2 className="text-sm font-bold text-zinc-900">Needs Attention</h2>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">
+                Staff Tasks
+              </span>
+            </div>
+
+            <div className="space-y-2.5 text-xs">
+              <div className="flex items-start gap-2.5 p-2.5 rounded-md bg-zinc-50 border border-zinc-200/60">
+                <Clock className="w-4 h-4 text-[#FE6000] shrink-0 mt-0.5" />
+                <div className="min-w-0">
+                  <p className="font-semibold text-zinc-900">
+                    {stats?.newEnquiries || 0} enquiries awaiting review
+                  </p>
+                  <p className="text-[11px] text-zinc-500 mt-0.5">
+                    Assess service requirements and confirm estimates with customers.
+                  </p>
+                </div>
+              </div>
+
+              {stats?.pendingHandoffs && stats.pendingHandoffs > 0 ? (
+                <div className="flex items-start gap-2.5 p-2.5 rounded-md bg-zinc-50 border border-zinc-200/60">
+                  <PhoneCall className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
+                  <div className="min-w-0">
+                    <p className="font-semibold text-zinc-900">
+                      {stats.pendingHandoffs} customer callbacks requested
+                    </p>
+                    <p className="text-[11px] text-zinc-500 mt-0.5">
+                      Respond to customer telephone callback inquiries.
+                    </p>
+                  </div>
+                </div>
+              ) : null}
+            </div>
+          </div>
         </div>
       </div>
     </div>
