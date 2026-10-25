@@ -20,30 +20,33 @@ export const publicBookingRouter = Router();
 // ============================================================================
 
 export function resolveClientIp(req: Request): string {
-  const gatewaySecret = process.env.INTERNAL_GATEWAY_SECRET || process.env.GATEWAY_SECRET;
-  const reqSecret = req.headers['x-gateway-secret'];
+  const gatewaySecret =
+    process.env.INTERNAL_GATEWAY_SECRET ||
+    process.env.GATEWAY_SECRET ||
+    process.env.ADMIN_API_SECRET;
+  const reqSecret =
+    (req.headers['x-gateway-secret'] as string) ||
+    (req.headers['x-admin-token'] as string);
 
   // 1. Authenticated header forwarded from trusted Next.js Netlify gateway
-  if (gatewaySecret && reqSecret === gatewaySecret && req.headers['x-laurrel-client-ip']) {
-    return (req.headers['x-laurrel-client-ip'] as string).trim();
+  if (gatewaySecret && reqSecret && reqSecret === gatewaySecret) {
+    const candidate = (
+      (req.headers['x-laurrel-client-ip'] as string) ||
+      (req.headers['x-nf-client-connection-ip'] as string)
+    )?.trim();
+    if (candidate) return candidate;
+
+    const forwarded = req.headers['x-forwarded-for'] || req.headers['x-real-ip'];
+    if (forwarded) {
+      const first = (typeof forwarded === 'string' ? forwarded : forwarded[0]).split(',')[0].trim();
+      if (first) return first;
+    }
   }
 
-  // 2. Netlify cryptographically-verified edge client IP
-  if (req.headers['x-nf-client-connection-ip']) {
-    return (req.headers['x-nf-client-connection-ip'] as string).trim();
-  }
-
-  // 3. Fallback to gateway header if no gateway secret is enforced
-  if (req.headers['x-laurrel-client-ip']) {
-    return (req.headers['x-laurrel-client-ip'] as string).trim();
-  }
-
-  // 4. Express req.ip (when trust proxy is configured)
-  if (req.ip) {
-    return req.ip;
-  }
-
-  return req.socket.remoteAddress || '127.0.0.1';
+  // 2. Direct unauthenticated hit to backend:
+  // Must NOT trust spoofable headers (X-Forwarded-For, X-Real-IP, X-NF-Client-Connection-IP, X-Laurrel-Client-IP).
+  // Strictly fall back to the direct TCP socket remote address to prevent rate-limit bypass.
+  return req.socket?.remoteAddress || '127.0.0.1';
 }
 
 interface MemoryRateLimitEntry {
