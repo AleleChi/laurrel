@@ -22,8 +22,9 @@ dotenv.config();
 
 const app = express();
 
-// Trust proxy headers from Netlify Next.js Gateway and Render edge load balancer
-app.set('trust proxy', true);
+// Trust single upstream reverse proxy hop (Render edge load balancer)
+// This ensures req.ip represents the authentic connecting IP and cannot be spoofed by prepending arbitrary IP addresses into X-Forwarded-For.
+app.set('trust proxy', 1);
 const port = parseInt(process.env.PORT || '5000', 10);
 const host = '0.0.0.0';
 

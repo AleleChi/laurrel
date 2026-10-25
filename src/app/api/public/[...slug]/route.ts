@@ -17,7 +17,10 @@ function buildForwardHeaders(req: NextRequest): Record<string, string> {
     forwardHeaders['X-Forwarded-For'] = req.headers.get('x-forwarded-for') || clientIp;
   }
 
-  const gatewaySecret = process.env.INTERNAL_GATEWAY_SECRET || process.env.GATEWAY_SECRET;
+  const gatewaySecret =
+    process.env.INTERNAL_GATEWAY_SECRET ||
+    process.env.GATEWAY_SECRET ||
+    (process.env.NODE_ENV !== 'production' ? 'laurrel_dev_gateway_secret_insecure' : '');
   if (gatewaySecret) {
     forwardHeaders['X-Gateway-Secret'] = gatewaySecret;
   }

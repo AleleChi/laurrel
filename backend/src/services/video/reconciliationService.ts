@@ -4,6 +4,7 @@ import { getEmailProvider } from '../email';
 
 const BACKOFF_SCHEDULE_SECONDS = [15, 30, 60, 120, 300, 600, 900, 1800];
 const MAX_RETRY_COUNT = BACKOFF_SCHEDULE_SECONDS.length;
+export const RECONCILIATION_LEASE_SECONDS = 120; // 2 minutes expiring claim lease
 
 let workerInterval: NodeJS.Timeout | null = null;
 let isWorkerRunning = false;
@@ -11,14 +12,50 @@ let isWorkerRunning = false;
 export interface ReconciliationResult {
   reconciled: boolean;
   joinUrl: string | null;
-  status: 'ready' | 'pending_details' | 'failed' | 'already_processed' | 'not_applicable' | 'error';
+  status: 'ready' | 'pending_details' | 'reconciling' | 'failed' | 'already_processed' | 'not_applicable' | 'error';
   error?: string;
   nextRetryAt?: Date | null;
 }
 
 /**
+ * Recovers stale claims left in 'reconciling' by previous crashed processes.
+ * Safe to call on server startup or periodically.
+ */
+export async function recoverStaleReconciliationClaims(leaseSeconds: number = RECONCILIATION_LEASE_SECONDS): Promise<number> {
+  const pool = getDbPool();
+  if (!pool) return 0;
+
+  try {
+    const res = await pool.query(
+      `
+      UPDATE appointments
+      SET
+        conference_status = 'pending_details',
+        reconciliation_claimed_at = NULL,
+        conference_next_retry_at = NOW(),
+        updated_at = NOW()
+      WHERE appointment_type = 'google_meet'
+        AND conference_status = 'reconciling'
+        AND (reconciliation_claimed_at IS NULL OR reconciliation_claimed_at < NOW() - make_interval(secs => $1))
+      RETURNING id
+      `,
+      [leaseSeconds]
+    );
+
+    if (res.rows.length > 0) {
+      console.log(`[Reconciliation Recovery] Recovered ${res.rows.length} stale claim(s) from previous process crashes.`);
+    }
+    return res.rows.length;
+  } catch (err: any) {
+    console.warn('[Reconciliation Recovery Error]:', err.message);
+    return 0;
+  }
+}
+
+/**
  * Transaction-safe claiming and reconciliation of a pending Google Meet conference.
- * Uses atomic state transitions to guarantee concurrent requests cannot generate duplicate customer notifications.
+ * Uses an expiring lease (120s) so crashed workers release claims, and deduplicated
+ * provider-level idempotency to prevent uncontrolled duplicate notifications.
  */
 export async function claimAndReconcileAppointment(
   appointmentId: string,
@@ -33,23 +70,30 @@ export async function claimAndReconcileAppointment(
   try {
     await client.query('BEGIN');
 
-    // 1. Atomic claim: transition from 'pending_details' to 'reconciling'
-    // Concurrency safeguard: only one worker/request can claim this appointment row
+    // 1. Atomic claim with expiring lease:
+    // Can claim if 'pending_details', or if 'reconciling' but the previous claim lease has expired (> 120s)
     const claimRes = await client.query(
       `
       UPDATE appointments
       SET
         conference_status = 'reconciling',
+        reconciliation_claimed_at = NOW(),
         updated_at = NOW()
       WHERE id = $1
-        AND conference_status = 'pending_details'
+        AND (
+          conference_status = 'pending_details'
+          OR (
+            conference_status = 'reconciling'
+            AND (reconciliation_claimed_at IS NULL OR reconciliation_claimed_at < NOW() - make_interval(secs => $2))
+          )
+        )
       RETURNING *
       `,
-      [appointmentId]
+      [appointmentId, RECONCILIATION_LEASE_SECONDS]
     );
 
     if (claimRes.rows.length === 0) {
-      // Row is either already 'ready', 'failed', currently claimed, or not pending
+      // Row is either already 'ready', 'failed', actively held by another worker, or not pending
       const checkRes = await client.query('SELECT * FROM appointments WHERE id = $1 LIMIT 1', [appointmentId]);
       await client.query('COMMIT');
 
@@ -60,6 +104,14 @@ export async function claimAndReconcileAppointment(
       const existing = checkRes.rows[0];
       if (existing.conference_status === 'ready' && existing.location_or_link) {
         return { reconciled: true, joinUrl: existing.location_or_link, status: 'ready' };
+      }
+      if (existing.conference_status === 'reconciling') {
+        return {
+          reconciled: false,
+          joinUrl: existing.location_or_link || null,
+          status: 'reconciling',
+          error: 'Reconciliation is currently active under an unexpired lease',
+        };
       }
       return {
         reconciled: false,
@@ -81,7 +133,7 @@ export async function claimAndReconcileAppointment(
   // 2. Query Google Calendar API for conferenceData outside database transaction
   if (!appointment.calendar_event_id) {
     await pool.query(
-      `UPDATE appointments SET conference_status = 'failed', google_sync_status = 'failed', google_sync_error = 'Missing calendar event ID', updated_at = NOW() WHERE id = $1`,
+      `UPDATE appointments SET conference_status = 'failed', google_sync_status = 'failed', google_sync_error = 'Missing calendar event ID', reconciliation_claimed_at = NULL, updated_at = NOW() WHERE id = $1`,
       [appointment.id]
     );
     return { reconciled: false, joinUrl: null, status: 'failed', error: 'Missing calendar event ID' };
@@ -102,6 +154,7 @@ export async function claimAndReconcileAppointment(
         google_sync_status = 'synced',
         google_sync_error = NULL,
         conference_reconciled_at = NOW(),
+        reconciliation_claimed_at = NULL,
         updated_at = NOW()
       WHERE id = $2
       `,
@@ -116,11 +169,13 @@ export async function claimAndReconcileAppointment(
       [`act_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`, appointment.id, performedBy]
     );
 
-    // 4. Guaranteed Single Customer Notification
-    // Ensure duplicate notification is never sent even under concurrent retries
+    // 4. Durable Notification Attempt Tracking & Provider Idempotency
+    // Provider-level deduplication: pass a deterministic idempotency key to prevent uncontrolled duplicates
+    const idempotencyKey = `meet_ready_${appointment.id}`;
+
     const notifCheck = await pool.query(
       `
-      SELECT id FROM appointment_notifications
+      SELECT id, status FROM appointment_notifications
       WHERE appointment_id = $1
         AND notification_type = 'video_link_ready'
         AND status = 'sent'
@@ -130,6 +185,20 @@ export async function claimAndReconcileAppointment(
     );
 
     if (notifCheck.rows.length === 0) {
+      const notifId = `notif_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+
+      // Record in-progress attempt with unique idempotency key
+      await pool.query(
+        `
+        INSERT INTO appointment_notifications (id, appointment_id, recipient_email, notification_type, status, idempotency_key, sent_at)
+        VALUES ($1, $2, $3, 'video_link_ready', 'in_progress', $4, NOW())
+        ON CONFLICT (idempotency_key) DO UPDATE
+        SET sent_at = NOW()
+        WHERE appointment_notifications.status != 'sent'
+        `,
+        [notifId, appointment.id, appointment.customer_email, idempotencyKey]
+      );
+
       let dispatchStatus: 'sent' | 'failed' = 'failed';
       let dispatchError: string | null = null;
 
@@ -150,6 +219,7 @@ export async function claimAndReconcileAppointment(
           timezone: appointment.timezone || 'America/Toronto',
           locationOrLink: meetUrl,
           assignedStaffName: appointment.assigned_staff_name,
+          idempotencyKey,
         });
 
         if (sendRes.success) {
@@ -162,19 +232,17 @@ export async function claimAndReconcileAppointment(
         console.warn('[Reconciliation Email Dispatch Error]:', emailErr.message);
       }
 
-      // Record notification attempt and result in appointment_notifications audit log
+      // Update final delivery outcome
       await pool.query(
         `
-        INSERT INTO appointment_notifications (id, appointment_id, recipient_email, notification_type, status, error_message, sent_at)
-        VALUES ($1, $2, $3, 'video_link_ready', $4, $5, NOW())
+        UPDATE appointment_notifications
+        SET
+          status = $1,
+          error_message = $2,
+          sent_at = NOW()
+        WHERE idempotency_key = $3
         `,
-        [
-          `notif_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
-          appointment.id,
-          appointment.customer_email,
-          dispatchStatus,
-          dispatchError,
-        ]
+        [dispatchStatus, dispatchError, idempotencyKey]
       );
     }
 
@@ -188,6 +256,7 @@ export async function claimAndReconcileAppointment(
         conference_status = 'failed',
         google_sync_status = 'failed',
         google_sync_error = $1,
+        reconciliation_claimed_at = NULL,
         updated_at = NOW()
       WHERE id = $2
       `,
@@ -217,6 +286,7 @@ export async function claimAndReconcileAppointment(
           conference_status = 'failed',
           google_sync_status = 'failed',
           google_sync_error = $1,
+          reconciliation_claimed_at = NULL,
           updated_at = NOW()
         WHERE id = $2
         `,
@@ -244,6 +314,7 @@ export async function claimAndReconcileAppointment(
         conference_status = 'pending_details',
         conference_retry_count = $1,
         conference_next_retry_at = $2,
+        reconciliation_claimed_at = NULL,
         updated_at = NOW()
       WHERE id = $3
       `,
@@ -262,6 +333,7 @@ export async function claimAndReconcileAppointment(
 /**
  * Process due reconciliation jobs from the persistent database queue.
  * Safe across horizontal backend instances using FOR UPDATE SKIP LOCKED.
+ * Also recovers stale claims whose 120s lease expired.
  */
 export async function processReconciliationQueue(): Promise<{ processed: number; succeeded: number; failed: number }> {
   const pool = getDbPool();
@@ -273,12 +345,19 @@ export async function processReconciliationQueue(): Promise<{ processed: number;
   try {
     await client.query('BEGIN');
 
-    // Claim due appointments using row-level locking with SKIP LOCKED
+    // Claim due appointments using row-level locking with SKIP LOCKED.
+    // Handles both normal pending_details and stale reconciling claims whose lease has elapsed.
     const selectRes = await client.query(`
       SELECT id
       FROM appointments
       WHERE appointment_type = 'google_meet'
-        AND conference_status = 'pending_details'
+        AND (
+          conference_status = 'pending_details'
+          OR (
+            conference_status = 'reconciling'
+            AND (reconciliation_claimed_at IS NULL OR reconciliation_claimed_at < NOW() - make_interval(secs => $1))
+          )
+        )
         AND calendar_event_id IS NOT NULL
         AND status NOT IN ('cancelled', 'completed')
         AND (conference_next_retry_at IS NULL OR conference_next_retry_at <= NOW())
@@ -286,7 +365,7 @@ export async function processReconciliationQueue(): Promise<{ processed: number;
       ORDER BY conference_next_retry_at ASC NULLS FIRST
       FOR UPDATE SKIP LOCKED
       LIMIT 5
-    `);
+    `, [RECONCILIATION_LEASE_SECONDS]);
 
     dueRows = selectRes.rows;
     await client.query('COMMIT');
@@ -326,6 +405,11 @@ export function startReconciliationWorker(intervalMs: number = 25000): void {
   if (workerInterval) return;
 
   console.log('[Reconciliation Service] Starting durable Google Meet reconciliation worker...');
+
+  // Recover any stale claims left over from previous process crash
+  recoverStaleReconciliationClaims().catch((err) =>
+    console.warn('[Reconciliation Worker Recovery Warning]:', err.message)
+  );
 
   // Immediate initial drain on startup
   processReconciliationQueue().catch((err) =>

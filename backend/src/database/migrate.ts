@@ -256,6 +256,28 @@ const MIGRATION_PIPELINE: MigrationStep[] = [
       console.log('[Migration] Stage B final integration acceptance tables and columns created successfully.');
     },
   },
+  {
+    version: '20261025_stage_b_restart_safe_reconciliation_lease',
+    description: 'Add expiring claim lease and notification idempotency key for restart-safe reconciliation',
+    run: async (client) => {
+      await client.query(`
+        -- 1. Expiring claim lease mechanism on appointments
+        ALTER TABLE appointments ADD COLUMN IF NOT EXISTS reconciliation_claimed_at TIMESTAMPTZ;
+
+        CREATE INDEX IF NOT EXISTS idx_appointments_reconciliation_stale 
+          ON appointments(conference_status, reconciliation_claimed_at) 
+          WHERE conference_status = 'reconciling';
+
+        -- 2. Durable idempotency tracking on appointment_notifications
+        ALTER TABLE appointment_notifications ADD COLUMN IF NOT EXISTS idempotency_key VARCHAR(128);
+
+        CREATE UNIQUE INDEX IF NOT EXISTS idx_appointment_notifications_idempotency 
+          ON appointment_notifications(idempotency_key) 
+          WHERE idempotency_key IS NOT NULL;
+      `);
+      console.log('[Migration] Stage B restart-safe reconciliation lease columns created successfully.');
+    },
+  },
 ];
 
 export async function runMigrations(): Promise<{ success: boolean; message: string; appliedCount?: number }> {

@@ -325,6 +325,7 @@ CREATE TABLE IF NOT EXISTS appointments (
     conference_retry_count INT NOT NULL DEFAULT 0,
     conference_next_retry_at TIMESTAMPTZ,
     conference_reconciled_at TIMESTAMPTZ,
+    reconciliation_claimed_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -341,6 +342,7 @@ CREATE INDEX IF NOT EXISTS idx_appointments_booking_source ON appointments(booki
 CREATE INDEX IF NOT EXISTS idx_appointments_conference_status ON appointments(conference_status);
 CREATE INDEX IF NOT EXISTS idx_appointments_google_sync_status ON appointments(google_sync_status);
 CREATE INDEX IF NOT EXISTS idx_appointments_reconciliation_queue ON appointments(conference_status, conference_next_retry_at) WHERE conference_status = 'pending_details';
+CREATE INDEX IF NOT EXISTS idx_appointments_reconciliation_stale ON appointments(conference_status, reconciliation_claimed_at) WHERE conference_status = 'reconciling';
 
 CREATE TABLE IF NOT EXISTS appointment_activity (
     id VARCHAR(64) PRIMARY KEY,
@@ -361,12 +363,14 @@ CREATE TABLE IF NOT EXISTS appointment_notifications (
     recipient_email VARCHAR(255) NOT NULL,
     notification_type VARCHAR(64) NOT NULL, -- 'invitation', 'rescheduled', 'cancellation'
     status VARCHAR(32) NOT NULL, -- 'sent', 'failed'
+    idempotency_key VARCHAR(128),
     error_message TEXT,
     sent_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE INDEX IF NOT EXISTS idx_appointment_notifications_appointment_id ON appointment_notifications(appointment_id);
 CREATE INDEX IF NOT EXISTS idx_appointment_notifications_sent_at ON appointment_notifications(sent_at DESC);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_appointment_notifications_idempotency ON appointment_notifications(idempotency_key) WHERE idempotency_key IS NOT NULL;
 
 
 -- 10. Appointment Settings Table (Stage B)

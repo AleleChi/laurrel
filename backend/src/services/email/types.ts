@@ -23,6 +23,7 @@ export interface AppointmentEmailData {
   locationOrLink?: string | null;
   assignedStaffName?: string | null;
   cancellationReason?: string | null;
+  idempotencyKey?: string;
 }
 
 export interface IEmailProvider {

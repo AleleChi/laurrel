@@ -367,12 +367,17 @@ export class ResendEmailProvider implements IEmailProvider {
     `;
 
     try {
+      const headers: Record<string, string> = {
+        Authorization: `Bearer ${this.apiKey}`,
+        'Content-Type': 'application/json',
+      };
+      if (data.idempotencyKey) {
+        headers['Idempotency-Key'] = data.idempotencyKey;
+      }
+
       const response = await fetch('https://api.resend.com/emails', {
         method: 'POST',
-        headers: {
-          Authorization: `Bearer ${this.apiKey}`,
-          'Content-Type': 'application/json',
-        },
+        headers,
         body: JSON.stringify({
           from: this.fromAddress,
           to: data.customerEmail,
@@ -466,12 +471,17 @@ export class ResendEmailProvider implements IEmailProvider {
     `;
 
     try {
+      const headers: Record<string, string> = {
+        Authorization: `Bearer ${this.apiKey}`,
+        'Content-Type': 'application/json',
+      };
+      if (data.idempotencyKey) {
+        headers['Idempotency-Key'] = data.idempotencyKey;
+      }
+
       const response = await fetch('https://api.resend.com/emails', {
         method: 'POST',
-        headers: {
-          Authorization: `Bearer ${this.apiKey}`,
-          'Content-Type': 'application/json',
-        },
+        headers,
         body: JSON.stringify({
           from: this.fromAddress,
           to: data.customerEmail,

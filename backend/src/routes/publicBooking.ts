@@ -20,25 +20,29 @@ export const publicBookingRouter = Router();
 // ============================================================================
 
 export function resolveClientIp(req: Request): string {
-  const gatewaySecret = process.env.INTERNAL_GATEWAY_SECRET || process.env.GATEWAY_SECRET;
+  const gatewaySecret =
+    process.env.INTERNAL_GATEWAY_SECRET ||
+    process.env.GATEWAY_SECRET ||
+    (process.env.NODE_ENV !== 'production' ? 'laurrel_dev_gateway_secret_insecure' : '');
   const reqSecret = req.headers['x-gateway-secret'];
 
-  // 1. Authenticated header forwarded from trusted Next.js Netlify gateway
-  if (gatewaySecret && reqSecret === gatewaySecret && req.headers['x-laurrel-client-ip']) {
-    return (req.headers['x-laurrel-client-ip'] as string).trim();
+  // Only trust forwarded client-IP identity from an authenticated or otherwise verified proxy.
+  // Require matching gateway secrets for identity-bearing requests routed from Netlify.
+  const isVerifiedGateway = Boolean(gatewaySecret && reqSecret && reqSecret === gatewaySecret);
+
+  if (isVerifiedGateway) {
+    const forwardedIp =
+      (typeof req.headers['x-laurrel-client-ip'] === 'string' && req.headers['x-laurrel-client-ip'].trim()) ||
+      (typeof req.headers['x-nf-client-connection-ip'] === 'string' && req.headers['x-nf-client-connection-ip'].trim()) ||
+      (typeof req.headers['x-forwarded-for'] === 'string' && req.headers['x-forwarded-for'].split(',')[0].trim());
+
+    if (forwardedIp) {
+      return forwardedIp;
+    }
   }
 
-  // 2. Netlify cryptographically-verified edge client IP
-  if (req.headers['x-nf-client-connection-ip']) {
-    return (req.headers['x-nf-client-connection-ip'] as string).trim();
-  }
-
-  // 3. Fallback to gateway header if no gateway secret is enforced
-  if (req.headers['x-laurrel-client-ip']) {
-    return (req.headers['x-laurrel-client-ip'] as string).trim();
-  }
-
-  // 4. Express req.ip (when trust proxy is configured)
+  // Direct requests or unverified proxy calls: MUST NOT trust arbitrary client-supplied forwarding headers.
+  // Rate limiting applies strictly to connection IP (req.ip via trusted reverse proxy or socket remoteAddress).
   if (req.ip) {
     return req.ip;
   }
