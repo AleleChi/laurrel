@@ -31,7 +31,8 @@ export interface IEmailProvider {
   sendCustomerAcknowledgement(record: EnquiryRecord): Promise<EmailDispatchResult>;
   sendPasswordResetEmail(email: string, resetLink: string, userName?: string): Promise<EmailDispatchResult>;
   sendAppointmentInvitation(data: AppointmentEmailData): Promise<EmailDispatchResult>;
-  sendAppointmentUpdate(data: AppointmentEmailData, changeType: 'rescheduled' | 'cancelled'): Promise<EmailDispatchResult>;
+  sendAppointmentUpdate(data: AppointmentEmailData, changeType: 'rescheduled' | 'cancelled' | 'video_link_ready'): Promise<EmailDispatchResult>;
+  sendConferenceLinkReady(data: AppointmentEmailData): Promise<EmailDispatchResult>;
 }
 
 /**

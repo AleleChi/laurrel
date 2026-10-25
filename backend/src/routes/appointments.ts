@@ -16,6 +16,12 @@ import {
 import { getVideoMeetingProvider, AppointmentType } from '../services/video';
 import { getEmailProvider } from '../services/email';
 import { getDbPool } from '../database/pool';
+import {
+  rescheduleGoogleCalendarEvent,
+  deleteGoogleCalendarEvent,
+  createGoogleMeetEvent,
+} from '../services/video/googleCalendarClient';
+import { claimAndReconcileAppointment } from '../services/video/reconciliationService';
 
 export const appointmentsRouter = Router();
 
@@ -497,6 +503,37 @@ appointmentsRouter.post(
         }
       }
 
+      // Sync reschedule with Google Calendar if event exists
+      if (updated.calendarEventId) {
+        try {
+          const syncRes = await rescheduleGoogleCalendarEvent(
+            updated.calendarEventId,
+            startDate.toISOString(),
+            endDate.toISOString()
+          );
+          const pool = getDbPool();
+          if (pool) {
+            if (syncRes.success) {
+              await pool.query(
+                "UPDATE appointments SET google_sync_status = 'synced', google_sync_error = NULL, updated_at = NOW() WHERE id = $1",
+                [updated.id]
+              );
+              updated.googleSyncStatus = 'synced';
+              updated.googleSyncError = null;
+            } else {
+              await pool.query(
+                "UPDATE appointments SET google_sync_status = 'failed', google_sync_error = $1, updated_at = NOW() WHERE id = $2",
+                [syncRes.error || 'Google Calendar reschedule failed', updated.id]
+              );
+              updated.googleSyncStatus = 'failed';
+              updated.googleSyncError = syncRes.error || 'Google Calendar reschedule failed';
+            }
+          }
+        } catch (syncErr: any) {
+          console.warn('[Admin Reschedule Google Sync Error]:', syncErr.message);
+        }
+      }
+
       res.status(200).json({ appointment: updated, emailDispatch });
     } catch (err: any) {
       if (err.code === 'STAFF_CONFLICT') {
@@ -565,6 +602,33 @@ appointmentsRouter.post(
         }
       }
 
+      // Sync cancellation with Google Calendar if event exists
+      if (cancelled.calendarEventId) {
+        try {
+          const syncRes = await deleteGoogleCalendarEvent(cancelled.calendarEventId);
+          const pool = getDbPool();
+          if (pool) {
+            if (syncRes.success) {
+              await pool.query(
+                "UPDATE appointments SET google_sync_status = 'synced', google_sync_error = NULL, updated_at = NOW() WHERE id = $1",
+                [cancelled.id]
+              );
+              cancelled.googleSyncStatus = 'synced';
+              cancelled.googleSyncError = null;
+            } else {
+              await pool.query(
+                "UPDATE appointments SET google_sync_status = 'failed', google_sync_error = $1, updated_at = NOW() WHERE id = $2",
+                [syncRes.error || 'Google Calendar event deletion failed', cancelled.id]
+              );
+              cancelled.googleSyncStatus = 'failed';
+              cancelled.googleSyncError = syncRes.error || 'Google Calendar event deletion failed';
+            }
+          }
+        } catch (syncErr: any) {
+          console.warn('[Admin Cancel Google Sync Error]:', syncErr.message);
+        }
+      }
+
       res.status(200).json({ appointment: cancelled, emailDispatch });
     } catch (err: any) {
       res.status(500).json({ error: err.message });
@@ -626,6 +690,137 @@ appointmentsRouter.post(
         messageId: dispatchRes.messageId,
         error: dispatchRes.error,
       });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  }
+);
+
+/**
+ * POST /api/admin/appointments/:id/retry-google-sync - Manually retry Google Calendar sync
+ */
+appointmentsRouter.post(
+  '/api/admin/appointments/:id/retry-google-sync',
+  requireRole(['owner', 'admin', 'operations_staff']),
+  async (req: Request, res: Response) => {
+    try {
+      const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+      const appointment = await getAppointmentById(id);
+      if (!appointment) {
+        res.status(404).json({ error: 'Appointment not found.' });
+        return;
+      }
+
+      const pool = getDbPool();
+      if (!pool) {
+        res.status(500).json({ error: 'Database unavailable.' });
+        return;
+      }
+
+      const performedBy = req.adminUser?.name || req.adminUser?.email || 'Operations Staff';
+
+      if (appointment.status === 'cancelled') {
+        if (appointment.calendarEventId) {
+          const delRes = await deleteGoogleCalendarEvent(appointment.calendarEventId);
+          if (delRes.success) {
+            await pool.query(
+              "UPDATE appointments SET google_sync_status = 'synced', google_sync_error = NULL, updated_at = NOW() WHERE id = $1",
+              [id]
+            );
+            await pool.query(
+              "INSERT INTO appointment_activity (id, appointment_id, action, performed_by, details) VALUES ($1, $2, 'google_sync_retried', $3, 'Google Calendar deletion successfully synced')",
+              [`act_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`, id, performedBy]
+            );
+            const fresh = await getAppointmentById(id);
+            res.json({ success: true, googleSyncStatus: 'synced', appointment: fresh });
+            return;
+          } else {
+            await pool.query(
+              "UPDATE appointments SET google_sync_status = 'failed', google_sync_error = $1, updated_at = NOW() WHERE id = $2",
+              [delRes.error, id]
+            );
+            res.status(502).json({ success: false, error: delRes.error, googleSyncStatus: 'failed' });
+            return;
+          }
+        }
+      } else {
+        if (appointment.calendarEventId) {
+          const syncRes = await rescheduleGoogleCalendarEvent(
+            appointment.calendarEventId,
+            new Date(appointment.scheduledStart).toISOString(),
+            new Date(appointment.scheduledEnd).toISOString()
+          );
+          if (syncRes.success) {
+            await pool.query(
+              "UPDATE appointments SET google_sync_status = 'synced', google_sync_error = NULL, updated_at = NOW() WHERE id = $1",
+              [id]
+            );
+            await pool.query(
+              "INSERT INTO appointment_activity (id, appointment_id, action, performed_by, details) VALUES ($1, $2, 'google_sync_retried', $3, 'Google Calendar event successfully resynced')",
+              [`act_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`, id, performedBy]
+            );
+            const fresh = await getAppointmentById(id);
+            res.json({ success: true, googleSyncStatus: 'synced', appointment: fresh });
+            return;
+          } else {
+            await pool.query(
+              "UPDATE appointments SET google_sync_status = 'failed', google_sync_error = $1, updated_at = NOW() WHERE id = $2",
+              [syncRes.error, id]
+            );
+            res.status(502).json({ success: false, error: syncRes.error, googleSyncStatus: 'failed' });
+            return;
+          }
+        } else if (appointment.appointmentType === 'google_meet') {
+          const meetRes = await createGoogleMeetEvent({
+            title: appointment.title,
+            description: appointment.purpose || appointment.title,
+            scheduledStartIso: new Date(appointment.scheduledStart).toISOString(),
+            scheduledEndIso: new Date(appointment.scheduledEnd).toISOString(),
+            customerName: appointment.customerName,
+            customerEmail: appointment.customerEmail,
+            requestId: `retry_${Date.now()}`,
+          });
+
+          await pool.query(
+            `UPDATE appointments
+             SET
+               calendar_event_id = $1,
+               location_or_link = $2,
+               conference_status = $3,
+               conference_id = $4,
+               google_sync_status = 'synced',
+               google_sync_error = NULL,
+               updated_at = NOW()
+             WHERE id = $5`,
+            [meetRes.eventId, meetRes.joinUrl, meetRes.conferenceStatus, meetRes.conferenceId || null, id]
+          );
+
+          const fresh = await getAppointmentById(id);
+          res.json({ success: true, googleSyncStatus: 'synced', appointment: fresh });
+          return;
+        }
+      }
+
+      res.json({ success: true, message: 'No Google Calendar event required for this appointment.' });
+    } catch (err: any) {
+      console.error('[Retry Google Sync Error]:', err);
+      res.status(500).json({ error: err.message });
+    }
+  }
+);
+
+/**
+ * POST /api/admin/appointments/:id/reconcile-conference - Reconcile pending video conference
+ */
+appointmentsRouter.post(
+  '/api/admin/appointments/:id/reconcile-conference',
+  requireRole(['owner', 'admin', 'operations_staff']),
+  async (req: Request, res: Response) => {
+    try {
+      const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+      const result = await claimAndReconcileAppointment(id, req.adminUser?.name || 'Staff Administrator');
+      const appointment = await getAppointmentById(id);
+      res.json({ success: true, ...result, appointment });
     } catch (err: any) {
       res.status(500).json({ error: err.message });
     }
