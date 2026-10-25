@@ -1,12 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 function buildForwardHeaders(req: NextRequest): Record<string, string> {
-  // Extract verified client IP from Netlify edge or proxy chain
-  const clientIp =
+  // Only extract verified platform-provided client identity:
+  // 1. Netlify cryptographically-verified edge client IP (x-nf-client-connection-ip)
+  // 2. Next.js connection socket IP (req.ip)
+  // NEVER read raw client-supplied X-Real-IP or X-Forwarded-For headers from external requests.
+  // Stamping trusted gateway secret onto arbitrary client-supplied IP headers would create a rate-limit bypass vulnerability.
+  const clientIp = (
     req.headers.get('x-nf-client-connection-ip') ||
-    req.headers.get('x-real-ip') ||
-    req.headers.get('x-forwarded-for')?.split(',')[0].trim() ||
-    '';
+    req.ip ||
+    ''
+  ).trim();
 
   const forwardHeaders: Record<string, string> = {
     'Content-Type': 'application/json',
@@ -14,10 +18,10 @@ function buildForwardHeaders(req: NextRequest): Record<string, string> {
 
   if (clientIp) {
     forwardHeaders['X-Laurrel-Client-IP'] = clientIp;
-    forwardHeaders['X-Forwarded-For'] = req.headers.get('x-forwarded-for') || clientIp;
   }
 
-  const gatewaySecret = process.env.INTERNAL_GATEWAY_SECRET || process.env.GATEWAY_SECRET || process.env.ADMIN_API_SECRET;
+  // Use dedicated INTERNAL_GATEWAY_SECRET distinct from admin authentication secret
+  const gatewaySecret = process.env.INTERNAL_GATEWAY_SECRET || process.env.GATEWAY_SECRET;
   if (gatewaySecret) {
     forwardHeaders['X-Gateway-Secret'] = gatewaySecret;
   }

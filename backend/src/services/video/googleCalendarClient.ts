@@ -26,10 +26,17 @@ export function getGoogleOAuthConfig(): GoogleConfig | null {
   const clientSecret = process.env.GOOGLE_CALENDAR_CLIENT_SECRET || process.env.GOOGLE_CLIENT_SECRET;
   
   // Fixed canonical redirect URI configured in environment or matching the canonical admin settings callback
+  const siteUrl = (
+    process.env.PUBLIC_SITE_URL ||
+    process.env.NEXT_PUBLIC_SITE_URL ||
+    process.env.FRONTEND_ORIGIN ||
+    'http://localhost:3000'
+  ).replace(/\/$/, '');
+
   const redirectUri =
     process.env.GOOGLE_CALENDAR_REDIRECT_URI ||
     process.env.GOOGLE_REDIRECT_URI ||
-    'http://localhost:3000/api/admin/integrations/google/callback';
+    `${siteUrl}/admin/appointments/settings`;
 
   if (!clientId || !clientSecret) return null;
   return { clientId, clientSecret, redirectUri };
@@ -60,7 +67,10 @@ export function generateGoogleAuthUrl(state: string): string {
 /**
  * Exchange Authorization Code for Refresh and Access tokens using the fixed redirect URI
  */
-export async function exchangeGoogleAuthCode(code: string): Promise<{
+export async function exchangeGoogleAuthCode(
+  code: string,
+  overrideRedirectUri?: string
+): Promise<{
   accountEmail: string;
   refreshToken: string;
   accessToken: string;
@@ -70,6 +80,8 @@ export async function exchangeGoogleAuthCode(code: string): Promise<{
     throw new Error('Google OAuth credentials are not configured on server.');
   }
 
+  const effectiveRedirectUri = overrideRedirectUri || config.redirectUri;
+
   const tokenRes = await fetch(GOOGLE_TOKEN_ENDPOINT, {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -77,7 +89,7 @@ export async function exchangeGoogleAuthCode(code: string): Promise<{
       code,
       client_id: config.clientId,
       client_secret: config.clientSecret,
-      redirect_uri: config.redirectUri,
+      redirect_uri: effectiveRedirectUri,
       grant_type: 'authorization_code',
     }),
   });

@@ -107,12 +107,17 @@ export class ResendEmailProvider implements IEmailProvider {
     `;
 
     try {
+      const headers: Record<string, string> = {
+        Authorization: `Bearer ${this.apiKey}`,
+        'Content-Type': 'application/json',
+      };
+      if (record.id) {
+        headers['Idempotency-Key'] = `notif_enquiry_${record.id}`;
+      }
+
       const response = await fetch('https://api.resend.com/emails', {
         method: 'POST',
-        headers: {
-          Authorization: `Bearer ${this.apiKey}`,
-          'Content-Type': 'application/json',
-        },
+        headers,
         body: JSON.stringify({
           from: this.fromAddress,
           to: this.toAddress,
@@ -171,12 +176,17 @@ export class ResendEmailProvider implements IEmailProvider {
     `;
 
     try {
+      const headers: Record<string, string> = {
+        Authorization: `Bearer ${this.apiKey}`,
+        'Content-Type': 'application/json',
+      };
+      if (record.id) {
+        headers['Idempotency-Key'] = `notif_autoreply_${record.id}`;
+      }
+
       const response = await fetch('https://api.resend.com/emails', {
         method: 'POST',
-        headers: {
-          Authorization: `Bearer ${this.apiKey}`,
-          'Content-Type': 'application/json',
-        },
+        headers,
         body: JSON.stringify({
           from: this.fromAddress,
           to: record.customer.email,
@@ -466,12 +476,17 @@ export class ResendEmailProvider implements IEmailProvider {
     `;
 
     try {
+      const headers: Record<string, string> = {
+        Authorization: `Bearer ${this.apiKey}`,
+        'Content-Type': 'application/json',
+      };
+      if (data.appointmentId) {
+        headers['Idempotency-Key'] = `notif_${changeType}_${data.appointmentId}`;
+      }
+
       const response = await fetch('https://api.resend.com/emails', {
         method: 'POST',
-        headers: {
-          Authorization: `Bearer ${this.apiKey}`,
-          'Content-Type': 'application/json',
-        },
+        headers,
         body: JSON.stringify({
           from: this.fromAddress,
           to: data.customerEmail,

@@ -171,8 +171,10 @@ appointmentSettingsRouter.post(
         return;
       }
 
-      // Exchange code using fixed server-configured redirect URI
-      const result = await exchangeGoogleAuthCode(code);
+      const recordedRedirectUri = stateRes.rows[0]?.redirect_uri;
+
+      // Exchange code using the exact redirect URI recorded during state creation
+      const result = await exchangeGoogleAuthCode(code, recordedRedirectUri);
       res.json({
         success: true,
         message: 'Google Workspace Calendar & Meet connected successfully.',

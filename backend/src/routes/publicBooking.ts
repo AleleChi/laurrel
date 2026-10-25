@@ -20,13 +20,12 @@ export const publicBookingRouter = Router();
 // ============================================================================
 
 export function resolveClientIp(req: Request): string {
+  // Prefer dedicated INTERNAL_GATEWAY_SECRET distinct from admin authentication secret
   const gatewaySecret =
     process.env.INTERNAL_GATEWAY_SECRET ||
-    process.env.GATEWAY_SECRET ||
-    process.env.ADMIN_API_SECRET;
-  const reqSecret =
-    (req.headers['x-gateway-secret'] as string) ||
-    (req.headers['x-admin-token'] as string);
+    process.env.GATEWAY_SECRET;
+
+  const reqSecret = req.headers['x-gateway-secret'] as string;
 
   // 1. Authenticated header forwarded from trusted Next.js Netlify gateway
   if (gatewaySecret && reqSecret && reqSecret === gatewaySecret) {
@@ -35,12 +34,6 @@ export function resolveClientIp(req: Request): string {
       (req.headers['x-nf-client-connection-ip'] as string)
     )?.trim();
     if (candidate) return candidate;
-
-    const forwarded = req.headers['x-forwarded-for'] || req.headers['x-real-ip'];
-    if (forwarded) {
-      const first = (typeof forwarded === 'string' ? forwarded : forwarded[0]).split(',')[0].trim();
-      if (first) return first;
-    }
   }
 
   // 2. Direct unauthenticated hit to backend:

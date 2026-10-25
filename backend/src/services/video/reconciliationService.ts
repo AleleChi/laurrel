@@ -42,7 +42,13 @@ export async function claimAndReconcileAppointment(
         conference_status = 'reconciling',
         updated_at = NOW()
       WHERE id = $1
-        AND conference_status = 'pending_details'
+        AND (
+          conference_status = 'pending_details'
+          OR (
+            conference_status = 'reconciling'
+            AND updated_at < NOW() - INTERVAL '5 minutes'
+          )
+        )
       RETURNING *
       `,
       [appointmentId]
@@ -116,20 +122,41 @@ export async function claimAndReconcileAppointment(
       [`act_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`, appointment.id, performedBy]
     );
 
-    // 4. Guaranteed Single Customer Notification
-    // Ensure duplicate notification is never sent even under concurrent retries
-    const notifCheck = await pool.query(
-      `
-      SELECT id FROM appointment_notifications
-      WHERE appointment_id = $1
-        AND notification_type = 'video_link_ready'
-        AND status = 'sent'
-      LIMIT 1
-      `,
-      [appointment.id]
-    );
+    // 4. Guaranteed Single Customer Notification (Persistent Outbox Dispatch Claim)
+    // Concurrency safeguard: atomic reservation with deterministic primary key prevents duplicate sends.
+    const notifClaimId = `notif_ready_${appointment.id}`;
+    let shouldDispatch = false;
 
-    if (notifCheck.rows.length === 0) {
+    try {
+      const claimNotifRes = await pool.query(
+        `
+        INSERT INTO appointment_notifications (
+          id, appointment_id, recipient_email, notification_type, status, error_message, sent_at
+        )
+        VALUES ($1, $2, $3, 'video_link_ready', 'dispatching', NULL, NOW())
+        ON CONFLICT (id) DO UPDATE
+        SET
+          status = 'dispatching',
+          sent_at = NOW(),
+          error_message = NULL
+        WHERE appointment_notifications.status = 'failed'
+           OR (
+             appointment_notifications.status = 'dispatching'
+             AND appointment_notifications.sent_at < NOW() - INTERVAL '5 minutes'
+           )
+        RETURNING id, status
+        `,
+        [notifClaimId, appointment.id, appointment.customer_email]
+      );
+
+      if (claimNotifRes.rows.length > 0) {
+        shouldDispatch = true;
+      }
+    } catch (claimErr: any) {
+      console.warn('[Notification Claim Warning]:', claimErr.message);
+    }
+
+    if (shouldDispatch) {
       let dispatchStatus: 'sent' | 'failed' = 'failed';
       let dispatchError: string | null = null;
 
@@ -162,19 +189,16 @@ export async function claimAndReconcileAppointment(
         console.warn('[Reconciliation Email Dispatch Error]:', emailErr.message);
       }
 
-      // Record notification attempt and result in appointment_notifications audit log
       await pool.query(
         `
-        INSERT INTO appointment_notifications (id, appointment_id, recipient_email, notification_type, status, error_message, sent_at)
-        VALUES ($1, $2, $3, 'video_link_ready', $4, $5, NOW())
+        UPDATE appointment_notifications
+        SET
+          status = $1,
+          error_message = $2,
+          sent_at = NOW()
+        WHERE id = $3
         `,
-        [
-          `notif_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
-          appointment.id,
-          appointment.customer_email,
-          dispatchStatus,
-          dispatchError,
-        ]
+        [dispatchStatus, dispatchError, notifClaimId]
       );
     }
 
@@ -263,6 +287,45 @@ export async function claimAndReconcileAppointment(
  * Process due reconciliation jobs from the persistent database queue.
  * Safe across horizontal backend instances using FOR UPDATE SKIP LOCKED.
  */
+
+/**
+ * Recovers abandoned reconciling jobs whose leases have expired (e.g. after a process crash or Render restart).
+ * Stale reconciling appointments (>5 minutes) are reset to pending_details for worker re-processing.
+ */
+export async function recoverAbandonedReconciliations(): Promise<number> {
+  const pool = getDbPool();
+  if (!pool) return 0;
+
+  try {
+    const res = await pool.query(`
+      UPDATE appointments
+      SET
+        conference_status = 'pending_details',
+        updated_at = NOW()
+      WHERE appointment_type = 'google_meet'
+        AND conference_status = 'reconciling'
+        AND updated_at < NOW() - INTERVAL '5 minutes'
+        AND status NOT IN ('cancelled', 'completed')
+      RETURNING id
+    `);
+
+    if (res.rows.length > 0) {
+      console.warn(`[Reconciliation Recovery] Recovered ${res.rows.length} abandoned reconciling jobs.`);
+      for (const row of res.rows) {
+        await pool.query(
+          `INSERT INTO appointment_activity (id, appointment_id, action, performed_by, details)
+           VALUES ($1, $2, 'conference_recovered', 'Reconciliation Recovery', 'Stale reconciling lease recovered after worker restart')`,
+          [`act_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`, row.id]
+        );
+      }
+    }
+    return res.rows.length;
+  } catch (err: any) {
+    console.warn('[Reconciliation Recovery Warning]:', err.message);
+    return 0;
+  }
+}
+
 export async function processReconciliationQueue(): Promise<{ processed: number; succeeded: number; failed: number }> {
   const pool = getDbPool();
   if (!pool) return { processed: 0, succeeded: 0, failed: 0 };
@@ -278,7 +341,13 @@ export async function processReconciliationQueue(): Promise<{ processed: number;
       SELECT id
       FROM appointments
       WHERE appointment_type = 'google_meet'
-        AND conference_status = 'pending_details'
+        AND (
+          conference_status = 'pending_details'
+          OR (
+            conference_status = 'reconciling'
+            AND updated_at < NOW() - INTERVAL '5 minutes'
+          )
+        )
         AND calendar_event_id IS NOT NULL
         AND status NOT IN ('cancelled', 'completed')
         AND (conference_next_retry_at IS NULL OR conference_next_retry_at <= NOW())
@@ -326,6 +395,11 @@ export function startReconciliationWorker(intervalMs: number = 25000): void {
   if (workerInterval) return;
 
   console.log('[Reconciliation Service] Starting durable Google Meet reconciliation worker...');
+
+  // Recover any stale/abandoned leases from prior process crashes
+  recoverAbandonedReconciliations().catch((err) =>
+    console.warn('[Reconciliation Lease Recovery Error]:', err.message)
+  );
 
   // Immediate initial drain on startup
   processReconciliationQueue().catch((err) =>

@@ -111,6 +111,13 @@ export default function AppointmentSettingsPage() {
   useEffect(() => {
     const code = searchParams.get('code');
     const state = searchParams.get('state');
+    const oauthError = searchParams.get('error');
+
+    if (oauthError) {
+      setFeedback({ type: 'error', message: `Google authorization was cancelled or denied: ${oauthError}` });
+      router.replace('/admin/appointments/settings');
+      return;
+    }
 
     if (code) {
       const exchangeCode = async () => {
