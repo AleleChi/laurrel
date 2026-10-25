@@ -153,37 +153,37 @@ export default function AdminOverviewPage() {
     switch (status) {
       case 'new':
         return (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-orange-50 text-[#FE6000] border border-orange-200/80">
+          <span className="inline-flex items-center px-2 py-0.5 rounded-[4px] text-xs font-medium bg-orange-50 text-[#FE6000] border border-orange-200/80">
             Awaiting Review
           </span>
         );
       case 'reviewed':
         return (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-zinc-100 text-zinc-700 border border-zinc-200">
+          <span className="inline-flex items-center px-2 py-0.5 rounded-[4px] text-xs font-medium bg-zinc-100 text-zinc-700 border border-zinc-200">
             Reviewed
           </span>
         );
       case 'quoted':
         return (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-purple-50 text-[#390044] border border-purple-200/80">
+          <span className="inline-flex items-center px-2 py-0.5 rounded-[4px] text-xs font-medium bg-purple-50 text-[#390044] border border-purple-200/80">
             Quoted
           </span>
         );
       case 'scheduled':
         return (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200/80">
+          <span className="inline-flex items-center px-2 py-0.5 rounded-[4px] text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200/80">
             Scheduled
           </span>
         );
       case 'closed':
         return (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-zinc-50 text-zinc-400 border border-zinc-200/60">
+          <span className="inline-flex items-center px-2 py-0.5 rounded-[4px] text-xs font-medium bg-zinc-50 text-zinc-500 border border-zinc-200/60">
             Closed
           </span>
         );
       default:
         return (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-zinc-100 text-zinc-600 capitalize">
+          <span className="inline-flex items-center px-2 py-0.5 rounded-[4px] text-xs font-medium bg-zinc-100 text-zinc-600 capitalize border border-zinc-200">
             {status}
           </span>
         );
@@ -225,10 +225,10 @@ export default function AdminOverviewPage() {
   const CustomChartTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       return (
-        <div className="bg-[#1A0022] border border-purple-700/60 rounded-xl p-3 shadow-xl text-xs text-white">
+        <div className="bg-[#1A0022] border border-purple-700/60 rounded-md p-3 shadow-xl text-xs text-white">
           <p className="font-semibold text-purple-200/90">{label}</p>
           <div className="flex items-center gap-2 mt-1.5">
-            <span className="w-2 h-2 rounded-full bg-[#C8E80B]" />
+            <span className="w-2 h-2 rounded-[2px] bg-[#C8E80B]" />
             <span className="text-zinc-300">Enquiries:</span>
             <span className="font-extrabold text-[#C8E80B] text-sm">{payload[0].value}</span>
           </div>
@@ -255,7 +255,7 @@ export default function AdminOverviewPage() {
           <button
             onClick={loadOverviewData}
             disabled={refreshing}
-            className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg bg-white border border-zinc-200/80 text-xs font-semibold text-zinc-700 hover:bg-zinc-50 hover:border-zinc-300 transition-colors shadow-2xs disabled:opacity-60"
+            className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-md bg-white border border-zinc-200 text-xs font-semibold text-zinc-700 hover:bg-zinc-50 hover:border-zinc-300 transition-colors shadow-2xs disabled:opacity-60"
           >
             <RefreshCw className={`w-3.5 h-3.5 text-zinc-500 ${refreshing ? 'animate-spin' : ''}`} />
             <span>{refreshing ? 'Refreshing...' : 'Refresh'}</span>
@@ -264,7 +264,7 @@ export default function AdminOverviewPage() {
       </div>
 
       {error && (
-        <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-center justify-between">
+        <div className="p-4 rounded-md bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
             <span>{error}</span>
@@ -287,13 +287,13 @@ export default function AdminOverviewPage() {
         {/* Left: 2x2 Solid Color-Block KPI Grid (approx 55% width on desktop) */}
         <div className="lg:col-span-7 grid grid-cols-1 sm:grid-cols-2 gap-4">
           {/* Card 1: Total Enquiries — Rich Laurrel Purple (#390044) */}
-          <div className="bg-[#390044] text-white p-5 lg:p-6 rounded-2xl shadow-sm border border-purple-900/30 flex flex-col justify-between group hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
+          <div className="bg-[#390044] text-white p-5 lg:p-6 rounded-md shadow-sm border border-purple-900/30 flex flex-col justify-between group hover:shadow-md transition-all duration-200">
             <div>
               <div className="flex items-start justify-between gap-3">
                 <span className="text-[11px] font-bold uppercase tracking-wider text-purple-200/90 leading-tight">
                   Total Inbound Enquiries
                 </span>
-                <div className="w-10 h-10 rounded-xl bg-white/15 backdrop-blur-xs flex items-center justify-center text-white shrink-0 shadow-inner group-hover:scale-105 transition-transform">
+                <div className="w-10 h-10 rounded-md bg-white/15 flex items-center justify-center text-white shrink-0 shadow-inner">
                   <Inbox className="w-5 h-5 text-white" />
                 </div>
               </div>
@@ -309,20 +309,20 @@ export default function AdminOverviewPage() {
               <span className="text-purple-200/80 truncate pr-2">
                 All-time quote requests
               </span>
-              <span className="inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-full bg-white/10 text-purple-100 shrink-0">
+              <span className="text-xs text-purple-200/90 font-medium shrink-0">
                 Ottawa & Region
               </span>
             </div>
           </div>
 
           {/* Card 2: Awaiting Review — Warm Orange / Coral (#FE6000) */}
-          <div className="bg-[#FE6000] text-white p-5 lg:p-6 rounded-2xl shadow-sm border border-orange-600/30 flex flex-col justify-between group hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
+          <div className="bg-[#FE6000] text-white p-5 lg:p-6 rounded-md shadow-sm border border-orange-600/30 flex flex-col justify-between group hover:shadow-md transition-all duration-200">
             <div>
               <div className="flex items-start justify-between gap-3">
                 <span className="text-[11px] font-bold uppercase tracking-wider text-orange-100 leading-tight">
                   Awaiting Review
                 </span>
-                <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-xs flex items-center justify-center text-white shrink-0 shadow-inner group-hover:scale-105 transition-transform">
+                <div className="w-10 h-10 rounded-md bg-white/20 flex items-center justify-center text-white shrink-0 shadow-inner">
                   <Clock className="w-5 h-5 text-white" />
                 </div>
               </div>
@@ -338,20 +338,20 @@ export default function AdminOverviewPage() {
               <span className="text-orange-100/90 truncate pr-2">
                 Requires triage & quote
               </span>
-              <span className="inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-full bg-white/20 text-white shrink-0">
+              <span className="text-xs text-white/90 font-medium shrink-0">
                 Action Required
               </span>
             </div>
           </div>
 
           {/* Card 3: Upcoming Consultations — Sophisticated Teal (#0D9488) */}
-          <div className="bg-[#0D9488] text-white p-5 lg:p-6 rounded-2xl shadow-sm border border-teal-700/30 flex flex-col justify-between group hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
+          <div className="bg-[#0D9488] text-white p-5 lg:p-6 rounded-md shadow-sm border border-teal-700/30 flex flex-col justify-between group hover:shadow-md transition-all duration-200">
             <div>
               <div className="flex items-start justify-between gap-3">
                 <span className="text-[11px] font-bold uppercase tracking-wider text-teal-100 leading-tight">
                   Upcoming Consultations
                 </span>
-                <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-xs flex items-center justify-center text-white shrink-0 shadow-inner group-hover:scale-105 transition-transform">
+                <div className="w-10 h-10 rounded-md bg-white/20 flex items-center justify-center text-white shrink-0 shadow-inner">
                   <CalendarDays className="w-5 h-5 text-white" />
                 </div>
               </div>
@@ -367,20 +367,20 @@ export default function AdminOverviewPage() {
               <span className="text-teal-100/90 truncate pr-2">
                 Scheduled meetings in Ottawa
               </span>
-              <span className="inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-full bg-white/20 text-white shrink-0">
+              <span className="text-xs text-white/90 font-medium shrink-0">
                 Confirmed
               </span>
             </div>
           </div>
 
           {/* Card 4: Callback Requests — Muted Gold / Warm Amber (#D97706) */}
-          <div className="bg-[#D97706] text-white p-5 lg:p-6 rounded-2xl shadow-sm border border-amber-700/30 flex flex-col justify-between group hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
+          <div className="bg-[#D97706] text-white p-5 lg:p-6 rounded-md shadow-sm border border-amber-700/30 flex flex-col justify-between group hover:shadow-md transition-all duration-200">
             <div>
               <div className="flex items-start justify-between gap-3">
                 <span className="text-[11px] font-bold uppercase tracking-wider text-amber-100 leading-tight">
                   Callback Requests
                 </span>
-                <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-xs flex items-center justify-center text-white shrink-0 shadow-inner group-hover:scale-105 transition-transform">
+                <div className="w-10 h-10 rounded-md bg-white/20 flex items-center justify-center text-white shrink-0 shadow-inner">
                   <PhoneCall className="w-5 h-5 text-white" />
                 </div>
               </div>
@@ -396,7 +396,7 @@ export default function AdminOverviewPage() {
               <span className="text-amber-100/90 truncate pr-2">
                 Direct customer callbacks
               </span>
-              <span className="inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-full bg-white/20 text-white shrink-0">
+              <span className="text-xs text-white/90 font-medium shrink-0">
                 Direct Line
               </span>
             </div>
@@ -404,7 +404,7 @@ export default function AdminOverviewPage() {
         </div>
 
         {/* Right: Tall 60-Day Enquiry Activity Chart Panel (approx 45% width on desktop) */}
-        <div className="lg:col-span-5 bg-[#25002D] text-white rounded-2xl p-6 shadow-sm border border-purple-900/40 flex flex-col justify-between">
+        <div className="lg:col-span-5 bg-[#25002D] text-white rounded-md p-6 shadow-sm border border-purple-900/40 flex flex-col justify-between">
           <div>
             {/* Chart Header */}
             <div className="flex items-start justify-between gap-3 mb-2">
@@ -419,8 +419,7 @@ export default function AdminOverviewPage() {
                 </p>
               </div>
 
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-white/10 text-[#C8E80B] border border-[#C8E80B]/30 shrink-0">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#C8E80B] animate-pulse" />
+              <span className="text-xs font-medium text-purple-200/90 px-2.5 py-1 rounded-md bg-white/10 border border-white/10 shrink-0">
                 Last 60 Days
               </span>
             </div>
@@ -515,7 +514,7 @@ export default function AdminOverviewPage() {
       {/* ========================================================================= */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Recent Inbound Enquiries Table (8 cols on desktop) */}
-        <div className="lg:col-span-8 bg-white rounded-2xl border border-zinc-200/80 shadow-sm overflow-hidden">
+        <div className="lg:col-span-8 bg-white rounded-md border border-zinc-200/80 shadow-sm overflow-hidden">
           <div className="p-5 border-b border-zinc-200/80 flex items-center justify-between">
             <div>
               <h2 className="text-sm font-bold text-zinc-900">Recent Customer Enquiries</h2>
@@ -551,8 +550,8 @@ export default function AdminOverviewPage() {
                       className="hover:bg-zinc-50/70 transition-colors group"
                     >
                       <td className="py-3.5 px-5">
-                        <div className="font-semibold text-zinc-900">{enq.customer.name}</div>
-                        <div className="text-[11px] text-zinc-500 truncate max-w-[200px]">
+                        <div className="font-semibold text-zinc-900 text-sm">{enq.customer.name}</div>
+                        <div className="text-xs text-zinc-500 truncate max-w-[200px]">
                           {enq.customer.email}
                         </div>
                       </td>
@@ -561,7 +560,7 @@ export default function AdminOverviewPage() {
                           {enq.services.map((svc) => (
                             <span
                               key={svc}
-                              className="px-2 py-0.5 rounded-md text-[10px] font-medium bg-zinc-100 text-zinc-700 capitalize"
+                              className="px-2 py-0.5 rounded-[4px] text-xs font-medium bg-zinc-100 text-zinc-700 capitalize border border-zinc-200"
                             >
                               {svc}
                             </span>
@@ -577,7 +576,7 @@ export default function AdminOverviewPage() {
                       <td className="py-3.5 px-5 text-right">
                         <Link
                           href={`/admin/enquiries?id=${enq.id}`}
-                          className="inline-flex items-center gap-1 text-xs font-semibold text-[#390044] hover:text-[#520062] px-2.5 py-1 rounded-lg hover:bg-purple-50 transition-colors"
+                          className="inline-flex items-center gap-1 text-xs font-semibold text-[#390044] hover:text-[#520062] px-2.5 py-1 rounded-md hover:bg-purple-50 transition-colors"
                         >
                           <span>Review</span>
                           <ChevronRight className="w-3.5 h-3.5" />
@@ -598,7 +597,7 @@ export default function AdminOverviewPage() {
         {/* Right Column: Service Demand, Upcoming Consultations & Attention (4 cols on desktop) */}
         <div className="lg:col-span-4 space-y-6">
           {/* Secondary Card: Service Demand Breakdown */}
-          <div className="bg-white p-5 sm:p-6 rounded-2xl border border-zinc-200/80 shadow-sm flex flex-col justify-between">
+          <div className="bg-white p-5 sm:p-6 rounded-md border border-zinc-200/80 shadow-sm flex flex-col justify-between">
             <div>
               <div className="flex items-center justify-between mb-4">
                 <div>
@@ -622,9 +621,9 @@ export default function AdminOverviewPage() {
                             {item.count} ({pct}%)
                           </span>
                         </div>
-                        <div className="w-full h-2 rounded-full bg-zinc-100 overflow-hidden">
+                        <div className="w-full h-2 rounded-[2px] bg-zinc-100 overflow-hidden">
                           <div
-                            className="h-full rounded-full transition-all duration-300"
+                            className="h-full rounded-[2px] transition-all duration-300"
                             style={{ width: `${Math.min(pct, 100)}%`, backgroundColor: color }}
                           />
                         </div>
@@ -652,7 +651,7 @@ export default function AdminOverviewPage() {
           </div>
 
           {/* Upcoming Consultations Box */}
-          <div className="bg-white p-5 sm:p-6 rounded-2xl border border-zinc-200/80 shadow-sm">
+          <div className="bg-white p-5 sm:p-6 rounded-md border border-zinc-200/80 shadow-sm">
             <div className="flex items-center justify-between mb-3.5 pb-2.5 border-b border-zinc-100">
               <h2 className="text-sm font-bold text-zinc-900">Upcoming Consultations</h2>
               <Link
@@ -668,13 +667,13 @@ export default function AdminOverviewPage() {
                 {upcomingAppointments.map((apt) => (
                   <div
                     key={apt.id}
-                    className="p-3 rounded-xl bg-zinc-50/80 border border-zinc-200/60 text-xs space-y-1.5 hover:border-zinc-300 transition-colors"
+                    className="p-3 rounded-md bg-zinc-50/80 border border-zinc-200/60 text-xs space-y-1.5 hover:border-zinc-300 transition-colors"
                   >
                     <div className="flex items-center justify-between">
                       <span className="font-semibold text-zinc-900 truncate pr-2">
                         {apt.title}
                       </span>
-                      <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-white border border-zinc-200 text-zinc-700 capitalize shrink-0">
+                      <span className="px-2 py-0.5 rounded-[4px] text-xs font-medium bg-white border border-zinc-200 text-zinc-700 capitalize shrink-0">
                         {apt.status}
                       </span>
                     </div>
@@ -701,7 +700,7 @@ export default function AdminOverviewPage() {
           </div>
 
           {/* Restrained Needs Attention Section */}
-          <div className="bg-white p-5 sm:p-6 rounded-2xl border border-zinc-200/80 shadow-sm">
+          <div className="bg-white p-5 sm:p-6 rounded-md border border-zinc-200/80 shadow-sm">
             <div className="flex items-center justify-between mb-3.5 pb-2.5 border-b border-zinc-100">
               <h2 className="text-sm font-bold text-zinc-900">Needs Attention</h2>
               <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">
@@ -710,7 +709,7 @@ export default function AdminOverviewPage() {
             </div>
 
             <div className="space-y-2.5 text-xs">
-              <div className="flex items-start gap-2.5 p-3 rounded-xl bg-orange-50/50 border border-orange-200/60">
+              <div className="flex items-start gap-2.5 p-3 rounded-md bg-orange-50/50 border border-orange-200/60">
                 <Clock className="w-4 h-4 text-[#FE6000] shrink-0 mt-0.5" />
                 <div className="min-w-0">
                   <p className="font-semibold text-zinc-900">
@@ -723,7 +722,7 @@ export default function AdminOverviewPage() {
               </div>
 
               {stats?.pendingHandoffs && stats.pendingHandoffs > 0 ? (
-                <div className="flex items-start gap-2.5 p-3 rounded-xl bg-amber-50/50 border border-amber-200/60">
+                <div className="flex items-start gap-2.5 p-3 rounded-md bg-amber-50/50 border border-amber-200/60">
                   <PhoneCall className="w-4 h-4 text-[#D97706] shrink-0 mt-0.5" />
                   <div className="min-w-0">
                     <p className="font-semibold text-zinc-900">

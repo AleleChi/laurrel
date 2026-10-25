@@ -26,20 +26,20 @@ export function AdminBadge({ status, variant, className = '' }: AdminBadgeProps)
     switch (normalized) {
       case 'new':
       case 'awaiting review':
-        return 'bg-orange-50/80 text-[#FE6000] border-orange-200/60';
+        return 'bg-orange-50/90 text-[#FE6000] border-orange-200/80';
       case 'reviewed':
-        return 'bg-zinc-100/80 text-zinc-700 border-zinc-200';
+        return 'bg-zinc-100 text-zinc-700 border-zinc-200';
       case 'quoted':
-        return 'bg-purple-50/80 text-[#49056B] border-purple-200/60';
+        return 'bg-purple-50 text-[#49056B] border-purple-200/80';
       case 'scheduled':
       case 'confirmed':
-        return 'bg-emerald-50/80 text-emerald-700 border-emerald-200/60';
+        return 'bg-emerald-50 text-emerald-700 border-emerald-200/80';
       case 'closed':
-        return 'bg-zinc-50 text-zinc-400 border-zinc-200/60';
+        return 'bg-zinc-50 text-zinc-500 border-zinc-200/60';
       case 'pending':
-        return 'bg-amber-50/80 text-amber-800 border-amber-200/60';
+        return 'bg-amber-50 text-amber-800 border-amber-200/80';
       case 'cancelled':
-        return 'bg-red-50/80 text-red-700 border-red-200/60';
+        return 'bg-red-50 text-red-700 border-red-200/80';
       default:
         return 'bg-zinc-100 text-zinc-700 border-zinc-200';
     }
@@ -70,7 +70,7 @@ export function AdminBadge({ status, variant, className = '' }: AdminBadgeProps)
 
   return (
     <span
-      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getStyles()} ${className}`}
+      className={`inline-flex items-center px-2 py-0.5 rounded-[4px] text-xs font-medium border ${getStyles()} ${className}`}
     >
       {getLabel()}
     </span>

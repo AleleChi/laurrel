@@ -1,6 +1,6 @@
 'use client';
 
-import React, { forwardRef } from 'react';
+import React, { forwardRef, useId } from 'react';
 
 interface AdminTextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
   label?: string;
@@ -23,7 +23,10 @@ export const AdminTextarea = forwardRef<HTMLTextAreaElement, AdminTextareaProps>
     },
     ref
   ) => {
-    const textareaId = id || (label ? label.toLowerCase().replace(/\s+/g, '-') : undefined);
+    const generatedId = useId();
+    const textareaId = id || (label ? `${label.toLowerCase().replace(/[^a-z0-9]/g, '-')}-${generatedId}` : generatedId);
+    const errorId = `${textareaId}-error`;
+    const hintId = `${textareaId}-hint`;
 
     return (
       <div className={`space-y-1.5 ${containerClassName}`}>
@@ -41,14 +44,24 @@ export const AdminTextarea = forwardRef<HTMLTextAreaElement, AdminTextareaProps>
           id={textareaId}
           ref={ref}
           rows={rows}
-          className={`w-full p-3 text-sm bg-white text-zinc-900 border rounded-lg transition-all placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#49056B]/20 focus:border-[#49056B] disabled:bg-zinc-100 disabled:text-zinc-500 disabled:cursor-not-allowed ${
+          aria-invalid={!!error}
+          aria-describedby={error ? errorId : hint ? hintId : undefined}
+          className={`w-full p-3 text-sm bg-white text-zinc-900 border rounded-md transition-all placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#49056B]/20 focus:border-[#49056B] disabled:bg-zinc-100 disabled:text-zinc-500 disabled:cursor-not-allowed ${
             error ? 'border-red-400 focus:border-red-500 focus:ring-red-500/20' : 'border-zinc-300'
           } ${className}`}
           {...props}
         />
 
-        {error && <p className="text-xs text-red-600 font-medium">{error}</p>}
-        {!error && hint && <p className="text-xs text-zinc-500">{hint}</p>}
+        {error && (
+          <p id={errorId} className="text-xs text-red-600 font-medium">
+            {error}
+          </p>
+        )}
+        {!error && hint && (
+          <p id={hintId} className="text-xs text-zinc-500">
+            {hint}
+          </p>
+        )}
       </div>
     );
   }

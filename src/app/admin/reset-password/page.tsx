@@ -70,7 +70,7 @@ function ResetPasswordForm() {
   if (!token.trim()) {
     return (
       <div className="text-center py-4 space-y-4">
-        <div className="w-11 h-11 rounded-full bg-amber-50 border border-amber-200 text-amber-600 flex items-center justify-center mx-auto">
+        <div className="w-11 h-11 rounded-md bg-amber-50 border border-amber-200 text-amber-600 flex items-center justify-center mx-auto">
           <AlertTriangle className="w-5 h-5" />
         </div>
         <div>
@@ -81,7 +81,7 @@ function ResetPasswordForm() {
         </div>
         <Link
           href="/admin/forgot-password"
-          className="inline-flex items-center justify-center w-full h-11 px-4 rounded-lg bg-[#49056B] text-white text-sm font-semibold hover:bg-[#390044] transition-colors text-center"
+          className="inline-flex items-center justify-center w-full h-11 px-4 rounded-md bg-[#49056B] text-white text-sm font-semibold hover:bg-[#390044] transition-colors text-center"
         >
           Request New Reset Link
         </Link>
@@ -92,7 +92,7 @@ function ResetPasswordForm() {
   if (isSuccess) {
     return (
       <div className="text-center py-4 space-y-4">
-        <div className="w-11 h-11 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-600 flex items-center justify-center mx-auto">
+        <div className="w-11 h-11 rounded-md bg-emerald-50 border border-emerald-200 text-emerald-600 flex items-center justify-center mx-auto">
           <CheckCircle2 className="w-5 h-5" />
         </div>
         <div>
@@ -103,7 +103,7 @@ function ResetPasswordForm() {
         </div>
         <Link
           href="/admin/login"
-          className="inline-flex items-center justify-center w-full h-11 px-4 rounded-lg bg-[#49056B] text-white text-sm font-semibold hover:bg-[#390044] transition-colors text-center"
+          className="inline-flex items-center justify-center w-full h-11 px-4 rounded-md bg-[#49056B] text-white text-sm font-semibold hover:bg-[#390044] transition-colors text-center"
         >
           Proceed to Sign In
         </Link>
@@ -116,7 +116,7 @@ function ResetPasswordForm() {
       {errorMessage && (
         <div
           role="alert"
-          className="mb-4 p-3.5 rounded-lg bg-red-50 border border-red-200 text-xs text-red-800 leading-relaxed flex items-start gap-2.5"
+          className="mb-4 p-3.5 rounded-md bg-red-50 border border-red-200 text-xs text-red-800 leading-relaxed flex items-start gap-2.5"
         >
           <span className="font-semibold shrink-0 text-red-700">Notice:</span>
           <span>{errorMessage}</span>
@@ -139,7 +139,7 @@ function ResetPasswordForm() {
             placeholder="••••••••••••"
             required
             autoComplete="new-password"
-            className="w-full h-11 px-3.5 pr-11 bg-white border border-zinc-300 rounded-lg text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#49056B]/20 focus:border-[#49056B] transition-all"
+            className="w-full h-11 px-3.5 pr-11 bg-white border border-zinc-300 rounded-md text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#49056B]/20 focus:border-[#49056B] transition-all"
           />
           <button
             type="button"
@@ -168,7 +168,7 @@ function ResetPasswordForm() {
             placeholder="••••••••••••"
             required
             autoComplete="new-password"
-            className="w-full h-11 px-3.5 pr-11 bg-white border border-zinc-300 rounded-lg text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#49056B]/20 focus:border-[#49056B] transition-all"
+            className="w-full h-11 px-3.5 pr-11 bg-white border border-zinc-300 rounded-md text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#49056B]/20 focus:border-[#49056B] transition-all"
           />
           <button
             type="button"
@@ -184,7 +184,7 @@ function ResetPasswordForm() {
       <button
         type="submit"
         disabled={isLoading}
-        className="w-full h-11 mt-2 rounded-lg bg-[#49056B] text-white text-sm font-semibold hover:bg-[#390044] focus:outline-none focus:ring-2 focus:ring-[#49056B] focus:ring-offset-1 disabled:opacity-50 transition-colors flex items-center justify-center gap-2 shadow-xs cursor-pointer"
+        className="w-full h-11 mt-2 rounded-md bg-[#49056B] text-white text-sm font-semibold hover:bg-[#390044] focus:outline-none focus:ring-2 focus:ring-[#49056B] focus:ring-offset-1 disabled:opacity-50 transition-colors flex items-center justify-center gap-2 shadow-xs cursor-pointer"
       >
         {isLoading ? (
           <>
@@ -223,8 +223,8 @@ export default function ResetPasswordPage() {
 
         <div className="relative z-10">
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-xl bg-white/10 backdrop-blur-xs flex items-center justify-center border border-white/15">
-              <ShieldCheck className="w-5 h-5 text-[#C8E80B]" />
+            <div className="h-10 w-10 rounded-md bg-white/10 backdrop-blur-xs flex items-center justify-center border border-white/15">
+              <ShieldCheck className="w-5 h-5 text-purple-200" />
             </div>
             <div>
               <span className="text-xs font-bold tracking-widest uppercase text-purple-200">
@@ -236,8 +236,7 @@ export default function ResetPasswordPage() {
         </div>
 
         <div className="relative z-10 my-auto py-8">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 text-xs font-semibold text-purple-200 mb-6 border border-white/15">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#C8E80B]" />
+          <div className="inline-flex items-center px-2.5 py-1 rounded-md bg-white/10 text-xs font-medium text-purple-200 mb-6 border border-white/15">
             Credential Update
           </div>
 

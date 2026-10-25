@@ -289,7 +289,7 @@ export default function AdminAppointmentsPage() {
       </div>
 
       {feedbackMessage && (
-        <div className="p-4 rounded-xl bg-purple-50 border border-purple-200 text-[#49056B] text-sm flex items-center justify-between">
+        <div className="p-4 rounded-md bg-purple-50 border border-purple-200 text-[#49056B] text-sm flex items-center justify-between">
           <div className="flex items-center gap-2">
             <CheckCircle2 className="w-5 h-5 text-[#49056B] shrink-0" />
             <span>{feedbackMessage}</span>
@@ -303,7 +303,7 @@ export default function AdminAppointmentsPage() {
       {/* ========================================================================= */}
       {/* TOOLBAR: Search, Filters & View Toggles (44px height)                     */}
       {/* ========================================================================= */}
-      <div className="bg-white p-4 sm:p-5 rounded-xl border border-zinc-200 shadow-sm space-y-4">
+      <div className="bg-white p-4 sm:p-5 rounded-md border border-zinc-200 shadow-sm space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
           {/* Search Input (6 cols) */}
           <div className="md:col-span-5 relative flex items-center">
@@ -396,7 +396,7 @@ export default function AdminAppointmentsPage() {
       {/* VIEW: Table Mode                                                          */}
       {/* ========================================================================= */}
       {viewMode === 'table' && (
-        <div className="bg-white rounded-xl border border-zinc-200 shadow-sm overflow-hidden">
+        <div className="bg-white rounded-md border border-zinc-200 shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
             {filteredAppointments.length > 0 ? (
               <table className="w-full text-left border-collapse">
@@ -473,7 +473,7 @@ export default function AdminAppointmentsPage() {
               </table>
             ) : (
               <div className="py-16 text-center space-y-3">
-                <div className="w-12 h-12 rounded-full bg-zinc-100 flex items-center justify-center mx-auto text-zinc-400">
+                <div className="w-12 h-12 rounded-md bg-zinc-100 flex items-center justify-center mx-auto text-zinc-400">
                   <CalendarDays className="w-6 h-6" />
                 </div>
                 <div>
@@ -495,7 +495,7 @@ export default function AdminAppointmentsPage() {
         <div className="space-y-6">
           {Object.keys(groupedAgenda).length > 0 ? (
             Object.entries(groupedAgenda).map(([dateLabel, aptList]) => (
-              <div key={dateLabel} className="bg-white rounded-xl border border-zinc-200 shadow-sm overflow-hidden">
+              <div key={dateLabel} className="bg-white rounded-md border border-zinc-200 shadow-sm overflow-hidden">
                 <div className="px-5 py-3.5 bg-zinc-50/80 border-b border-zinc-200 flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <CalendarIcon className="w-4 h-4 text-[#49056B]" />
@@ -546,7 +546,7 @@ export default function AdminAppointmentsPage() {
               </div>
             ))
           ) : (
-            <div className="bg-white rounded-xl border border-zinc-200 p-16 text-center text-sm text-zinc-400">
+            <div className="bg-white rounded-md border border-zinc-200 p-16 text-center text-sm text-zinc-400">
               No appointments found for the selected filters.
             </div>
           )}
@@ -583,7 +583,7 @@ export default function AdminAppointmentsPage() {
             {/* Body */}
             <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6">
               {/* Standardized Consultation Summary */}
-              <div className="p-4 rounded-xl bg-zinc-50 border border-zinc-200 space-y-2 text-sm text-zinc-700">
+              <div className="p-4 rounded-md bg-zinc-50 border border-zinc-200 space-y-2 text-sm text-zinc-700">
                 <div>
                   <strong className="text-zinc-900 font-semibold">Date:</strong>{' '}
                   <span>{formatOttawaDate(selectedAppointment.scheduledStart)}</span>
@@ -607,7 +607,7 @@ export default function AdminAppointmentsPage() {
                 <div className="text-xs font-bold uppercase tracking-wider text-zinc-500">
                   Customer Information
                 </div>
-                <div className="p-4 rounded-xl bg-white border border-zinc-200 space-y-2 text-sm">
+                <div className="p-4 rounded-md bg-white border border-zinc-200 space-y-2 text-sm">
                   <div className="font-bold text-zinc-900">{selectedAppointment.customerName}</div>
                   <div className="text-zinc-600">{selectedAppointment.customerEmail}</div>
                   {selectedAppointment.customerPhone && (
@@ -621,7 +621,7 @@ export default function AdminAppointmentsPage() {
                 <div className="text-xs font-bold uppercase tracking-wider text-zinc-500">
                   Location & Meeting Coordinates
                 </div>
-                <div className="p-4 rounded-xl bg-white border border-zinc-200 text-sm">
+                <div className="p-4 rounded-md bg-white border border-zinc-200 text-sm">
                   {selectedAppointment.locationOrLink ? (
                     selectedAppointment.locationOrLink.startsWith('http') ? (
                       <a
@@ -652,7 +652,7 @@ export default function AdminAppointmentsPage() {
                   <div className="text-xs font-bold uppercase tracking-wider text-zinc-500">
                     Internal Staff Notes
                   </div>
-                  <div className="p-3.5 rounded-xl bg-zinc-50 border border-zinc-200 text-sm text-zinc-700 leading-relaxed whitespace-pre-wrap">
+                  <div className="p-3.5 rounded-md bg-zinc-50 border border-zinc-200 text-sm text-zinc-700 leading-relaxed whitespace-pre-wrap">
                     {selectedAppointment.staffNotes}
                   </div>
                 </div>

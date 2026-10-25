@@ -1,6 +1,6 @@
 'use client';
 
-import React, { forwardRef } from 'react';
+import React, { forwardRef, useId } from 'react';
 import { ChevronDown } from 'lucide-react';
 
 interface AdminSelectOption {
@@ -31,7 +31,10 @@ export const AdminSelect = forwardRef<HTMLSelectElement, AdminSelectProps>(
     },
     ref
   ) => {
-    const selectId = id || (label ? label.toLowerCase().replace(/\s+/g, '-') : undefined);
+    const generatedId = useId();
+    const selectId = id || (label ? `${label.toLowerCase().replace(/[^a-z0-9]/g, '-')}-${generatedId}` : generatedId);
+    const errorId = `${selectId}-error`;
+    const hintId = `${selectId}-hint`;
 
     return (
       <div className={`space-y-1.5 ${containerClassName}`}>
@@ -49,7 +52,9 @@ export const AdminSelect = forwardRef<HTMLSelectElement, AdminSelectProps>(
           <select
             id={selectId}
             ref={ref}
-            className={`w-full h-11 text-sm bg-white text-zinc-900 border rounded-lg transition-all appearance-none pl-3.5 pr-10 focus:outline-none focus:ring-2 focus:ring-[#49056B]/20 focus:border-[#49056B] disabled:bg-zinc-100 disabled:text-zinc-500 disabled:cursor-not-allowed ${
+            aria-invalid={!!error}
+            aria-describedby={error ? errorId : hint ? hintId : undefined}
+            className={`w-full h-11 text-sm bg-white text-zinc-900 border rounded-md transition-all appearance-none pl-3.5 pr-10 focus:outline-none focus:ring-2 focus:ring-[#49056B]/20 focus:border-[#49056B] disabled:bg-zinc-100 disabled:text-zinc-500 disabled:cursor-not-allowed ${
               error ? 'border-red-400 focus:border-red-500 focus:ring-red-500/20' : 'border-zinc-300'
             } ${className}`}
             {...props}
@@ -63,11 +68,19 @@ export const AdminSelect = forwardRef<HTMLSelectElement, AdminSelectProps>(
               : children}
           </select>
 
-          <ChevronDown className="w-4 h-4 text-zinc-400 absolute right-3 pointer-events-none" />
+          <ChevronDown className="w-4 h-4 text-zinc-400 absolute right-3 pointer-events-none" aria-hidden="true" />
         </div>
 
-        {error && <p className="text-xs text-red-600 font-medium">{error}</p>}
-        {!error && hint && <p className="text-xs text-zinc-500">{hint}</p>}
+        {error && (
+          <p id={errorId} className="text-xs text-red-600 font-medium">
+            {error}
+          </p>
+        )}
+        {!error && hint && (
+          <p id={hintId} className="text-xs text-zinc-500">
+            {hint}
+          </p>
+        )}
       </div>
     );
   }

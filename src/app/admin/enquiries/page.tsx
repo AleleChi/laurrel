@@ -356,7 +356,7 @@ export default function AdminEnquiriesPage() {
       </div>
 
       {apiError && (
-        <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-sm flex items-center justify-between">
+        <div className="p-4 rounded-md bg-amber-50 border border-amber-200 text-amber-900 text-sm flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <AlertCircle className="w-5 h-5 text-amber-600 shrink-0" />
             <span>{apiError}</span>
@@ -382,7 +382,7 @@ export default function AdminEnquiriesPage() {
             }`}
           >
             Enquiries List
-            <span className="ml-2 px-2 py-0.5 text-xs rounded-full bg-zinc-100 text-zinc-600">
+            <span className="ml-2 px-2 py-0.5 text-xs rounded-[4px] bg-zinc-100 text-zinc-600">
               {enquiries.length}
             </span>
           </button>
@@ -396,7 +396,7 @@ export default function AdminEnquiriesPage() {
           >
             Assistant Callbacks
             {handoffs.length > 0 && (
-              <span className="ml-2 px-2 py-0.5 text-xs rounded-full bg-orange-100 text-[#FE6000] font-bold">
+              <span className="ml-2 px-2 py-0.5 text-xs rounded-[4px] bg-orange-100 text-[#FE6000] font-bold">
                 {handoffs.length}
               </span>
             )}
@@ -408,7 +408,7 @@ export default function AdminEnquiriesPage() {
       {/* TOOLBAR: WowDash & Geex Inspired Consistent Controls (44px height)         */}
       {/* ========================================================================= */}
       {activeTab === 'enquiries' && (
-        <div className="bg-white p-4 sm:p-5 rounded-xl border border-zinc-200 shadow-sm space-y-4">
+        <div className="bg-white p-4 sm:p-5 rounded-md border border-zinc-200 shadow-sm space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
             {/* Search Input (6 cols) */}
             <div className="md:col-span-6 relative flex items-center">
@@ -488,7 +488,7 @@ export default function AdminEnquiriesPage() {
       {/* DATA TABLE: WowDash & Geex Inspired Complete Container                     */}
       {/* ========================================================================= */}
       {activeTab === 'enquiries' && (
-        <div className="bg-white rounded-xl border border-zinc-200 shadow-sm overflow-hidden">
+        <div className="bg-white rounded-md border border-zinc-200 shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
             {filteredEnquiries.length > 0 ? (
               <table className="w-full text-left border-collapse">
@@ -586,7 +586,7 @@ export default function AdminEnquiriesPage() {
               </table>
             ) : (
               <div className="py-16 text-center space-y-3">
-                <div className="w-12 h-12 rounded-full bg-zinc-100 flex items-center justify-center mx-auto text-zinc-400">
+                <div className="w-12 h-12 rounded-md bg-zinc-100 flex items-center justify-center mx-auto text-zinc-400">
                   <Search className="w-6 h-6" />
                 </div>
                 <div>
@@ -610,7 +610,7 @@ export default function AdminEnquiriesPage() {
 
       {/* Assistant Handoffs Tab */}
       {activeTab === 'handoffs' && (
-        <div className="bg-white rounded-xl border border-zinc-200 shadow-sm overflow-hidden">
+        <div className="bg-white rounded-md border border-zinc-200 shadow-sm overflow-hidden">
           <div className="p-5 border-b border-zinc-200">
             <h2 className="text-base font-bold text-zinc-900">Customer Callback Requests</h2>
             <p className="text-xs text-zinc-500 mt-0.5">
@@ -627,7 +627,7 @@ export default function AdminEnquiriesPage() {
                       <span className="font-semibold text-zinc-900 text-sm">
                         {h.customerName || 'Anonymous Customer'}
                       </span>
-                      <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-orange-100 text-[#FE6000]">
+                      <span className="px-2 py-0.5 rounded-[4px] text-xs font-semibold bg-orange-100 text-[#FE6000]">
                         {h.status}
                       </span>
                     </div>
@@ -686,7 +686,7 @@ export default function AdminEnquiriesPage() {
             {/* Drawer Body */}
             <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6">
               {/* 1. Customer Contact Card */}
-              <div className="p-4 rounded-xl bg-zinc-50/80 border border-zinc-200 space-y-3">
+              <div className="p-4 rounded-md bg-zinc-50/80 border border-zinc-200 space-y-3">
                 <div className="text-xs font-bold uppercase tracking-wider text-zinc-500">
                   Customer Contact Information
                 </div>
@@ -734,7 +734,7 @@ export default function AdminEnquiriesPage() {
                 </div>
 
                 {selectedEnquiry.serviceDetails && Object.keys(selectedEnquiry.serviceDetails).length > 0 && (
-                  <div className="mt-3 p-4 bg-zinc-50 rounded-xl border border-zinc-200 space-y-2">
+                  <div className="mt-3 p-4 bg-zinc-50 rounded-md border border-zinc-200 space-y-2">
                     <div className="text-xs font-bold uppercase tracking-wider text-zinc-500">
                       Scope Specifications
                     </div>
@@ -797,7 +797,7 @@ export default function AdminEnquiriesPage() {
                   <div className="text-xs font-bold uppercase tracking-wider text-zinc-500">
                     Customer Project Notes
                   </div>
-                  <div className="p-3.5 bg-zinc-50 rounded-xl border border-zinc-200 text-sm text-zinc-700 leading-relaxed whitespace-pre-wrap">
+                  <div className="p-3.5 bg-zinc-50 rounded-md border border-zinc-200 text-sm text-zinc-700 leading-relaxed whitespace-pre-wrap">
                     {selectedEnquiry.details}
                   </div>
                 </div>
@@ -833,7 +833,7 @@ export default function AdminEnquiriesPage() {
                     Loading consultations...
                   </div>
                 ) : enquiryAppointments.length === 0 ? (
-                  <div className="p-4 rounded-xl bg-zinc-50 border border-zinc-200 text-sm text-zinc-500 text-center">
+                  <div className="p-4 rounded-md bg-zinc-50 border border-zinc-200 text-sm text-zinc-500 text-center">
                     No consultations scheduled yet for this enquiry.
                   </div>
                 ) : (
@@ -857,7 +857,7 @@ export default function AdminEnquiriesPage() {
                       return (
                         <div
                           key={apt.id}
-                          className="p-5 rounded-xl bg-white border border-zinc-200 shadow-sm space-y-4 transition-all"
+                          className="p-5 rounded-md bg-white border border-zinc-200 shadow-sm space-y-4 transition-all"
                         >
                           {/* Header */}
                           <div className="flex items-start justify-between gap-3">

@@ -98,7 +98,7 @@ export default function CmsOverviewPage() {
           <Link
             href="/"
             target="_blank"
-            className="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg bg-[#49056B] text-white hover:bg-[#390044] text-xs font-semibold transition-colors shadow-2xs"
+            className="inline-flex items-center gap-2 px-3.5 py-2 rounded-md bg-[#49056B] text-white hover:bg-[#390044] text-xs font-semibold transition-colors shadow-2xs"
           >
             <Globe className="w-3.5 h-3.5 text-orange-400" />
             <span>View Public Website</span>
@@ -108,7 +108,7 @@ export default function CmsOverviewPage() {
       </div>
 
       {error && (
-        <div className="p-4 rounded-xl bg-red-50 border border-red-200 text-sm text-red-800 flex items-center justify-between">
+        <div className="p-4 rounded-md bg-red-50 border border-red-200 text-sm text-red-800 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <AlertCircle className="w-5 h-5 text-red-600 shrink-0" />
             <span>{error}</span>
@@ -120,7 +120,7 @@ export default function CmsOverviewPage() {
       )}
 
       {/* Pages Table Card */}
-      <div className="bg-white rounded-xl border border-zinc-200 shadow-sm overflow-hidden">
+      <div className="bg-white rounded-md border border-zinc-200 shadow-sm overflow-hidden">
         <div className="px-6 py-4 border-b border-zinc-200 flex items-center justify-between bg-zinc-50/50">
           <div>
             <h2 className="text-sm font-bold text-zinc-900 tracking-tight">Registered Website Pages</h2>
@@ -216,7 +216,7 @@ export default function CmsOverviewPage() {
                         </Link>
                         <Link
                           href={`/admin/website/${page.id}`}
-                          className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#49056B] hover:text-[#390044] px-3 py-1.5 rounded-lg bg-purple-50 hover:bg-purple-100 transition-colors"
+                          className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#49056B] hover:text-[#390044] px-3 py-1.5 rounded-md bg-purple-50 hover:bg-purple-100 transition-colors"
                         >
                           <FileEdit className="w-3.5 h-3.5" />
                           <span>Edit</span>

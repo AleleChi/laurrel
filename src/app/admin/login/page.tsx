@@ -106,8 +106,7 @@ export default function AdminLoginPage() {
 
         {/* Center Content on Left Panel */}
         <div className="relative z-10 my-auto py-8">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 text-xs font-semibold text-purple-200 mb-6 border border-white/15">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#C8E80B]" />
+          <div className="inline-flex items-center px-2.5 py-1 rounded-md bg-white/10 text-xs font-medium text-purple-200 mb-6 border border-white/15">
             Verified Admin Access
           </div>
 
@@ -121,15 +120,15 @@ export default function AdminLoginPage() {
 
           <div className="mt-8 space-y-3 pt-6 border-t border-white/10">
             <div className="flex items-center gap-3 text-xs text-purple-100">
-              <CheckCircle2 className="w-4 h-4 text-[#C8E80B] shrink-0" />
+              <CheckCircle2 className="w-4 h-4 text-purple-200 shrink-0" />
               <span>Real-time residential & commercial enquiry triage</span>
             </div>
             <div className="flex items-center gap-3 text-xs text-purple-100">
-              <CheckCircle2 className="w-4 h-4 text-[#C8E80B] shrink-0" />
+              <CheckCircle2 className="w-4 h-4 text-purple-200 shrink-0" />
               <span>Direct Ottawa consultation booking & video conference sync</span>
             </div>
             <div className="flex items-center gap-3 text-xs text-purple-100">
-              <CheckCircle2 className="w-4 h-4 text-[#C8E80B] shrink-0" />
+              <CheckCircle2 className="w-4 h-4 text-purple-200 shrink-0" />
               <span>Automated customer notices & inventory tracking</span>
             </div>
           </div>
@@ -177,7 +176,7 @@ export default function AdminLoginPage() {
           {errorMessage && (
             <div
               role="alert"
-              className="mb-5 p-3.5 rounded-lg bg-red-50 border border-red-200 text-xs text-red-800 leading-relaxed flex items-start gap-2.5"
+              className="mb-5 p-3.5 rounded-md bg-red-50 border border-red-200 text-xs text-red-800 leading-relaxed flex items-start gap-2.5"
             >
               <span className="font-semibold shrink-0 text-red-700">Notice:</span>
               <span>{errorMessage}</span>
@@ -202,7 +201,7 @@ export default function AdminLoginPage() {
                 required
                 autoFocus
                 autoComplete="email"
-                className="w-full h-11 px-3.5 bg-white border border-zinc-300 rounded-lg text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#49056B]/20 focus:border-[#49056B] transition-all"
+                className="w-full h-11 px-3.5 bg-white border border-zinc-300 rounded-md text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#49056B]/20 focus:border-[#49056B] transition-all"
               />
             </div>
 
@@ -230,7 +229,7 @@ export default function AdminLoginPage() {
                   placeholder="••••••••••••"
                   required
                   autoComplete="current-password"
-                  className="w-full h-11 px-3.5 pr-11 bg-white border border-zinc-300 rounded-lg text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#49056B]/20 focus:border-[#49056B] transition-all"
+                  className="w-full h-11 px-3.5 pr-11 bg-white border border-zinc-300 rounded-md text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#49056B]/20 focus:border-[#49056B] transition-all"
                 />
                 <button
                   type="button"
@@ -247,7 +246,7 @@ export default function AdminLoginPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full h-11 mt-2 rounded-lg bg-[#49056B] text-white text-sm font-semibold hover:bg-[#390044] focus:outline-none focus:ring-2 focus:ring-[#49056B] focus:ring-offset-1 disabled:opacity-50 transition-colors flex items-center justify-center gap-2 shadow-xs cursor-pointer"
+              className="w-full h-11 mt-2 rounded-md bg-[#49056B] text-white text-sm font-semibold hover:bg-[#390044] focus:outline-none focus:ring-2 focus:ring-[#49056B] focus:ring-offset-1 disabled:opacity-50 transition-colors flex items-center justify-center gap-2 shadow-xs cursor-pointer"
             >
               {isLoading ? (
                 <>

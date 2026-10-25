@@ -153,7 +153,7 @@ export default function MediaLibraryPage() {
       {/* ========================================================================= */}
       {/* TOOLBAR: Standardized Controls (44px height)                              */}
       {/* ========================================================================= */}
-      <div className="bg-white p-4 sm:p-5 rounded-xl border border-zinc-200 shadow-sm space-y-4">
+      <div className="bg-white p-4 sm:p-5 rounded-md border border-zinc-200 shadow-sm space-y-4">
         <form onSubmit={handleSearchSubmit} className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-12 gap-3 items-center">
           {/* Search Input (5 cols) */}
           <div className="sm:col-span-2 md:col-span-5 relative flex items-center">
@@ -265,7 +265,7 @@ export default function MediaLibraryPage() {
 
       {/* Main Asset Container */}
       {error && (
-        <div className="p-4 rounded-xl bg-red-50 border border-red-200 text-sm text-red-800 flex items-center justify-between">
+        <div className="p-4 rounded-md bg-red-50 border border-red-200 text-sm text-red-800 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <AlertCircle className="w-5 h-5 text-red-600 shrink-0" />
             <span>{error}</span>
@@ -282,8 +282,8 @@ export default function MediaLibraryPage() {
           <span>Loading media assets...</span>
         </div>
       ) : assets.length === 0 ? (
-        <div className="py-20 text-center bg-white rounded-xl border border-zinc-200 p-8 shadow-sm space-y-3">
-          <div className="w-12 h-12 rounded-full bg-zinc-100 flex items-center justify-center mx-auto text-zinc-400">
+        <div className="py-20 text-center bg-white rounded-md border border-zinc-200 p-8 shadow-sm space-y-3">
+          <div className="w-12 h-12 rounded-md bg-zinc-100 flex items-center justify-center mx-auto text-zinc-400">
             <ImageIcon className="w-6 h-6" />
           </div>
           <div>
@@ -318,7 +318,7 @@ export default function MediaLibraryPage() {
               <div
                 key={asset.id}
                 onClick={() => handleAssetClick(asset)}
-                className="group rounded-xl border border-zinc-200 bg-white overflow-hidden hover:border-zinc-300 hover:shadow-md transition-all cursor-pointer flex flex-col shadow-2xs"
+                className="group rounded-md border border-zinc-200 bg-white overflow-hidden hover:border-zinc-300 hover:shadow-md transition-all cursor-pointer flex flex-col shadow-2xs"
               >
                 {/* Media Thumbnail Container */}
                 <div className="aspect-[4/3] bg-zinc-100 relative overflow-hidden flex items-center justify-center border-b border-zinc-100">
@@ -372,7 +372,7 @@ export default function MediaLibraryPage() {
         </div>
       ) : (
         /* LIST VIEW */
-        <div className="bg-white rounded-xl border border-zinc-200 shadow-sm overflow-hidden">
+        <div className="bg-white rounded-md border border-zinc-200 shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
