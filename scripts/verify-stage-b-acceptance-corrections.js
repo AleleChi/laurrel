@@ -334,9 +334,8 @@ async function run() {
     console.log('STAGE B ACCEPTANCE CORRECTIONS VERIFICATION: ALL TESTS PASSED');
     console.log('========================================================================\n');
   } finally {
-    if (server && server.close) {
-      server.close();
-    }
+    if (server && server.close) { server.close(); }
+    process.exit(0);
   }
 }
 
@@ -344,3 +343,4 @@ run().catch((err) => {
   console.error('\n[FATAL TEST RUNNER ERROR]:', err);
   process.exit(1);
 });
+
