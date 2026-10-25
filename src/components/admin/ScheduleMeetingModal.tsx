@@ -5,15 +5,17 @@ import {
   X,
   Calendar,
   Clock,
-  Phone,
+  PhoneCall,
   MapPin,
   Video,
-  User,
-  Mail,
+  Building2,
   AlertCircle,
-  CheckCircle2,
   Loader2,
   CalendarDays,
+  CheckCircle2,
+  Bell,
+  FileText,
+  User,
 } from 'lucide-react';
 import {
   AppointmentType,
@@ -24,6 +26,7 @@ import {
   utcToOttawaDate,
   utcToOttawaTime,
 } from '@/lib/utils/formatters';
+import { AdminButton } from '@/components/admin/ui/AdminButton';
 
 interface StaffUser {
   id: string;
@@ -35,18 +38,25 @@ interface StaffUser {
 interface ScheduleMeetingModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onScheduled: (appointment: any) => void;
-  enquiry: {
+  onScheduled?: (appointment: any) => void;
+  onSuccess?: (appointment: any) => void;
+  enquiry?: {
     id: string;
     customer: {
       name: string;
       email: string;
       phone?: string;
     };
-    services: string[];
+    services?: string[];
     serviceLocation?: string;
     preferredTiming?: string;
     details?: string;
+  };
+  enquiryId?: string;
+  customer?: {
+    name: string;
+    email: string;
+    phone?: string;
   };
   rescheduleAppointmentId?: string | null;
   initialAppointment?: any | null;
@@ -56,29 +66,42 @@ export default function ScheduleMeetingModal({
   isOpen,
   onClose,
   onScheduled,
+  onSuccess,
   enquiry,
+  enquiryId,
+  customer,
   rescheduleAppointmentId,
   initialAppointment,
 }: ScheduleMeetingModalProps) {
   const isReschedule = Boolean(rescheduleAppointmentId);
 
-  // Form states
+  // Normalize enquiry and customer data
+  const resolvedEnquiryId = enquiry?.id || enquiryId || '';
+  const resolvedCustomer = enquiry?.customer || customer || { name: 'Customer', email: '' };
+  const resolvedServices = enquiry?.services || [];
+  const resolvedLocation = enquiry?.serviceLocation || '';
+
+  const notifySuccess = (apt: any) => {
+    if (onScheduled) onScheduled(apt);
+    if (onSuccess) onSuccess(apt);
+  };
+
   const defaultServicesTitle =
-    enquiry.services && enquiry.services.length > 0
-      ? `${enquiry.services.map((s) => s.charAt(0).toUpperCase() + s.slice(1)).join(' & ')} Consultation`
+    resolvedServices.length > 0
+      ? `${resolvedServices.map((s) => s.charAt(0).toUpperCase() + s.slice(1)).join(' & ')} Consultation`
       : 'Customer Consultation';
 
   const [title, setTitle] = useState(
-    initialAppointment?.title || `${defaultServicesTitle} — ${enquiry.customer.name}`
+    initialAppointment?.title || `${defaultServicesTitle} — ${resolvedCustomer.name}`
   );
   const [purpose, setPurpose] = useState(
-    initialAppointment?.purpose || 'Review scope, schedule, and estimate requirements'
+    initialAppointment?.purpose || 'Review service scope, schedule, and estimate requirements'
   );
   const [appointmentType, setAppointmentType] = useState<AppointmentType>(
     initialAppointment?.appointmentType || 'telephone'
   );
 
-  // Date and Time (default to tomorrow at 10:00 AM Ottawa time)
+  // Default to tomorrow at 10:00 AM Ottawa time
   const tomorrowOttawa = (() => {
     const d = new Date();
     d.setDate(d.getDate() + 1);
@@ -116,17 +139,18 @@ export default function ScheduleMeetingModal({
   const [rescheduleReason, setRescheduleReason] = useState<string>('');
   const [notifyCustomer, setNotifyCustomer] = useState<boolean>(true);
 
-  // Stable idempotency key for this logical booking attempt across retries
+  // Idempotency key
   const [bookingIdempotencyKey, setBookingIdempotencyKey] = useState<string>(() =>
-    `idemp_${enquiry.id}_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`
+    `idemp_${resolvedEnquiryId}_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`
   );
 
-  // Generate a new stable idempotency key only when starting a new booking attempt
   useEffect(() => {
     if (isOpen && !isReschedule) {
-      setBookingIdempotencyKey(`idemp_${enquiry.id}_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`);
+      setBookingIdempotencyKey(
+        `idemp_${resolvedEnquiryId}_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`
+      );
     }
-  }, [isOpen, enquiry.id, isReschedule]);
+  }, [isOpen, resolvedEnquiryId, isReschedule]);
 
   // Conflict & submission states
   const [loadingStaff, setLoadingStaff] = useState(false);
@@ -134,7 +158,7 @@ export default function ScheduleMeetingModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
-  // Load available staff members
+  // Load staff members
   useEffect(() => {
     if (!isOpen) return;
 
@@ -158,17 +182,17 @@ export default function ScheduleMeetingModal({
     if (initialAppointment && !isReschedule) return;
 
     if (appointmentType === 'telephone') {
-      setLocationOrLink(enquiry.customer.phone || 'Customer telephone number');
+      setLocationOrLink(resolvedCustomer.phone || 'Customer telephone number');
     } else if (appointmentType === 'on_site') {
-      setLocationOrLink(enquiry.serviceLocation || 'Customer service address (Ottawa)');
+      setLocationOrLink(resolvedLocation || 'Customer service address (Ottawa)');
     } else if (appointmentType === 'in_person') {
       setLocationOrLink('Laurrel Services Office (Ottawa, ON)');
     } else {
       setLocationOrLink('');
     }
-  }, [appointmentType, enquiry.customer.phone, enquiry.serviceLocation]);
+  }, [appointmentType, resolvedCustomer.phone, resolvedLocation]);
 
-  // Check schedule conflicts when staff or time changes
+  // Check schedule conflicts
   useEffect(() => {
     if (!selectedStaffId || !dateStr || !timeStr) return;
 
@@ -211,11 +235,9 @@ export default function ScheduleMeetingModal({
     setIsSubmitting(true);
 
     try {
-      // Validate inputs
       if (!title.trim()) throw new Error('Meeting title is required.');
       if (!dateStr || !timeStr) throw new Error('Valid date and time are required.');
 
-      // Construct scheduled start timestamp accurately in America/Toronto timezone
       const scheduledStart = ottawaToUtcIso(dateStr, timeStr);
       const assignedStaff = staffList.find((s) => s.id === selectedStaffId);
 
@@ -226,7 +248,6 @@ export default function ScheduleMeetingModal({
       }
 
       if (isReschedule && rescheduleAppointmentId) {
-        // Call Reschedule API
         const res = await fetch(`/api/admin/appointments/${rescheduleAppointmentId}/reschedule`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -241,10 +262,9 @@ export default function ScheduleMeetingModal({
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || 'Failed to reschedule appointment.');
 
-        onScheduled(data.appointment);
+        notifySuccess(data.appointment);
         onClose();
       } else {
-        // Call Create Appointment API with stable Idempotency Key across retries
         const idempotencyKey = bookingIdempotencyKey;
 
         const res = await fetch('/api/admin/appointments', {
@@ -254,15 +274,15 @@ export default function ScheduleMeetingModal({
             'Idempotency-Key': idempotencyKey,
           },
           body: JSON.stringify({
-            enquiryId: enquiry.id,
+            enquiryId: resolvedEnquiryId,
             title: title.trim(),
             purpose: purpose.trim(),
             appointmentType,
             scheduledStart,
             durationMinutes,
-            customerName: enquiry.customer.name,
-            customerEmail: enquiry.customer.email,
-            customerPhone: enquiry.customer.phone,
+            customerName: resolvedCustomer.name,
+            customerEmail: resolvedCustomer.email,
+            customerPhone: resolvedCustomer.phone,
             locationOrLink: locationOrLink.trim(),
             assignedStaffId: selectedStaffId || undefined,
             assignedStaffName: assignedStaff?.name || undefined,
@@ -276,7 +296,7 @@ export default function ScheduleMeetingModal({
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || 'Failed to schedule consultation.');
 
-        onScheduled(data.appointment);
+        notifySuccess(data.appointment);
         onClose();
       }
     } catch (err: any) {
@@ -286,83 +306,95 @@ export default function ScheduleMeetingModal({
     }
   };
 
+  const formatOptions = [
+    { type: 'telephone', label: 'Phone Call', icon: PhoneCall },
+    { type: 'in_person', label: 'Office Visit', icon: Building2 },
+    { type: 'on_site', label: 'Property Visit', icon: MapPin },
+    { type: 'google_meet', label: 'Google Meet', icon: Video },
+    { type: 'ms_teams', label: 'Teams', icon: Video },
+    { type: 'zoom', label: 'Zoom', icon: Video },
+  ] as const;
+
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/40 backdrop-blur-xs flex items-center justify-center p-4">
-      <div className="relative w-full max-w-xl bg-white rounded-2xl shadow-xl border border-black/[0.08] overflow-hidden flex flex-col max-h-[90vh]">
-        {/* Header */}
-        <div className="px-6 py-5 border-b border-black/[0.06] flex items-center justify-between bg-zinc-50/50">
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/40 backdrop-blur-2xs flex items-center justify-center p-4">
+      <div className="relative w-full max-w-2xl bg-white rounded-md shadow-2xl border border-zinc-200 overflow-hidden flex flex-col max-h-[92vh]">
+        {/* Modal Header */}
+        <div className="px-6 py-4 border-b border-zinc-200 flex items-center justify-between bg-zinc-50/80">
           <div>
-            <h2 className="text-base font-semibold text-zinc-900 tracking-tight">
+            <h2 className="text-base font-bold text-zinc-900 tracking-tight">
               {isReschedule ? 'Reschedule Consultation' : 'Schedule Customer Consultation'}
             </h2>
             <p className="text-xs text-zinc-500 mt-0.5">
-              {enquiry.customer.name} · Ref: <span className="font-mono text-zinc-600">{enquiry.id}</span>
+              Customer: <span className="font-semibold text-zinc-800">{resolvedCustomer.name}</span>
+              {resolvedEnquiryId && (
+                <span> • Ref: #{resolvedEnquiryId.slice(0, 8)}</span>
+              )}
             </p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-700 hover:bg-zinc-100 transition-colors"
+            className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-700 hover:bg-zinc-200/60 transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Body Form */}
-        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
+        {/* Modal Form */}
+        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto px-6 py-6 space-y-6">
           {formError && (
-            <div className="p-3.5 rounded-xl bg-red-50 border border-red-200/80 text-xs text-red-700 flex items-start gap-2.5">
+            <div className="p-3.5 rounded-lg bg-red-50 border border-red-200 text-xs text-red-800 flex items-start gap-2.5">
               <AlertCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
               <span>{formError}</span>
             </div>
           )}
 
-          {/* Meeting Title & Purpose */}
-          <div className="space-y-3">
-            <div>
-              <label className="block text-xs font-semibold text-zinc-700 mb-1.5">
-                Meeting Title <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                required
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                className="w-full px-3.5 py-2 rounded-lg bg-zinc-50/60 border border-black/[0.1] text-xs text-zinc-900 placeholder:text-zinc-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#49056B]/20 focus:border-[#49056B]"
-                placeholder="e.g. Residential Move Consultation"
-              />
+          {/* Section 1: Customer and Consultation Purpose */}
+          <div className="space-y-4">
+            <div className="text-xs font-bold uppercase tracking-wider text-zinc-500 pb-1 border-b border-zinc-100 flex items-center gap-2">
+              <FileText className="w-3.5 h-3.5 text-[#49056B]" />
+              <span>1. Consultation Purpose</span>
             </div>
 
-            <div>
-              <label className="block text-xs font-semibold text-zinc-700 mb-1.5">
-                Consultation Scope / Purpose
-              </label>
-              <input
-                type="text"
-                value={purpose}
-                onChange={(e) => setPurpose(e.target.value)}
-                className="w-full px-3.5 py-2 rounded-lg bg-zinc-50/60 border border-black/[0.1] text-xs text-zinc-900 placeholder:text-zinc-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#49056B]/20 focus:border-[#49056B]"
-                placeholder="Brief purpose of the consultation"
-              />
+            <div className="grid grid-cols-1 gap-4">
+              <div>
+                <label className="block text-[13px] font-medium text-zinc-700 mb-1.5">
+                  Meeting Title <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  className="w-full h-11 px-3.5 rounded-lg bg-white border border-zinc-300 text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#49056B]/20 focus:border-[#49056B] transition-all"
+                  placeholder="e.g. Residential Move Consultation"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[13px] font-medium text-zinc-700 mb-1.5">
+                  Consultation Scope / Scope Notes
+                </label>
+                <input
+                  type="text"
+                  value={purpose}
+                  onChange={(e) => setPurpose(e.target.value)}
+                  className="w-full h-11 px-3.5 rounded-lg bg-white border border-zinc-300 text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#49056B]/20 focus:border-[#49056B] transition-all"
+                  placeholder="Scope review, packing assessment, inventory inspection..."
+                />
+              </div>
             </div>
           </div>
 
-          {/* Appointment Type Selector */}
-          <div>
-            <label className="block text-xs font-semibold text-zinc-700 mb-2">
-              Consultation Format
-            </label>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-              {(
-                [
-                  { type: 'telephone', label: 'Telephone', icon: Phone },
-                  { type: 'in_person', label: 'In-Person', icon: User },
-                  { type: 'on_site', label: 'On-Site Assessment', icon: MapPin },
-                  { type: 'google_meet', label: 'Google Meet', icon: Video },
-                  { type: 'ms_teams', label: 'Teams', icon: Video },
-                  { type: 'zoom', label: 'Zoom', icon: Video },
-                ] as const
-              ).map((item) => {
+          {/* Section 2: Consultation Format */}
+          <div className="space-y-3">
+            <div className="text-xs font-bold uppercase tracking-wider text-zinc-500 pb-1 border-b border-zinc-100 flex items-center gap-2">
+              <Video className="w-3.5 h-3.5 text-[#49056B]" />
+              <span>2. Consultation Format</span>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+              {formatOptions.map((item) => {
                 const Icon = item.icon;
                 const isSelected = appointmentType === item.type;
                 return (
@@ -370,239 +402,217 @@ export default function ScheduleMeetingModal({
                     key={item.type}
                     type="button"
                     onClick={() => setAppointmentType(item.type)}
-                    className={`flex items-center gap-2 p-2.5 rounded-lg border text-xs font-medium text-left transition-all ${
+                    className={`flex items-center gap-2.5 p-3 rounded-lg border text-sm text-left transition-all ${
                       isSelected
-                        ? 'border-[#49056B] bg-[#49056B]/5 text-[#49056B] shadow-2xs font-semibold'
-                        : 'border-black/[0.08] hover:border-zinc-300 text-zinc-600 bg-white'
+                        ? 'border-[#49056B] bg-purple-50/70 text-[#49056B] font-semibold ring-1 ring-[#49056B]'
+                        : 'border-zinc-300 hover:border-zinc-400 text-zinc-700 bg-white'
                     }`}
                   >
-                    <Icon className={`w-3.5 h-3.5 ${isSelected ? 'text-[#49056B]' : 'text-zinc-400'}`} />
+                    <Icon className={`w-4 h-4 ${isSelected ? 'text-[#49056B]' : 'text-zinc-400'}`} />
                     <span className="truncate">{item.label}</span>
                   </button>
                 );
               })}
             </div>
-
-            {/* Video provider credentials notice */}
-            {(appointmentType === 'google_meet' ||
-              appointmentType === 'ms_teams' ||
-              appointmentType === 'zoom') && (
-              <p className="text-[11px] text-zinc-500 mt-2 bg-zinc-50 p-2.5 rounded-lg border border-black/[0.04]">
-                <strong>Provider Integration:</strong> Automated URL generation requires backend OAuth credentials. Enter your meeting link below, or leave blank for coordinator manual arrangement.
-              </p>
-            )}
           </div>
 
-          {/* Initial Status Selector (if not rescheduling) */}
-          {!isReschedule && (
-            <div>
-              <label className="block text-xs font-semibold text-zinc-700 mb-1.5">
-                Consultation Status
-              </label>
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  onClick={() => setInitialStatus('confirmed')}
-                  className={`p-2.5 rounded-lg border text-xs text-left transition-all ${
-                    initialStatus === 'confirmed'
-                      ? 'border-emerald-500 bg-emerald-50/50 text-emerald-900 font-medium ring-1 ring-emerald-500/20'
-                      : 'border-black/[0.08] text-zinc-600 bg-white hover:border-zinc-300'
-                  }`}
+          {/* Section 3: Date, Ottawa Time & Duration */}
+          <div className="space-y-4">
+            <div className="text-xs font-bold uppercase tracking-wider text-zinc-500 pb-1 border-b border-zinc-100 flex items-center gap-2">
+              <Clock className="w-3.5 h-3.5 text-[#49056B]" />
+              <span>3. Schedule & Ottawa Timing</span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div>
+                <label className="block text-[13px] font-medium text-zinc-700 mb-1.5">
+                  Date <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="date"
+                  required
+                  value={dateStr}
+                  onChange={(e) => setDateStr(e.target.value)}
+                  className="w-full h-11 px-3.5 rounded-lg bg-white border border-zinc-300 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-[#49056B]/20 focus:border-[#49056B]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[13px] font-medium text-zinc-700 mb-1.5">
+                  Time (Ottawa) <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="time"
+                  required
+                  value={timeStr}
+                  onChange={(e) => setTimeStr(e.target.value)}
+                  className="w-full h-11 px-3.5 rounded-lg bg-white border border-zinc-300 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-[#49056B]/20 focus:border-[#49056B]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[13px] font-medium text-zinc-700 mb-1.5">
+                  Duration
+                </label>
+                <select
+                  value={durationMinutes}
+                  onChange={(e) => setDurationMinutes(parseInt(e.target.value, 10))}
+                  className="w-full h-11 px-3.5 rounded-lg bg-white border border-zinc-300 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-[#49056B]/20 focus:border-[#49056B]"
                 >
-                  <div className="font-semibold text-emerald-800">Confirmed</div>
-                  <div className="text-[11px] text-emerald-700/80">Sends confirmation notice to customer</div>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setInitialStatus('pending')}
-                  className={`p-2.5 rounded-lg border text-xs text-left transition-all ${
-                    initialStatus === 'pending'
-                      ? 'border-amber-500 bg-amber-50/50 text-amber-900 font-medium ring-1 ring-amber-500/20'
-                      : 'border-black/[0.08] text-zinc-600 bg-white hover:border-zinc-300'
-                  }`}
-                >
-                  <div className="font-semibold text-amber-800">Pending Review</div>
-                  <div className="text-[11px] text-amber-700/80">Awaiting coordinator confirmation</div>
-                </button>
+                  <option value={15}>15 minutes</option>
+                  <option value={30}>30 minutes</option>
+                  <option value={45}>45 minutes</option>
+                  <option value={60}>60 minutes</option>
+                  <option value={90}>90 minutes</option>
+                </select>
               </div>
             </div>
-          )}
 
-          {/* Date, Time, Duration */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <div>
-              <label className="block text-xs font-semibold text-zinc-700 mb-1.5">
-                Date <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="date"
-                required
-                value={dateStr}
-                onChange={(e) => setDateStr(e.target.value)}
-                className="w-full px-3 py-2 rounded-lg bg-zinc-50/60 border border-black/[0.1] text-xs text-zinc-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#49056B]/20 focus:border-[#49056B]"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-zinc-700 mb-1.5">
-                Start Time (Ottawa) <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="time"
-                required
-                value={timeStr}
-                onChange={(e) => setTimeStr(e.target.value)}
-                className="w-full px-3 py-2 rounded-lg bg-zinc-50/60 border border-black/[0.1] text-xs text-zinc-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#49056B]/20 focus:border-[#49056B]"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-zinc-700 mb-1.5">
-                Duration
-              </label>
-              <select
-                value={durationMinutes}
-                onChange={(e) => setDurationMinutes(Number(e.target.value))}
-                className="w-full px-3 py-2 rounded-lg bg-zinc-50/60 border border-black/[0.1] text-xs text-zinc-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#49056B]/20 focus:border-[#49056B]"
-              >
-                <option value={15}>15 minutes</option>
-                <option value={30}>30 minutes</option>
-                <option value={45}>45 minutes</option>
-                <option value={60}>60 minutes (1 hour)</option>
-                <option value={90}>90 minutes (1.5 hours)</option>
-              </select>
-            </div>
+            <p className="text-xs text-zinc-500">
+              Times are scheduled in Eastern Time (America/Toronto / Ottawa, ON).
+            </p>
           </div>
 
-          {/* Assigned Staff Coordinator */}
-          <div>
-            <label className="block text-xs font-semibold text-zinc-700 mb-1.5">
-              Assigned Coordinator
-            </label>
-            <select
-              value={selectedStaffId}
-              onChange={(e) => setSelectedStaffId(e.target.value)}
-              className="w-full px-3.5 py-2 rounded-lg bg-zinc-50/60 border border-black/[0.1] text-xs text-zinc-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#49056B]/20 focus:border-[#49056B]"
-            >
-              {loadingStaff ? (
-                <option value="">Loading team members...</option>
-              ) : staffList.length > 0 ? (
-                staffList.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.name} ({s.role.replace(/_/g, ' ')})
-                  </option>
-                ))
-              ) : (
-                <option value="">Operations Coordinator</option>
-              )}
-            </select>
+          {/* Section 4: Assigned Coordinator */}
+          <div className="space-y-3">
+            <div className="text-xs font-bold uppercase tracking-wider text-zinc-500 pb-1 border-b border-zinc-100 flex items-center gap-2">
+              <User className="w-3.5 h-3.5 text-[#49056B]" />
+              <span>4. Assigned Staff Coordinator</span>
+            </div>
+
+            <div>
+              <label className="block text-[13px] font-medium text-zinc-700 mb-1.5">
+                Staff Member
+              </label>
+              <select
+                value={selectedStaffId}
+                onChange={(e) => setSelectedStaffId(e.target.value)}
+                disabled={loadingStaff}
+                className="w-full h-11 px-3.5 rounded-lg bg-white border border-zinc-300 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-[#49056B]/20 focus:border-[#49056B]"
+              >
+                {staffList.length === 0 ? (
+                  <option value="">{loadingStaff ? 'Loading staff...' : 'No staff available'}</option>
+                ) : (
+                  staffList.map((staff) => (
+                    <option key={staff.id} value={staff.id}>
+                      {staff.name} ({staff.role})
+                    </option>
+                  ))
+                )}
+              </select>
+            </div>
+
             {conflictWarning && (
-              <p className="mt-1 text-[11px] text-amber-700 flex items-center gap-1.5">
-                <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+              <div className="p-3 rounded-lg bg-amber-50 border border-amber-200 text-xs text-amber-800 flex items-start gap-2">
+                <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
                 <span>{conflictWarning}</span>
-              </p>
+              </div>
             )}
           </div>
 
-          {/* Location or Video Link */}
-          <div>
-            <label className="block text-xs font-semibold text-zinc-700 mb-1.5">
-              {appointmentType === 'telephone'
-                ? 'Customer Telephone Contact'
-                : appointmentType === 'in_person' || appointmentType === 'on_site'
-                ? 'Meeting Location / Property Address'
-                : 'Meeting Link (URL)'}
-            </label>
-            <input
-              type="text"
-              value={locationOrLink}
-              onChange={(e) => setLocationOrLink(e.target.value)}
-              className="w-full px-3.5 py-2 rounded-lg bg-zinc-50/60 border border-black/[0.1] text-xs text-zinc-900 placeholder:text-zinc-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#49056B]/20 focus:border-[#49056B]"
-              placeholder={
-                appointmentType === 'telephone'
-                  ? 'Customer phone number'
-                  : appointmentType === 'google_meet' || appointmentType === 'ms_teams' || appointmentType === 'zoom'
-                  ? 'https://meet.google.com/... or leave blank for coordinator setup'
-                  : 'Address in Ottawa area'
-              }
-            />
+          {/* Section 5: Meeting Details / Location / Link */}
+          <div className="space-y-3">
+            <div className="text-xs font-bold uppercase tracking-wider text-zinc-500 pb-1 border-b border-zinc-100 flex items-center gap-2">
+              <MapPin className="w-3.5 h-3.5 text-[#49056B]" />
+              <span>5. Meeting Details & Coordinates</span>
+            </div>
+
+            <div>
+              <label className="block text-[13px] font-medium text-zinc-700 mb-1.5">
+                {appointmentType === 'telephone'
+                  ? 'Phone Number'
+                  : ['google_meet', 'ms_teams', 'zoom'].includes(appointmentType)
+                  ? 'Meeting URL'
+                  : 'Location / Address'}
+              </label>
+              <input
+                type="text"
+                value={locationOrLink}
+                onChange={(e) => setLocationOrLink(e.target.value)}
+                className="w-full h-11 px-3.5 rounded-lg bg-white border border-zinc-300 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-[#49056B]/20 focus:border-[#49056B]"
+                placeholder={
+                  appointmentType === 'telephone'
+                    ? 'Customer phone number'
+                    : ['google_meet', 'ms_teams', 'zoom'].includes(appointmentType)
+                    ? 'https://meet.google.com/...'
+                    : '123 Main St, Ottawa, ON'
+                }
+              />
+            </div>
           </div>
 
-          {/* Reschedule Reason if rescheduling */}
-          {isReschedule && (
+          {/* Section 6: Internal Notes & Notification */}
+          <div className="space-y-3">
+            <div className="text-xs font-bold uppercase tracking-wider text-zinc-500 pb-1 border-b border-zinc-100 flex items-center gap-2">
+              <Bell className="w-3.5 h-3.5 text-[#49056B]" />
+              <span>6. Internal Notes & Notifications</span>
+            </div>
+
             <div>
-              <label className="block text-xs font-semibold text-zinc-700 mb-1.5">
-                Reason for Rescheduling
+              <label className="block text-[13px] font-medium text-zinc-700 mb-1.5">
+                Staff Notes (Internal)
+              </label>
+              <textarea
+                rows={2}
+                value={staffNotes}
+                onChange={(e) => setStaffNotes(e.target.value)}
+                className="w-full p-3 rounded-lg bg-white border border-zinc-300 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-[#49056B]/20 focus:border-[#49056B]"
+                placeholder="Optional notes for internal coordination..."
+              />
+            </div>
+
+            <label className="flex items-center gap-3 cursor-pointer pt-1">
+              <input
+                type="checkbox"
+                checked={notifyCustomer}
+                onChange={(e) => setNotifyCustomer(e.target.checked)}
+                className="w-4 h-4 rounded text-[#49056B] focus:ring-[#49056B] border-zinc-300"
+              />
+              <span className="text-sm text-zinc-700">
+                Send appointment confirmation & calendar invitation to customer ({resolvedCustomer.email})
+              </span>
+            </label>
+          </div>
+
+          {/* Reschedule reason if applicable */}
+          {isReschedule && (
+            <div className="space-y-2 pt-2 border-t border-zinc-100">
+              <label className="block text-[13px] font-medium text-zinc-700">
+                Reschedule Reason
               </label>
               <input
                 type="text"
                 value={rescheduleReason}
                 onChange={(e) => setRescheduleReason(e.target.value)}
-                className="w-full px-3.5 py-2 rounded-lg bg-zinc-50/60 border border-black/[0.1] text-xs text-zinc-900 placeholder:text-zinc-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#49056B]/20 focus:border-[#49056B]"
-                placeholder="e.g. Customer requested afternoon time slot"
+                className="w-full h-11 px-3.5 rounded-lg bg-white border border-zinc-300 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-[#49056B]/20 focus:border-[#49056B]"
+                placeholder="e.g. Customer requested alternate time slot"
               />
             </div>
           )}
 
-          {/* Private Staff Notes */}
-          <div>
-            <label className="block text-xs font-semibold text-zinc-700 mb-1.5">
-              Private Staff Notes (Optional)
-            </label>
-            <textarea
-              rows={2}
-              value={staffNotes}
-              onChange={(e) => setStaffNotes(e.target.value)}
-              className="w-full px-3.5 py-2 rounded-lg bg-zinc-50/60 border border-black/[0.1] text-xs text-zinc-900 placeholder:text-zinc-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#49056B]/20 focus:border-[#49056B]"
-              placeholder="Internal notes visible only to Laurrel operations staff"
-            />
-          </div>
-
-          {/* Customer Notification Checkbox */}
-          <div className="pt-2 border-t border-black/[0.04]">
-            <label className="flex items-center gap-2.5 cursor-pointer select-none">
-              <input
-                type="checkbox"
-                checked={notifyCustomer}
-                onChange={(e) => setNotifyCustomer(e.target.checked)}
-                className="rounded text-[#49056B] focus:ring-[#49056B]/20 w-4 h-4 border-zinc-300"
-              />
-              <span className="text-xs text-zinc-700 font-medium">
-                Send email confirmation to <strong className="text-zinc-900">{enquiry.customer.email}</strong>
-              </span>
-            </label>
-          </div>
-        </form>
-
-        {/* Footer Actions */}
-        <div className="px-6 py-4 border-t border-black/[0.06] bg-zinc-50/50 flex items-center justify-between">
-          <span className="text-[11px] text-zinc-400">Ottawa Local Time (America/Toronto)</span>
-          <div className="flex items-center gap-2.5">
-            <button
+          {/* Modal Footer Actions */}
+          <div className="pt-4 border-t border-zinc-200 flex items-center justify-end gap-3">
+            <AdminButton
               type="button"
+              variant="outline"
+              size="md"
               onClick={onClose}
               disabled={isSubmitting}
-              className="px-4 py-2 rounded-lg border border-black/[0.1] bg-white text-xs font-semibold text-zinc-700 hover:bg-zinc-50 transition-colors"
             >
               Cancel
-            </button>
-            <button
-              type="button"
-              onClick={handleSubmit}
-              disabled={isSubmitting || Boolean(conflictWarning)}
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#49056B] text-white text-xs font-semibold hover:bg-[#5B0785] disabled:opacity-50 transition-all shadow-2xs"
+            </AdminButton>
+
+            <AdminButton
+              type="submit"
+              variant="primary"
+              size="md"
+              isLoading={isSubmitting}
+              disabled={Boolean(conflictWarning)}
             >
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  <span>Saving Booking...</span>
-                </>
-              ) : (
-                <span>{isReschedule ? 'Update Consultation' : 'Confirm & Schedule'}</span>
-              )}
-            </button>
+              {isReschedule ? 'Save Rescheduled Time' : 'Confirm Consultation'}
+            </AdminButton>
           </div>
-        </div>
+        </form>
       </div>
     </div>
   );

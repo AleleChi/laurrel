@@ -3,13 +3,14 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
-  Calendar as CalendarIcon,
+  Calendar,
   Clock,
   Phone,
+  User,
   MapPin,
   Video,
-  User,
   Search,
+  Plus,
   RefreshCw,
   X,
   ExternalLink,
@@ -21,6 +22,10 @@ import {
   Send,
   AlertCircle,
   FileText,
+  CalendarPlus,
+  FilterX,
+  Check,
+  Settings,
 } from 'lucide-react';
 import {
   formatOttawaDate,
@@ -33,6 +38,9 @@ import {
   formatCanadianDateTime,
 } from '@/lib/utils/formatters';
 import ScheduleMeetingModal from '@/components/admin/ScheduleMeetingModal';
+import { AdminBadge } from '@/components/admin/ui/AdminBadge';
+import { AdminButton } from '@/components/admin/ui/AdminButton';
+import { ConfirmDialog } from '@/components/admin/ui/ConfirmDialog';
 
 interface AppointmentItem {
   id: string;
@@ -55,6 +63,12 @@ interface AppointmentItem {
   notificationSent: boolean;
   notificationSentAt?: string | null;
   cancellationReason?: string | null;
+  conferenceStatus?: string | null;
+  googleSyncStatus?: string | null;
+  googleSyncError?: string | null;
+  calendarEventId?: string | null;
+  notificationStatus?: string | null;
+  notificationError?: string | null;
   createdAt: string;
 }
 
@@ -74,10 +88,7 @@ export default function AdminAppointmentsPage() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [staffFilter, setStaffFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
-  const [viewMode, setViewMode] = useState<'agenda' | 'week' | 'day'>('agenda');
-
-  // Selected date navigation for day/week views
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [viewMode, setViewMode] = useState<'agenda' | 'table'>('table');
 
   // Detail Drawer & Modals
   const [selectedAppointment, setSelectedAppointment] = useState<AppointmentItem | null>(null);
@@ -85,6 +96,67 @@ export default function AdminAppointmentsPage() {
   const [loadingActivity, setLoadingActivity] = useState<boolean>(false);
   const [isRescheduleOpen, setIsRescheduleOpen] = useState<boolean>(false);
   const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
+  const [retryingSync, setRetryingSync] = useState<boolean>(false);
+  const [reconcilingConf, setReconcilingConf] = useState<boolean>(false);
+
+  const handleRetryGoogleSync = async (aptId: string) => {
+    try {
+      setRetryingSync(true);
+      const res = await fetch(`/api/admin/appointments/${aptId}/retry-google-sync`, {
+        method: 'POST',
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setFeedbackMessage('Google Calendar event resynced successfully.');
+        if (data.appointment) {
+          setSelectedAppointment(data.appointment);
+          setAppointments((prev) => prev.map((a) => (a.id === aptId ? data.appointment : a)));
+        }
+      } else {
+        setFeedbackMessage(data.error || 'Retry sync failed.');
+      }
+    } catch {
+      setFeedbackMessage('Network failure during retry sync.');
+    } finally {
+      setRetryingSync(false);
+      setTimeout(() => setFeedbackMessage(null), 4000);
+    }
+  };
+
+  const handleReconcileConference = async (aptId: string) => {
+    try {
+      setReconcilingConf(true);
+      const res = await fetch(`/api/admin/appointments/${aptId}/reconcile-conference`, {
+        method: 'POST',
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setFeedbackMessage(data.reconciled ? 'Video link verified and updated.' : 'Conference is still pending creation.');
+        if (data.appointment) {
+          setSelectedAppointment(data.appointment);
+          setAppointments((prev) => prev.map((a) => (a.id === aptId ? data.appointment : a)));
+        }
+      } else {
+        setFeedbackMessage(data.error || 'Conference reconciliation check failed.');
+      }
+    } catch {
+      setFeedbackMessage('Network failure during conference reconciliation.');
+    } finally {
+      setReconcilingConf(false);
+      setTimeout(() => setFeedbackMessage(null), 4000);
+    }
+  };
+
+  // Confirm dialog for cancellation
+  const [cancelDialogState, setCancelDialogState] = useState<{
+    isOpen: boolean;
+    appointmentId: string | null;
+    isLoading: boolean;
+  }>({
+    isOpen: false,
+    appointmentId: null,
+    isLoading: false,
+  });
 
   const loadData = async () => {
     try {
@@ -146,8 +218,10 @@ export default function AdminAppointmentsPage() {
         setAppointments((prev) =>
           prev.map((a) => (a.id === aptId ? data.appointment : a))
         );
-        setSelectedAppointment(data.appointment);
-        setFeedbackMessage(`Status updated to ${newStatus}.`);
+        if (selectedAppointment?.id === aptId) {
+          setSelectedAppointment(data.appointment);
+        }
+        setFeedbackMessage(`Consultation status updated to ${newStatus}.`);
         setTimeout(() => setFeedbackMessage(null), 3500);
       }
     } catch (err) {
@@ -155,46 +229,58 @@ export default function AdminAppointmentsPage() {
     }
   };
 
-  const handleCancel = async (aptId: string) => {
-    const reason = window.prompt('Please enter a cancellation reason:');
-    if (!reason || !reason.trim()) return;
-
-    try {
-      const res = await fetch(`/api/admin/appointments/${aptId}/cancel`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ reason: reason.trim(), notifyCustomer: true }),
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setAppointments((prev) =>
-          prev.map((a) => (a.id === aptId ? data.appointment : a))
-        );
-        setSelectedAppointment(data.appointment);
-        setFeedbackMessage('Consultation cancelled.');
-        setTimeout(() => setFeedbackMessage(null), 3500);
-      }
-    } catch (err) {
-      console.error('Cancel failed:', err);
-    }
-  };
-
   const handleResendInvite = async (aptId: string) => {
     try {
-      setFeedbackMessage('Dispatching invitation email...');
+      setFeedbackMessage('Sending invitation email...');
       const res = await fetch(`/api/admin/appointments/${aptId}/resend-invite`, {
         method: 'POST',
       });
       const data = await res.json();
       if (data.success) {
-        setFeedbackMessage('Invitation email sent successfully.');
+        setFeedbackMessage('Notification email sent successfully.');
       } else {
-        setFeedbackMessage(`Email notice: ${data.error || 'Check service'}`);
+        setFeedbackMessage(`Email notice: ${data.error || 'Service unconfigured'}`);
       }
       setTimeout(() => setFeedbackMessage(null), 4000);
     } catch (err: any) {
-      setFeedbackMessage(`Error: ${err.message}`);
+      setFeedbackMessage(`Failed to resend invite: ${err.message}`);
       setTimeout(() => setFeedbackMessage(null), 4000);
+    }
+  };
+
+  const openCancelDialog = (aptId: string) => {
+    setCancelDialogState({
+      isOpen: true,
+      appointmentId: aptId,
+      isLoading: false,
+    });
+  };
+
+  const handleConfirmCancelAppointment = async (reason?: string) => {
+    if (!cancelDialogState.appointmentId) return;
+
+    try {
+      setCancelDialogState((prev) => ({ ...prev, isLoading: true }));
+      const res = await fetch(`/api/admin/appointments/${cancelDialogState.appointmentId}/cancel`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reason: reason || 'Cancelled by staff coordinator', notifyCustomer: true }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setAppointments((prev) =>
+          prev.map((a) => (a.id === cancelDialogState.appointmentId ? data.appointment : a))
+        );
+        if (selectedAppointment?.id === cancelDialogState.appointmentId) {
+          setSelectedAppointment(data.appointment);
+        }
+        setFeedbackMessage('Consultation cancelled successfully.');
+        setTimeout(() => setFeedbackMessage(null), 3500);
+      }
+    } catch (err) {
+      console.error('Cancellation failed:', err);
+    } finally {
+      setCancelDialogState({ isOpen: false, appointmentId: null, isLoading: false });
     }
   };
 
@@ -216,6 +302,14 @@ export default function AdminAppointmentsPage() {
     return true;
   });
 
+  const clearAllFilters = () => {
+    setSearchQuery('');
+    setStatusFilter('all');
+    setStaffFilter('all');
+  };
+
+  const hasActiveFilters = searchQuery.trim() !== '' || statusFilter !== 'all' || staffFilter !== 'all';
+
   // Group agenda by local date (Ottawa)
   const groupedAgenda: Record<string, AppointmentItem[]> = {};
   filteredAppointments.forEach((apt) => {
@@ -227,495 +321,616 @@ export default function AdminAppointmentsPage() {
   });
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-      {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-black/[0.06]">
+    <div className="space-y-6">
+      {/* Top Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-1">
         <div>
-          <h1 className="text-2xl font-bold text-zinc-900 tracking-tight">
+          <h1 className="text-2xl sm:text-[26px] font-bold tracking-tight text-zinc-900">
             Appointments & Consultations
           </h1>
-          <p className="text-xs text-zinc-500 mt-1">
-            Review, schedule, and coordinate customer consultations in Ottawa local time.
+          <p className="text-sm text-zinc-500 mt-0.5">
+            Operational calendar and verified dispatch for Laurrel Services in Ottawa, ON.
           </p>
         </div>
 
-        {/* View Switcher & Refresh */}
-        <div className="flex items-center gap-3">
-          <div className="inline-flex rounded-lg bg-zinc-100 p-0.5 border border-black/[0.06] text-xs font-medium">
-            <button
-              type="button"
-              onClick={() => setViewMode('agenda')}
-              className={`px-3 py-1.5 rounded-md transition-all ${
-                viewMode === 'agenda'
-                  ? 'bg-white text-zinc-900 shadow-2xs font-semibold'
-                  : 'text-zinc-600 hover:text-zinc-900'
-              }`}
-            >
-              Agenda
-            </button>
-            <button
-              type="button"
-              onClick={() => setViewMode('week')}
-              className={`px-3 py-1.5 rounded-md transition-all ${
-                viewMode === 'week'
-                  ? 'bg-white text-zinc-900 shadow-2xs font-semibold'
-                  : 'text-zinc-600 hover:text-zinc-900'
-              }`}
-            >
-              Week
-            </button>
-            <button
-              type="button"
-              onClick={() => setViewMode('day')}
-              className={`px-3 py-1.5 rounded-md transition-all ${
-                viewMode === 'day'
-                  ? 'bg-white text-zinc-900 shadow-2xs font-semibold'
-                  : 'text-zinc-600 hover:text-zinc-900'
-              }`}
-            >
-              Day
-            </button>
-          </div>
-
-          <button
-            type="button"
+        <div className="flex items-center gap-2.5">
+          <AdminButton
+            variant="outline"
+            size="sm"
             onClick={loadData}
-            disabled={loading}
-            className="p-2 rounded-lg border border-black/[0.1] bg-white text-zinc-600 hover:bg-zinc-50 transition-colors shadow-2xs"
-            title="Refresh appointments"
+            isLoading={loading}
+            leftIcon={<RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />}
           >
-            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-          </button>
+            Refresh
+          </AdminButton>
+
+          <Link
+            href="/admin/appointments/settings"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-zinc-200 bg-white text-zinc-700 hover:text-zinc-900 hover:bg-zinc-50 text-xs font-semibold shadow-2xs transition-colors"
+            title="Configure Ottawa schedule and availability rules"
+          >
+            <Settings className="w-3.5 h-3.5 text-zinc-500" />
+            <span>Settings</span>
+          </Link>
+
+          <Link
+            href="/book"
+            target="_blank"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-[#49056B] text-white hover:bg-[#390044] text-xs font-semibold shadow-2xs transition-colors"
+            title="Open customer-facing self-service booking page"
+          >
+            <ExternalLink className="w-3.5 h-3.5" />
+            <span>Public Booking</span>
+          </Link>
         </div>
       </div>
 
       {feedbackMessage && (
-        <div className="p-3 rounded-xl bg-purple-50 border border-purple-200 text-xs text-[#49056B] flex items-center justify-between">
-          <span>{feedbackMessage}</span>
-          <button type="button" onClick={() => setFeedbackMessage(null)}>
-            <X className="w-3.5 h-3.5" />
+        <div className="p-4 rounded-md bg-purple-50 border border-purple-200 text-[#49056B] text-sm flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="w-5 h-5 text-[#49056B] shrink-0" />
+            <span>{feedbackMessage}</span>
+          </div>
+          <button onClick={() => setFeedbackMessage(null)} className="text-purple-600 hover:text-purple-800">
+            <X className="w-4 h-4" />
           </button>
         </div>
       )}
 
-      {/* Filter and Search Bar */}
-      <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3">
-        <div className="relative flex-1">
-          <Search className="w-4 h-4 text-zinc-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search by customer name, email, phone, or title..."
-            className="w-full pl-9 pr-4 py-2 bg-white rounded-xl border border-black/[0.08] text-xs text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#49056B]/20 focus:border-[#49056B] shadow-2xs transition-all"
-          />
-        </div>
-
-        {/* Status Filter */}
-        <select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-          className="px-3.5 py-2 bg-white rounded-xl border border-black/[0.08] text-xs text-zinc-700 focus:outline-none focus:ring-2 focus:ring-[#49056B]/20 shadow-2xs"
-        >
-          <option value="all">All Statuses</option>
-          <option value="confirmed">Confirmed</option>
-          <option value="pending">Pending</option>
-          <option value="rescheduled">Rescheduled</option>
-          <option value="completed">Completed</option>
-          <option value="cancelled">Cancelled</option>
-        </select>
-
-        {/* Staff Filter */}
-        <select
-          value={staffFilter}
-          onChange={(e) => setStaffFilter(e.target.value)}
-          className="px-3.5 py-2 bg-white rounded-xl border border-black/[0.08] text-xs text-zinc-700 focus:outline-none focus:ring-2 focus:ring-[#49056B]/20 shadow-2xs"
-        >
-          <option value="all">All Coordinators</option>
-          {staffList.map((s) => (
-            <option key={s.id} value={s.id}>
-              {s.name}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      {/* Main Content View */}
-      {loading ? (
-        <div className="py-20 text-center text-xs text-zinc-400 bg-white rounded-xl border border-black/[0.06]">
-          Loading consultations and calendar data...
-        </div>
-      ) : filteredAppointments.length === 0 ? (
-        <div className="py-20 text-center bg-white rounded-xl border border-black/[0.06] p-6 space-y-3">
-          <CalendarDays className="w-10 h-10 text-zinc-300 mx-auto" />
-          <h3 className="text-sm font-semibold text-zinc-800">No consultations match your criteria</h3>
-          <p className="text-xs text-zinc-400 max-w-md mx-auto">
-            Try adjusting your search query, status filters, or schedule a new consultation from an inbound customer enquiry.
-          </p>
-          <Link
-            href="/admin/enquiries"
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#49056B] text-white text-xs font-semibold hover:bg-[#5B0785] transition-all shadow-2xs mt-2"
-          >
-            <span>View Customer Enquiries</span>
-          </Link>
-        </div>
-      ) : viewMode === 'agenda' ? (
-        /* Agenda View */
-        <div className="space-y-6">
-          {Object.entries(groupedAgenda).map(([dateLabel, aptList]) => (
-            <div key={dateLabel} className="space-y-3">
-              <div className="sticky top-16 z-10 bg-[#F8F7F4]/90 backdrop-blur-xs py-1.5 flex items-center justify-between border-b border-black/[0.06]">
-                <h3 className="text-xs font-bold text-zinc-800 uppercase tracking-wider">
-                  {dateLabel}
-                </h3>
-                <span className="text-[11px] text-zinc-400 font-medium">
-                  {aptList.length} {aptList.length === 1 ? 'consultation' : 'consultations'}
-                </span>
-              </div>
-
-              <div className="grid grid-cols-1 gap-2.5">
-                {aptList.map((apt) => {
-                  const statusBadge = formatAppointmentStatus(apt.status);
-                  const isJoinableUrl = apt.locationOrLink && /^https?:\/\//i.test(apt.locationOrLink);
-
-                  return (
-                    <div
-                      key={apt.id}
-                      onClick={() => setSelectedAppointment(apt)}
-                      className="p-4 rounded-xl bg-white border border-black/[0.06] hover:border-[#49056B]/30 hover:shadow-xs transition-all cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-4"
-                    >
-                      <div className="space-y-1.5 flex-1 min-w-0">
-                        <div className="flex items-center gap-2.5 flex-wrap">
-                          <span
-                            className={`px-2 py-0.5 rounded-md text-[10px] font-bold border uppercase tracking-wider ${statusBadge.color} ${statusBadge.bg}`}
-                          >
-                            {statusBadge.label}
-                          </span>
-                          <span className="text-xs font-bold text-zinc-900 truncate">{apt.title}</span>
-                          <span className="text-[11px] text-zinc-400">
-                            {formatAppointmentType(apt.appointmentType)}
-                          </span>
-                        </div>
-
-                        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-zinc-600">
-                          <div className="inline-flex items-center gap-1.5 font-medium text-zinc-800">
-                            <Clock className="w-3.5 h-3.5 text-[#49056B]" />
-                            <span>
-                              {formatOttawaTime(apt.scheduledStart)} – {formatOttawaTime(apt.scheduledEnd)}
-                            </span>
-                            <span className="text-zinc-400 font-normal">({apt.durationMinutes}m)</span>
-                          </div>
-
-                          <div className="inline-flex items-center gap-1.5">
-                            <User className="w-3.5 h-3.5 text-zinc-400" />
-                            <span>{apt.customerName}</span>
-                          </div>
-
-                          {apt.assignedStaffName && (
-                            <div className="inline-flex items-center gap-1.5 text-zinc-500">
-                              <span>Staff: {apt.assignedStaffName}</span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-3 shrink-0">
-                        {isJoinableUrl ? (
-                          <a
-                            href={apt.locationOrLink!}
-                            target="_blank"
-                            rel="noreferrer"
-                            onClick={(e) => e.stopPropagation()}
-                            className="inline-flex items-center gap-1 text-xs font-semibold text-[#49056B] hover:underline"
-                          >
-                            <span>Meeting Link</span>
-                            <ExternalLink className="w-3 h-3" />
-                          </a>
-                        ) : apt.locationOrLink ? (
-                          <span className="text-xs text-zinc-500 max-w-xs truncate">
-                            {apt.locationOrLink}
-                          </span>
-                        ) : null}
-
-                        <button
-                          type="button"
-                          className="px-3 py-1.5 rounded-lg bg-zinc-50 hover:bg-zinc-100 text-xs font-medium text-zinc-700 border border-black/[0.08] transition-colors"
-                        >
-                          Manage
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : (
-        /* Day or Week View */
-        <div className="bg-white rounded-xl border border-black/[0.06] p-6 space-y-4">
-          <div className="flex items-center justify-between pb-3 border-b border-black/[0.06]">
-            <div className="flex items-center gap-2">
+      {/* ========================================================================= */}
+      {/* TOOLBAR: 44px Controls, Table/Agenda Toggle, Search & Filters              */}
+      {/* ========================================================================= */}
+      <div className="bg-white p-4 sm:p-5 rounded-md border border-zinc-200 shadow-sm space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
+          {/* Search Input (5 cols) */}
+          <div className="md:col-span-5 relative flex items-center">
+            <Search className="w-4 h-4 text-zinc-400 absolute left-3.5 pointer-events-none" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search appointments by customer, title, phone..."
+              className="w-full h-11 pl-10 pr-10 text-sm bg-white text-zinc-900 border border-zinc-300 rounded-md placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#49056B]/20 focus:border-[#49056B] transition-all"
+            />
+            {searchQuery && (
               <button
-                type="button"
-                onClick={() => {
-                  const d = new Date(selectedDate);
-                  d.setDate(d.getDate() - (viewMode === 'week' ? 7 : 1));
-                  setSelectedDate(d);
-                }}
-                className="p-1 rounded-md hover:bg-zinc-100 text-zinc-600"
+                onClick={() => setSearchQuery('')}
+                className="absolute right-3 text-zinc-400 hover:text-zinc-600 p-1"
               >
-                <ChevronLeft className="w-4 h-4" />
+                <X className="w-4 h-4" />
               </button>
-              <span className="text-xs font-bold text-zinc-900">
-                {formatOttawaDate(selectedDate)}
-              </span>
-              <button
-                type="button"
-                onClick={() => {
-                  const d = new Date(selectedDate);
-                  d.setDate(d.getDate() + (viewMode === 'week' ? 7 : 1));
-                  setSelectedDate(d);
-                }}
-                className="p-1 rounded-md hover:bg-zinc-100 text-zinc-600"
-              >
-                <ChevronRight className="w-4 h-4" />
-              </button>
-            </div>
-            <button
-              type="button"
-              onClick={() => setSelectedDate(new Date())}
-              className="text-xs font-medium text-[#49056B] hover:underline"
-            >
-              Today
-            </button>
+            )}
           </div>
 
-          <div className="grid grid-cols-1 gap-3">
-            {filteredAppointments
-              .filter((apt) => {
-                const aptDate = new Date(apt.scheduledStart);
-                return (
-                  aptDate.getFullYear() === selectedDate.getFullYear() &&
-                  aptDate.getMonth() === selectedDate.getMonth() &&
-                  aptDate.getDate() === selectedDate.getDate()
-                );
-              })
-              .map((apt) => (
-                <div
-                  key={apt.id}
-                  onClick={() => setSelectedAppointment(apt)}
-                  className="p-3.5 rounded-lg border border-black/[0.08] bg-zinc-50 hover:bg-zinc-100/80 cursor-pointer flex items-center justify-between transition-colors"
-                >
-                  <div className="space-y-1">
-                    <div className="text-xs font-bold text-zinc-900">{apt.title}</div>
-                    <div className="text-[11px] text-zinc-500">
-                      {formatOttawaTime(apt.scheduledStart)} – {formatOttawaTime(apt.scheduledEnd)} · {apt.customerName}
-                    </div>
-                  </div>
-                  <span
-                    className={`px-2 py-0.5 rounded text-[10px] font-bold border uppercase ${formatAppointmentStatus(apt.status).color} ${formatAppointmentStatus(apt.status).bg}`}
-                  >
-                    {apt.status}
-                  </span>
-                </div>
+          {/* Status Filter (3 cols) */}
+          <div className="md:col-span-3">
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="w-full h-11 px-3.5 text-sm bg-white text-zinc-900 border border-zinc-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#49056B]/20 focus:border-[#49056B] transition-all"
+            >
+              <option value="all">All Statuses</option>
+              <option value="confirmed">Confirmed</option>
+              <option value="pending">Pending</option>
+              <option value="rescheduled">Rescheduled</option>
+              <option value="completed">Completed</option>
+              <option value="cancelled">Cancelled</option>
+            </select>
+          </div>
+
+          {/* Coordinator Filter (2 cols) */}
+          <div className="md:col-span-2">
+            <select
+              value={staffFilter}
+              onChange={(e) => setStaffFilter(e.target.value)}
+              className="w-full h-11 px-3.5 text-sm bg-white text-zinc-900 border border-zinc-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#49056B]/20 focus:border-[#49056B] transition-all"
+            >
+              <option value="all">All Coordinators</option>
+              {staffList.map((st) => (
+                <option key={st.id} value={st.id}>
+                  {st.name}
+                </option>
               ))}
+            </select>
+          </div>
+
+          {/* View Mode Toggle (2 cols) */}
+          <div className="md:col-span-2 flex items-center justify-end gap-1.5 bg-zinc-100 p-1 rounded-md">
+            <button
+              onClick={() => setViewMode('table')}
+              className={`flex-1 py-1.5 px-3 text-xs font-semibold rounded-md transition-colors ${
+                viewMode === 'table' ? 'bg-white text-zinc-900 shadow-2xs' : 'text-zinc-600 hover:text-zinc-900'
+              }`}
+            >
+              Table
+            </button>
+            <button
+              onClick={() => setViewMode('agenda')}
+              className={`flex-1 py-1.5 px-3 text-xs font-semibold rounded-md transition-colors ${
+                viewMode === 'agenda' ? 'bg-white text-zinc-900 shadow-2xs' : 'text-zinc-600 hover:text-zinc-900'
+              }`}
+            >
+              Agenda
+            </button>
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between text-xs text-zinc-500 pt-2 border-t border-zinc-100">
+          <span>
+            Showing <strong className="text-zinc-900 font-semibold">{filteredAppointments.length}</strong> of{' '}
+            <strong className="text-zinc-900 font-semibold">{appointments.length}</strong> scheduled appointments
+            {hasActiveFilters && ' (filtered)'}
+          </span>
+          {hasActiveFilters && (
+            <AdminButton variant="ghost" size="sm" onClick={clearAllFilters} leftIcon={<FilterX className="w-3.5 h-3.5" />}>
+              Reset Filters
+            </AdminButton>
+          )}
+        </div>
+      </div>
+
+      {/* ========================================================================= */}
+      {/* VIEW: Table Mode                                                          */}
+      {/* ========================================================================= */}
+      {viewMode === 'table' && (
+        <div className="bg-white rounded-md border border-zinc-200 shadow-sm overflow-hidden">
+          <div className="overflow-x-auto">
+            {filteredAppointments.length > 0 ? (
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-zinc-50/80 border-b border-zinc-200 text-xs font-semibold uppercase tracking-wider text-zinc-500">
+                    <th className="py-3.5 px-5">Title & Customer</th>
+                    <th className="py-3.5 px-4">Format</th>
+                    <th className="py-3.5 px-4">Ottawa Date & Time</th>
+                    <th className="py-3.5 px-4 hidden md:table-cell">Coordinator</th>
+                    <th className="py-3.5 px-4">Status</th>
+                    <th className="py-3.5 px-5 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-zinc-100 text-sm">
+                  {filteredAppointments.map((apt) => {
+                    const isSelected = selectedAppointment?.id === apt.id;
+                    return (
+                      <tr
+                        key={apt.id}
+                        onClick={() => setSelectedAppointment(apt)}
+                        className={`cursor-pointer transition-colors ${
+                          isSelected ? 'bg-purple-50/50' : 'hover:bg-zinc-50/80'
+                        }`}
+                      >
+                        <td className="py-3.5 px-5">
+                          <div className="font-semibold text-zinc-900">{apt.title}</div>
+                          <div className="text-xs text-zinc-500 mt-0.5">
+                            Customer: {apt.customerName} ({apt.customerEmail})
+                          </div>
+                        </td>
+
+                        <td className="py-3.5 px-4">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="inline-flex items-center gap-1.5 text-xs text-zinc-700">
+                              {formatAppointmentType(apt.appointmentType)}
+                            </span>
+                            {apt.googleSyncStatus === 'failed' && (
+                              <span className="text-[10px] font-semibold text-rose-700 bg-rose-50 border border-rose-200 px-1.5 py-0.5 rounded flex items-center gap-1">
+                                <AlertCircle className="w-3 h-3 text-rose-600" />
+                                Sync Error
+                              </span>
+                            )}
+                            {apt.notificationStatus === 'failed' && (
+                              <span className="text-[10px] font-semibold text-amber-800 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded flex items-center gap-1">
+                                <AlertCircle className="w-3 h-3 text-amber-600" />
+                                Notification Alert
+                              </span>
+                            )}
+                          </div>
+                        </td>
+
+                        <td className="py-3.5 px-4">
+                          <div className="font-medium text-zinc-900 text-xs">
+                            {formatOttawaDate(apt.scheduledStart)}
+                          </div>
+                          <div className="text-xs text-zinc-500 mt-0.5 flex items-center gap-1">
+                            <Clock className="w-3 h-3 text-zinc-400" />
+                            <span>{formatOttawaTime(apt.scheduledStart)} ({apt.durationMinutes}m)</span>
+                          </div>
+                        </td>
+
+                        <td className="py-3.5 px-4 hidden md:table-cell text-xs text-zinc-700">
+                          {apt.assignedStaffName || <span className="text-zinc-400 italic">Unassigned</span>}
+                        </td>
+
+                        <td className="py-3.5 px-4">
+                          <AdminBadge status={apt.status} />
+                        </td>
+
+                        <td className="py-3.5 px-5 text-right whitespace-nowrap">
+                          <AdminButton
+                            variant="ghost"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedAppointment(apt);
+                            }}
+                            className="text-[#49056B] hover:text-[#390044] hover:bg-purple-50"
+                            rightIcon={<ChevronRight className="w-4 h-4" />}
+                          >
+                            Details
+                          </AdminButton>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            ) : (
+              <div className="py-16 text-center space-y-3">
+                <div className="w-12 h-12 rounded-md bg-zinc-100 flex items-center justify-center mx-auto text-zinc-400">
+                  <CalendarDays className="w-6 h-6" />
+                </div>
+                <h3 className="text-sm font-bold text-zinc-800">No appointments found</h3>
+                <p className="text-xs text-zinc-500 max-w-sm mx-auto">
+                  {hasActiveFilters
+                    ? 'No scheduled consultations match your current search and filter settings.'
+                    : 'Customer consultations booked from enquiry triage will appear on this schedule.'}
+                </p>
+                {hasActiveFilters && (
+                  <AdminButton variant="outline" size="sm" onClick={clearAllFilters}>
+                    Clear Filters
+                  </AdminButton>
+                )}
+              </div>
+            )}
           </div>
         </div>
       )}
 
-      {/* Appointment Detail Drawer */}
+      {/* ========================================================================= */}
+      {/* VIEW: Agenda Mode                                                         */}
+      {/* ========================================================================= */}
+      {viewMode === 'agenda' && (
+        <div className="space-y-4">
+          {Object.keys(groupedAgenda).length > 0 ? (
+            Object.entries(groupedAgenda).map(([dateLabel, aptList]) => (
+              <div key={dateLabel} className="bg-white rounded-md border border-zinc-200 shadow-sm overflow-hidden">
+                <div className="px-5 py-3.5 bg-zinc-50/80 border-b border-zinc-200 flex items-center justify-between">
+                  <span className="font-bold text-sm text-zinc-900">{dateLabel}</span>
+                  <span className="text-xs text-zinc-500 font-medium">
+                    {aptList.length} appointment{aptList.length > 1 ? 's' : ''}
+                  </span>
+                </div>
+
+                <div className="divide-y divide-zinc-100">
+                  {aptList.map((apt) => (
+                    <div
+                      key={apt.id}
+                      onClick={() => setSelectedAppointment(apt)}
+                      className="p-5 hover:bg-zinc-50/70 transition-colors cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                    >
+                      <div className="space-y-1.5 min-w-0">
+                        <div className="flex items-center gap-2.5">
+                          <span className="font-bold text-sm text-zinc-900 truncate">
+                            {apt.title}
+                          </span>
+                          <AdminBadge status={apt.status} />
+                          {apt.googleSyncStatus === 'failed' && (
+                            <span className="text-[10px] font-semibold text-rose-700 bg-rose-50 border border-rose-200 px-1.5 py-0.5 rounded flex items-center gap-1">
+                              <AlertCircle className="w-3 h-3 text-rose-600" />
+                              Sync Error
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="text-xs text-zinc-600 flex flex-wrap gap-x-4 gap-y-1">
+                          <span>Customer: {apt.customerName}</span>
+                          <span>Format: {formatAppointmentType(apt.appointmentType)}</span>
+                          <span>Time: {formatOttawaTime(apt.scheduledStart)} ({apt.durationMinutes}m)</span>
+                          {apt.assignedStaffName && <span>Coordinator: {apt.assignedStaffName}</span>}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 shrink-0">
+                        <AdminButton
+                          variant="ghost"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedAppointment(apt);
+                          }}
+                          className="text-[#49056B]"
+                          rightIcon={<ChevronRight className="w-4 h-4" />}
+                        >
+                          View
+                        </AdminButton>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="bg-white rounded-md border border-zinc-200 p-16 text-center text-sm text-zinc-400">
+              No appointments found for the selected filters.
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* DRAWER: Appointment Details                                               */}
+      {/* ========================================================================= */}
       {selectedAppointment && (
-        <div className="fixed inset-0 z-50 overflow-hidden bg-black/40 backdrop-blur-xs flex justify-end">
-          <div className="relative w-full max-w-lg bg-white h-full shadow-2xl flex flex-col border-l border-black/[0.08] overflow-y-auto">
+        <div className="fixed inset-0 z-50 overflow-hidden bg-black/40 backdrop-blur-2xs flex justify-end">
+          <div className="w-full max-w-xl bg-white h-full shadow-2xl flex flex-col animate-in slide-in-from-right duration-200 border-l border-zinc-200">
             {/* Drawer Header */}
-            <div className="px-6 py-5 border-b border-black/[0.06] flex items-center justify-between sticky top-0 bg-white z-10">
+            <div className="px-6 py-4 border-b border-zinc-200 flex items-center justify-between bg-zinc-50/80">
               <div>
                 <div className="flex items-center gap-2">
-                  <span
-                    className={`px-2 py-0.5 rounded-md text-[10px] font-bold border uppercase tracking-wider ${formatAppointmentStatus(selectedAppointment.status).color} ${formatAppointmentStatus(selectedAppointment.status).bg}`}
-                  >
-                    {formatAppointmentStatus(selectedAppointment.status).label}
-                  </span>
-                  <span className="text-xs text-zinc-400 font-mono">{selectedAppointment.id}</span>
+                  <h2 className="text-base font-bold text-zinc-900 tracking-tight">
+                    {selectedAppointment.title}
+                  </h2>
+                  <AdminBadge status={selectedAppointment.status} />
                 </div>
-                <h2 className="text-base font-bold text-zinc-900 mt-1">{selectedAppointment.title}</h2>
+                <p className="text-xs text-zinc-500 mt-0.5">
+                  Reference: #{selectedAppointment.id.slice(0, 8)} • Ottawa, ON
+                </p>
               </div>
               <button
                 type="button"
                 onClick={() => setSelectedAppointment(null)}
-                className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-700 hover:bg-zinc-100 transition-colors"
+                className="text-zinc-400 hover:text-zinc-600 p-1 rounded-md transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            {/* Drawer Body */}
-            <div className="p-6 space-y-6 flex-1">
-              {/* Timing & Schedule */}
-              <div className="p-4 rounded-xl bg-zinc-50 border border-black/[0.06] space-y-2">
-                <div className="text-[10px] font-semibold uppercase tracking-wider text-zinc-400">
-                  Scheduled Time (Ottawa Local)
+            {/* Drawer Content */}
+            <div className="flex-1 overflow-y-auto p-6 space-y-6">
+              {/* Standardized Consultation Summary */}
+              <div className="p-4 rounded-md bg-zinc-50 border border-zinc-200 space-y-2 text-sm text-zinc-700">
+                <div>
+                  <strong className="text-zinc-900">Date:</strong> {formatOttawaDate(selectedAppointment.scheduledStart)}
                 </div>
-                <div className="text-sm font-bold text-zinc-900">
-                  {formatOttawaTimeRange(
-                    selectedAppointment.scheduledStart,
-                    selectedAppointment.scheduledEnd
-                  )}
+                <div>
+                  <strong className="text-zinc-900">Time:</strong> {formatOttawaTime(selectedAppointment.scheduledStart)} – {formatOttawaTime(selectedAppointment.scheduledEnd)} ({selectedAppointment.durationMinutes} mins · Ottawa time)
                 </div>
-                <div className="text-xs text-zinc-500">
-                  Duration: {selectedAppointment.durationMinutes} minutes · {formatAppointmentType(selectedAppointment.appointmentType)}
+                <div>
+                  <strong className="text-zinc-900">Format:</strong> {formatAppointmentType(selectedAppointment.appointmentType)}
+                </div>
+                <div>
+                  <strong className="text-zinc-900">Coordinator:</strong> {selectedAppointment.assignedStaffName || 'Unassigned / Team Pool'}
                 </div>
               </div>
 
               {/* Customer Contact */}
-              <div className="space-y-2">
-                <div className="text-[10px] font-semibold uppercase tracking-wider text-zinc-400">
+              <div className="space-y-3 pb-4 border-b border-zinc-100">
+                <div className="text-xs font-bold uppercase tracking-wider text-zinc-500">
                   Customer Information
                 </div>
-                <div className="p-4 rounded-xl bg-white border border-black/[0.06] space-y-2">
-                  <div className="font-semibold text-zinc-900 text-sm">{selectedAppointment.customerName}</div>
-                  <div className="text-xs text-zinc-600 flex items-center gap-2">
-                    <span className="text-zinc-400">Email:</span>
-                    <span>{selectedAppointment.customerEmail}</span>
-                  </div>
+                <div className="p-4 rounded-md bg-white border border-zinc-200 space-y-2 text-sm">
+                  <div className="font-bold text-zinc-900">{selectedAppointment.customerName}</div>
+                  <div className="text-zinc-600">{selectedAppointment.customerEmail}</div>
                   {selectedAppointment.customerPhone && (
-                    <div className="text-xs text-zinc-600 flex items-center gap-2">
-                      <span className="text-zinc-400">Phone:</span>
-                      <span>{selectedAppointment.customerPhone}</span>
-                    </div>
+                    <div className="text-zinc-600">Phone: {selectedAppointment.customerPhone}</div>
                   )}
-                  <div className="pt-2 border-t border-black/[0.04] text-xs">
-                    <Link
-                      href={`/admin/enquiries?id=${selectedAppointment.enquiryId}`}
-                      className="text-[#49056B] hover:underline font-semibold inline-flex items-center gap-1"
-                    >
-                      <span>View Linked Enquiry ({selectedAppointment.enquiryId})</span>
-                      <ExternalLink className="w-3 h-3" />
-                    </Link>
-                  </div>
                 </div>
               </div>
 
-              {/* Meeting Location / Video Link */}
-              <div className="space-y-2">
-                <div className="text-[10px] font-semibold uppercase tracking-wider text-zinc-400">
-                  Format & Connection
+              {/* Meeting Coordinates / Link */}
+              <div className="space-y-3 pb-4 border-b border-zinc-100">
+                <div className="text-xs font-bold uppercase tracking-wider text-zinc-500">
+                  Location & Meeting Coordinates
                 </div>
-                <div className="p-4 rounded-xl bg-white border border-black/[0.06] text-xs text-zinc-800 space-y-1">
-                  <div className="font-semibold">{formatAppointmentType(selectedAppointment.appointmentType)}</div>
+                <div className="p-4 rounded-md bg-white border border-zinc-200 text-sm">
                   {selectedAppointment.locationOrLink ? (
-                    <div className="break-all pt-1">
-                      {/^https?:\/\//i.test(selectedAppointment.locationOrLink) ? (
-                        <a
-                          href={selectedAppointment.locationOrLink}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="text-[#49056B] hover:underline font-semibold inline-flex items-center gap-1"
-                        >
-                          <span>Open Video Meeting</span>
-                          <ExternalLink className="w-3.5 h-3.5" />
-                        </a>
-                      ) : (
+                    selectedAppointment.locationOrLink.startsWith('http') ? (
+                      <a
+                        href={selectedAppointment.locationOrLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-[#49056B] text-white hover:bg-[#390044] text-xs font-semibold transition-colors"
+                      >
+                        <Video className="w-4 h-4" />
+                        <span>Join Video Meeting</span>
+                        <ExternalLink className="w-3.5 h-3.5" />
+                      </a>
+                    ) : (
+                      <div className="flex items-start gap-2 text-zinc-800">
+                        <MapPin className="w-4 h-4 text-zinc-400 mt-0.5" />
                         <span>{selectedAppointment.locationOrLink}</span>
-                      )}
-                    </div>
+                      </div>
+                    )
                   ) : (
-                    <div className="text-zinc-400 italic">No location or link recorded.</div>
+                    <span className="text-zinc-400 italic">No location or meeting link recorded</span>
                   )}
                 </div>
               </div>
 
-              {/* Coordinator */}
-              <div className="space-y-2">
-                <div className="text-[10px] font-semibold uppercase tracking-wider text-zinc-400">
-                  Assigned Team Member
+              {/* Customer Email Notification Status */}
+              <div className="space-y-2 pb-4 border-b border-zinc-100">
+                <div className="text-xs font-bold uppercase tracking-wider text-zinc-500">
+                  Customer Email Notification
                 </div>
-                <div className="p-4 rounded-xl bg-white border border-black/[0.06] text-xs text-zinc-800">
-                  {selectedAppointment.assignedStaffName || 'Unassigned / Team Dispatch'}
+                <div className="flex flex-wrap items-center gap-2">
+                  {selectedAppointment.notificationStatus === 'delivered' ? (
+                    <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-[4px] text-xs font-medium bg-emerald-50 text-emerald-800 border border-emerald-200">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                      Delivered to Recipient
+                    </span>
+                  ) : selectedAppointment.notificationStatus === 'sent' || selectedAppointment.notificationSent ? (
+                    <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-[4px] text-xs font-medium bg-emerald-50 text-emerald-800 border border-emerald-200">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                      Accepted by Provider
+                    </span>
+                  ) : selectedAppointment.notificationStatus === 'failed' ? (
+                    <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-[4px] text-xs font-medium bg-rose-50 text-rose-800 border border-rose-200">
+                      <AlertCircle className="w-3.5 h-3.5 text-rose-600" />
+                      Dispatch Failed
+                    </span>
+                  ) : selectedAppointment.status === 'cancelled' ? (
+                    <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-[4px] text-xs font-medium bg-zinc-100 text-zinc-600 border border-zinc-200">
+                      Cancelled (Suppressed)
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-[4px] text-xs font-medium bg-amber-50 text-amber-800 border border-amber-200">
+                      <Clock className="w-3.5 h-3.5 text-amber-600" />
+                      Dispatch Queued
+                    </span>
+                  )}
                 </div>
+
+                {selectedAppointment.notificationStatus === 'failed' && (
+                  <div className="p-2.5 rounded-md bg-amber-50 border border-amber-200 text-xs text-amber-900 space-y-1">
+                    <div className="font-semibold flex items-center gap-1">
+                      <AlertCircle className="w-3.5 h-3.5 text-amber-700" />
+                      <span>Notification Requires Attention:</span>
+                    </div>
+                    <p className="text-zinc-700">{selectedAppointment.notificationError || 'Automated dispatch was delayed or rejected by email provider.'}</p>
+                    <p className="text-[11px] text-zinc-500">The outbox will continue retrying automatically, or you can use &quot;Resend Invite&quot; below to trigger an immediate manual send.</p>
+                  </div>
+                )}
               </div>
 
-              {/* Private Staff Notes */}
-              {selectedAppointment.staffNotes && (
-                <div className="space-y-2">
-                  <div className="text-[10px] font-semibold uppercase tracking-wider text-zinc-400">
-                    Private Staff Notes
+              {/* Google Calendar Synchronization & Video Reconciliation */}
+              {(selectedAppointment.googleSyncStatus || selectedAppointment.calendarEventId || selectedAppointment.appointmentType === 'google_meet') && (
+                <div className="space-y-2.5 pb-4 border-b border-zinc-100">
+                  <div className="text-xs font-bold uppercase tracking-wider text-zinc-500">
+                    Google Calendar & Video Sync
                   </div>
-                  <div className="p-3.5 rounded-xl bg-zinc-50 border border-black/[0.06] text-xs text-zinc-700 whitespace-pre-wrap">
+                  <div className="flex flex-wrap items-center gap-2">
+                    {selectedAppointment.googleSyncStatus === 'synced' ? (
+                      <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-[4px] text-xs font-medium bg-emerald-50 text-emerald-800 border border-emerald-200">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                        Google Calendar Synced
+                      </span>
+                    ) : selectedAppointment.googleSyncStatus === 'failed' ? (
+                      <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-[4px] text-xs font-medium bg-rose-50 text-rose-800 border border-rose-200">
+                        <AlertCircle className="w-3.5 h-3.5 text-rose-600" />
+                        Google Sync Error
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-[4px] text-xs font-medium bg-zinc-100 text-zinc-600 border border-zinc-200">
+                        Sync: {selectedAppointment.googleSyncStatus || 'not_applicable'}
+                      </span>
+                    )}
+
+                    {selectedAppointment.conferenceStatus === 'pending_details' && (
+                      <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-[4px] text-xs font-medium bg-amber-50 text-amber-800 border border-amber-200">
+                        <Video className="w-3.5 h-3.5 text-amber-600" />
+                        Video Link Pending
+                      </span>
+                    )}
+                  </div>
+
+                  {selectedAppointment.googleSyncError && (
+                    <div className="p-2.5 rounded-md bg-rose-50 border border-rose-200 text-xs text-rose-800">
+                      <span className="font-semibold">Sync Error: </span>
+                      <span>{selectedAppointment.googleSyncError}</span>
+                    </div>
+                  )}
+
+                  <div className="flex flex-wrap items-center gap-2 pt-1">
+                    {selectedAppointment.googleSyncStatus === 'failed' && (
+                      <button
+                        type="button"
+                        onClick={() => handleRetryGoogleSync(selectedAppointment.id)}
+                        disabled={retryingSync}
+                        className="px-3 py-1.5 rounded-md bg-[#49056B] text-white text-xs font-semibold hover:bg-[#390044] transition-colors inline-flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                      >
+                        <RefreshCw className={`w-3.5 h-3.5 ${retryingSync ? 'animate-spin' : ''}`} />
+                        <span>Retry Google Calendar Sync</span>
+                      </button>
+                    )}
+
+                    {selectedAppointment.appointmentType === 'google_meet' && selectedAppointment.conferenceStatus === 'pending_details' && (
+                      <button
+                        type="button"
+                        onClick={() => handleReconcileConference(selectedAppointment.id)}
+                        disabled={reconcilingConf}
+                        className="px-3 py-1.5 rounded-md bg-amber-600 text-white text-xs font-semibold hover:bg-amber-700 transition-colors inline-flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                      >
+                        <RefreshCw className={`w-3.5 h-3.5 ${reconcilingConf ? 'animate-spin' : ''}`} />
+                        <span>Reconcile Video Link</span>
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Staff Notes */}
+              {selectedAppointment.staffNotes && (
+                <div className="space-y-2 pb-4 border-b border-zinc-100">
+                  <div className="text-xs font-bold uppercase tracking-wider text-zinc-500">
+                    Internal Staff Notes
+                  </div>
+                  <div className="p-3.5 rounded-md bg-zinc-50 border border-zinc-200 text-sm text-zinc-700 leading-relaxed whitespace-pre-wrap">
                     {selectedAppointment.staffNotes}
                   </div>
                 </div>
               )}
 
-              {/* Activity Timeline */}
-              <div className="space-y-2 pt-2 border-t border-black/[0.06]">
-                <div className="text-[10px] font-semibold uppercase tracking-wider text-zinc-400">
-                  Audit & Activity Log
+              {/* Activity History Audit Log */}
+              <div className="space-y-3 pt-2">
+                <div className="text-xs font-bold uppercase tracking-wider text-zinc-500">
+                  Appointment Activity & Audit History
                 </div>
                 {loadingActivity ? (
-                  <div className="text-xs text-zinc-400 py-2">Loading activity...</div>
+                  <div className="py-4 text-center text-xs text-zinc-400">Loading activity...</div>
                 ) : appointmentActivity.length > 0 ? (
                   <div className="space-y-2.5">
                     {appointmentActivity.map((act) => (
-                      <div key={act.id} className="text-xs p-2.5 rounded-lg bg-zinc-50 border border-black/[0.04]">
-                        <div className="flex items-center justify-between text-[11px] text-zinc-500 mb-0.5">
-                          <span className="font-semibold text-zinc-800">{act.performedBy}</span>
+                      <div key={act.id} className="p-3 rounded-md bg-zinc-50 border border-zinc-200 text-xs space-y-1">
+                        <div className="flex items-center justify-between text-zinc-500">
+                          <span className="font-semibold text-zinc-800">{act.actorName || 'System'}</span>
                           <span>{formatCanadianDateTime(act.createdAt)}</span>
                         </div>
-                        <p className="text-zinc-700">{act.details || act.action}</p>
+                        <p className="text-zinc-700">{act.action}: {act.details || 'No details'}</p>
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <div className="text-xs text-zinc-400 py-2">No activity recorded yet.</div>
+                  <div className="p-3 rounded-md bg-zinc-50 border border-zinc-200 text-xs text-zinc-400">
+                    No activity records logged.
+                  </div>
                 )}
               </div>
-            </div>
 
-            {/* Drawer Actions */}
-            <div className="p-6 border-t border-black/[0.06] bg-zinc-50/50 space-y-2 sticky bottom-0">
-              <div className="flex flex-wrap gap-2">
+              {/* Actions Toolbar */}
+              <div className="pt-4 border-t border-zinc-200 flex flex-wrap items-center gap-2.5">
                 {selectedAppointment.status === 'pending' && (
-                  <button
-                    type="button"
+                  <AdminButton
+                    variant="primary"
+                    size="sm"
                     onClick={() => handleStatusUpdate(selectedAppointment.id, 'confirmed')}
-                    className="flex-1 py-2 px-3 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-semibold shadow-2xs transition-colors"
                   >
-                    Confirm Consultation
-                  </button>
+                    Confirm Meeting
+                  </AdminButton>
                 )}
-                {selectedAppointment.status !== 'completed' && selectedAppointment.status !== 'cancelled' && (
-                  <>
-                    <button
-                      type="button"
-                      onClick={() => setIsRescheduleOpen(true)}
-                      className="py-2 px-3 rounded-lg border border-black/[0.1] bg-white text-zinc-700 hover:bg-zinc-100 text-xs font-semibold shadow-2xs transition-colors"
-                    >
-                      Reschedule
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleResendInvite(selectedAppointment.id)}
-                      className="py-2 px-3 rounded-lg border border-black/[0.1] bg-white text-zinc-700 hover:bg-zinc-100 text-xs font-semibold shadow-2xs transition-colors"
-                    >
-                      Resend Invite
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleStatusUpdate(selectedAppointment.id, 'completed')}
-                      className="py-2 px-3 rounded-lg border border-black/[0.1] bg-white text-zinc-700 hover:bg-zinc-100 text-xs font-semibold shadow-2xs transition-colors"
-                    >
-                      Complete
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleCancel(selectedAppointment.id)}
-                      className="py-2 px-3 rounded-lg bg-red-50 text-red-700 hover:bg-red-100 border border-red-200 text-xs font-semibold transition-colors"
-                    >
-                      Cancel
-                    </button>
-                  </>
+
+                <AdminButton
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsRescheduleOpen(true)}
+                >
+                  Reschedule
+                </AdminButton>
+
+                <AdminButton
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleResendInvite(selectedAppointment.id)}
+                >
+                  Resend Invite
+                </AdminButton>
+
+                {selectedAppointment.status !== 'cancelled' && (
+                  <AdminButton
+                    variant="danger"
+                    size="sm"
+                    onClick={() => openCancelDialog(selectedAppointment.id)}
+                    className="ml-auto"
+                  >
+                    Cancel Meeting
+                  </AdminButton>
                 )}
               </div>
             </div>
@@ -728,28 +943,37 @@ export default function AdminAppointmentsPage() {
         <ScheduleMeetingModal
           isOpen={isRescheduleOpen}
           onClose={() => setIsRescheduleOpen(false)}
-          onScheduled={(updated) => {
-            setAppointments((prev) =>
-              prev.map((a) => (a.id === updated.id ? updated : a))
-            );
-            setSelectedAppointment(updated);
-            setFeedbackMessage('Consultation rescheduled successfully.');
-            setTimeout(() => setFeedbackMessage(null), 3500);
+          onSuccess={async () => {
+            await loadData();
+            setIsRescheduleOpen(false);
           }}
-          enquiry={{
-            id: selectedAppointment.enquiryId,
-            customer: {
-              name: selectedAppointment.customerName,
-              email: selectedAppointment.customerEmail,
-              phone: selectedAppointment.customerPhone || undefined,
-            },
-            services: [],
-            serviceLocation: selectedAppointment.locationOrLink || undefined,
+          enquiryId={selectedAppointment.enquiryId}
+          customer={{
+            name: selectedAppointment.customerName,
+            email: selectedAppointment.customerEmail,
+            phone: selectedAppointment.customerPhone || undefined,
           }}
           rescheduleAppointmentId={selectedAppointment.id}
           initialAppointment={selectedAppointment}
         />
       )}
+
+      {/* Confirmation Dialog (replaces window.prompt!) */}
+      <ConfirmDialog
+        isOpen={cancelDialogState.isOpen}
+        title="Cancel Appointment"
+        description="Please provide a reason for cancelling this appointment. This note will be recorded in the audit trail and sent to the customer."
+        confirmLabel="Cancel Appointment"
+        cancelLabel="Keep Appointment"
+        variant="danger"
+        requiresInput={true}
+        inputRequired={true}
+        inputLabel="Cancellation Reason"
+        inputPlaceholder="e.g. Coordinator conflict, customer requested cancellation..."
+        isLoading={cancelDialogState.isLoading}
+        onConfirm={handleConfirmCancelAppointment}
+        onCancel={() => setCancelDialogState({ isOpen: false, appointmentId: null, isLoading: false })}
+      />
     </div>
   );
 }

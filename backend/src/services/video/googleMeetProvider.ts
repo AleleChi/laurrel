@@ -1,19 +1,23 @@
 import { IVideoMeetingProvider, MeetingDetails, MeetingRequest } from './types';
+import { getProviderIntegration } from '../../database/integrationRepo';
+import { createGoogleMeetEvent } from './googleCalendarClient';
 
 /**
- * Adapter for Google Meet / Google Calendar API integration.
- * Requires GOOGLE_CALENDAR_CLIENT_ID, GOOGLE_CALENDAR_CLIENT_SECRET, GOOGLE_CALENDAR_REFRESH_TOKEN.
- * Without active live API execution, strictly sets isAutomated: false and relies on verified manual links.
- * Never invents simulated meeting links or claims automated success when uncalled.
+ * Real Google Meet Provider supporting automated Google Calendar event creation
+ * with conferenceDataVersion=1 when connected.
  */
 export class GoogleMeetProvider implements IVideoMeetingProvider {
   readonly providerType = 'google_meet' as const;
 
+  async isConnected(): Promise<boolean> {
+    const integration = await getProviderIntegration('google_meet');
+    return integration?.status === 'connected' && Boolean(integration.credentials?.refreshToken);
+  }
+
   isConfigured(): boolean {
     return Boolean(
-      process.env.GOOGLE_CALENDAR_CLIENT_ID &&
-      process.env.GOOGLE_CALENDAR_CLIENT_SECRET &&
-      process.env.GOOGLE_CALENDAR_REFRESH_TOKEN
+      (process.env.GOOGLE_CALENDAR_CLIENT_ID || process.env.GOOGLE_CLIENT_ID) &&
+      (process.env.GOOGLE_CALENDAR_CLIENT_SECRET || process.env.GOOGLE_CLIENT_SECRET)
     );
   }
 
@@ -21,24 +25,56 @@ export class GoogleMeetProvider implements IVideoMeetingProvider {
     const manualLink = request.locationOrLink?.trim();
     const hasValidUrl = manualLink ? /^https?:\/\//i.test(manualLink) : false;
 
-    if (!this.isConfigured()) {
+    // 1. If a manual URL was explicitly supplied by an administrator, preserve it
+    if (hasValidUrl) {
       return {
         providerType: 'google_meet',
-        joinUrl: hasValidUrl ? manualLink : undefined,
+        joinUrl: manualLink,
         isAutomated: false,
-        notes: hasValidUrl
-          ? `Manual Google Meet link recorded: ${manualLink}`
-          : 'Google Meet automated integration is not active (pending Google Workspace OAuth). A manual meeting link can be supplied.',
+        notes: `Manual Google Meet link provided: ${manualLink}`,
       };
     }
 
-    return {
-      providerType: 'google_meet',
-      joinUrl: hasValidUrl ? manualLink : undefined,
-      isAutomated: false,
-      notes: hasValidUrl
-        ? `Manual Google Meet link recorded: ${manualLink}`
-        : 'Google Workspace credentials detected but live meeting creation requires calendar delegation. Using manual meeting arrangement.',
-    };
+    // 2. Check if Google Calendar integration is connected and authorized
+    const isConnected = await this.isConnected();
+    if (!isConnected) {
+      return {
+        providerType: 'google_meet',
+        isAutomated: false,
+        notes: 'Google Meet automated integration is currently disconnected in Admin Settings. Please connect Google Calendar or provide a manual link.',
+      };
+    }
+
+    // 3. Automated creation with conferenceDataVersion=1
+    try {
+      const result = await createGoogleMeetEvent({
+        title: request.title,
+        description: request.purpose || 'Customer consultation with Laurrel Services',
+        scheduledStartIso: request.startTime.toISOString(),
+        scheduledEndIso: request.endTime.toISOString(),
+        customerName: request.customerName,
+        customerEmail: request.customerEmail,
+        requestId: `req_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`,
+      });
+
+      return {
+        providerType: 'google_meet',
+        meetingId: result.eventId,
+        joinUrl: result.joinUrl || undefined,
+        hostUrl: result.calendarLink,
+        isAutomated: result.conferenceStatus === 'ready',
+        notes:
+          result.conferenceStatus === 'ready'
+            ? `Google Meet meeting created: ${result.joinUrl}`
+            : 'Google Calendar event created; video conference generation is pending.',
+      };
+    } catch (err: any) {
+      console.error('[Google Meet Provider] Automated meeting creation error:', err.message);
+      return {
+        providerType: 'google_meet',
+        isAutomated: false,
+        notes: `Automated creation failed: ${err.message}. Please coordinate by telephone or manual link.`,
+      };
+    }
   }
 }

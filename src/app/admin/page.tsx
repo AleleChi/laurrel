@@ -6,31 +6,61 @@ import {
   ArrowRight,
   RefreshCw,
   AlertCircle,
-  CheckCircle2,
   Clock,
   PhoneCall,
   Inbox,
   CalendarDays,
+  ChevronRight,
+  User,
+  MapPin,
+  CheckCircle2,
+  TrendingUp,
+  Activity,
   Calendar,
 } from 'lucide-react';
 import {
+  ResponsiveContainer,
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  Tooltip,
+  CartesianGrid,
+} from 'recharts';
+import {
   formatCanadianDate,
-  formatEnquirySource,
   formatOttawaDate,
   formatOttawaTime,
   formatAppointmentType,
   formatAppointmentStatus,
 } from '@/lib/utils/formatters';
 
+interface TimelinePoint {
+  period: string;
+  count: number;
+}
+
+interface ServiceBreakdownItem {
+  service: string;
+  count: number;
+}
+
+interface StatusBreakdownItem {
+  status: string;
+  count: number;
+}
+
 interface Stats {
   totalEnquiries: number;
   newEnquiries: number;
   reviewed: number;
   scheduled: number;
-  failedDeliveries: number;
   pendingHandoffs: number;
-  upcomingAppointments?: number;
-  todayAppointments?: number;
+  upcomingAppointments: number;
+  todayAppointments: number;
+  timeline?: TimelinePoint[];
+  servicesBreakdown?: ServiceBreakdownItem[];
+  statusBreakdown?: StatusBreakdownItem[];
 }
 
 interface AppointmentItem {
@@ -72,6 +102,11 @@ export default function AdminOverviewPage() {
   const [loading, setLoading] = useState<boolean>(true);
   const [refreshing, setRefreshing] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
+  const [mounted, setMounted] = useState<boolean>(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const loadOverviewData = async () => {
     try {
@@ -114,344 +149,589 @@ export default function AdminOverviewPage() {
     loadOverviewData();
   }, []);
 
-  // Clean, restrained status presentation without decorative dots or badge-heavy styling
-  const renderStatus = (status: string) => {
+  const renderStatusBadge = (status: string) => {
     switch (status) {
       case 'new':
-        return <span className="text-xs font-semibold text-[#FE6000]">New Lead</span>;
+        return (
+          <span className="inline-flex items-center px-2 py-0.5 rounded-[4px] text-xs font-medium bg-orange-50 text-[#FE6000] border border-orange-200/80">
+            Awaiting Review
+          </span>
+        );
       case 'reviewed':
-        return <span className="text-xs font-medium text-zinc-700">Reviewed</span>;
+        return (
+          <span className="inline-flex items-center px-2 py-0.5 rounded-[4px] text-xs font-medium bg-zinc-100 text-zinc-700 border border-zinc-200">
+            Reviewed
+          </span>
+        );
       case 'quoted':
-        return <span className="text-xs font-medium text-[#49056B]">Quoted</span>;
+        return (
+          <span className="inline-flex items-center px-2 py-0.5 rounded-[4px] text-xs font-medium bg-purple-50 text-[#390044] border border-purple-200/80">
+            Quoted
+          </span>
+        );
       case 'scheduled':
-        return <span className="text-xs font-medium text-emerald-700">Scheduled</span>;
+        return (
+          <span className="inline-flex items-center px-2 py-0.5 rounded-[4px] text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200/80">
+            Scheduled
+          </span>
+        );
       case 'closed':
-        return <span className="text-xs text-zinc-400">Closed</span>;
+        return (
+          <span className="inline-flex items-center px-2 py-0.5 rounded-[4px] text-xs font-medium bg-zinc-50 text-zinc-500 border border-zinc-200/60">
+            Closed
+          </span>
+        );
       default:
-        return <span className="text-xs text-zinc-500 capitalize">{status}</span>;
+        return (
+          <span className="inline-flex items-center px-2 py-0.5 rounded-[4px] text-xs font-medium bg-zinc-100 text-zinc-600 capitalize border border-zinc-200">
+            {status}
+          </span>
+        );
     }
+  };
+
+  // Format Timeline points for chart display
+  const timelineChartData = (stats?.timeline || []).map((t) => {
+    try {
+      const parts = t.period.split('-');
+      const date = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+      return {
+        label: date.toLocaleDateString('en-CA', { month: 'short', day: 'numeric' }),
+        count: t.count,
+        rawDate: t.period,
+      };
+    } catch {
+      return { label: t.period, count: t.count, rawDate: t.period };
+    }
+  });
+
+  const total60DayVolume = (stats?.timeline || []).reduce((acc, t) => acc + t.count, 0) || (stats?.totalEnquiries ?? 0);
+  const peakDayCount = stats?.timeline && stats.timeline.length > 0
+    ? Math.max(...stats.timeline.map((t) => t.count))
+    : 0;
+
+  const serviceChartData = (stats?.servicesBreakdown || []).map((s) => ({
+    name: s.service.charAt(0).toUpperCase() + s.service.slice(1),
+    count: s.count,
+  }));
+
+  const SERVICE_COLORS: Record<string, string> = {
+    Moving: '#390044',
+    Cleaning: '#FE6000',
+    Storage: '#0D9488',
+    General: '#6B7280',
+  };
+
+  const CustomChartTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="bg-[#1A0022] border border-purple-700/60 rounded-md p-3 shadow-xl text-xs text-white">
+          <p className="font-semibold text-purple-200/90">{label}</p>
+          <div className="flex items-center gap-2 mt-1.5">
+            <span className="w-2 h-2 rounded-[2px] bg-[#C8E80B]" />
+            <span className="text-zinc-300">Enquiries:</span>
+            <span className="font-extrabold text-[#C8E80B] text-sm">{payload[0].value}</span>
+          </div>
+        </div>
+      );
+    }
+    return null;
   };
 
   return (
     <div className="space-y-6">
-      {/* Editorial Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-2">
+      {/* Top Page Header (Canadian Commercial Restraint) */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-1">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-zinc-900">
-            Business Operations Overview
+            Overview
           </h1>
-          <p className="text-sm text-zinc-500 mt-1">
-            Real-time status of inbound service requests, customer enquiries, and customer follow-ups.
-          </p>
         </div>
 
         <div className="flex items-center gap-2.5">
           <button
             onClick={loadOverviewData}
             disabled={refreshing}
-            className="inline-flex items-center gap-2 px-3 py-2 rounded-[10px] bg-white border border-black/10 text-xs font-medium text-zinc-700 hover:bg-black/[0.02] hover:text-zinc-900 transition-colors shadow-2xs disabled:opacity-60"
+            className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-md bg-white border border-zinc-200 text-xs font-semibold text-zinc-700 hover:bg-zinc-50 hover:border-zinc-300 transition-colors shadow-2xs disabled:opacity-60"
           >
-            <RefreshCw className={`w-3.5 h-3.5 text-zinc-400 ${refreshing ? 'animate-spin' : ''}`} />
-            <span>{refreshing ? 'Refreshing' : 'Refresh'}</span>
+            <RefreshCw className={`w-3.5 h-3.5 text-zinc-500 ${refreshing ? 'animate-spin' : ''}`} />
+            <span>{refreshing ? 'Refreshing...' : 'Refresh'}</span>
           </button>
-
-          <Link
-            href="/admin/enquiries"
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-[10px] bg-[#49056B] text-white text-xs font-semibold hover:bg-[#5B0785] transition-all shadow-2xs"
-          >
-            <span>All Enquiries</span>
-            <ArrowRight className="w-3.5 h-3.5 text-orange-400" />
-          </Link>
         </div>
       </div>
 
       {error && (
-        <div className="p-4 rounded-xl bg-amber-50/70 border border-amber-200/80 text-xs text-amber-900 flex items-center justify-between">
-          <div className="flex items-center gap-2">
+        <div className="p-4 rounded-md bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
             <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
             <span>{error}</span>
           </div>
           <button
             onClick={loadOverviewData}
-            className="font-semibold underline hover:text-amber-800"
+            className="text-amber-800 font-semibold underline hover:no-underline ml-4"
           >
             Retry
           </button>
         </div>
       )}
 
-      {/* Simplified, Calm KPI Metric Row - No loud decorative circles */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Metric 1: Total Recorded */}
-        <div className="bg-white rounded-xl p-5 border border-black/[0.06] shadow-xs flex flex-col justify-between">
-          <div className="text-xs font-medium text-zinc-500 tracking-wide uppercase">
-            Total Inbound
-          </div>
-          <div className="my-2.5">
-            <div className="text-3xl font-semibold text-zinc-900 tracking-tight">
-              {loading ? '—' : stats?.totalEnquiries ?? 0}
+      {/* ========================================================================= */}
+      {/* 1. HERO SECTION — Asymmetric High-Impact Composition                      */}
+      {/* Left: 2x2 Geex-Inspired Confident Color-Block Tiles                       */}
+      {/* Right: Tall 60-Day Enquiry Activity Chart Panel (Dark Plum Surface)       */}
+      {/* ========================================================================= */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+        {/* Left: 2x2 Solid Color-Block KPI Grid (approx 55% width on desktop) */}
+        <div className="lg:col-span-7 grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {/* Card 1: Total Enquiries — Rich Laurrel Purple (#390044) */}
+          <div className="bg-[#390044] text-white p-5 lg:p-6 rounded-md shadow-sm border border-purple-900/30 flex flex-col justify-between group hover:shadow-md transition-all duration-200">
+            <div>
+              <div className="flex items-start justify-between gap-3">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-purple-200/90 leading-tight">
+                  Total Enquiries
+                </span>
+                <div className="w-10 h-10 rounded-md bg-white/15 flex items-center justify-center text-white shrink-0 shadow-inner">
+                  <Inbox className="w-5 h-5 text-white" />
+                </div>
+              </div>
+
+              <div className="mt-3">
+                <div className="text-3xl lg:text-4xl font-extrabold tracking-tight text-white leading-none">
+                  {stats ? stats.totalEnquiries : '—'}
+                </div>
+              </div>
             </div>
-            <p className="text-xs text-zinc-400 mt-0.5">Recorded in database</p>
+
+            <div className="mt-4 pt-3 border-t border-white/10 flex items-center justify-between text-xs">
+              <span className="text-purple-200/80 truncate pr-2">
+                All-time quote requests
+              </span>
+              <span className="text-xs text-purple-200/90 font-medium shrink-0">
+                Ottawa & Region
+              </span>
+            </div>
           </div>
-          <div className="text-[11px] text-zinc-400">All channels combined</div>
+
+          {/* Card 2: Awaiting Review — Warm Orange / Coral (#FE6000) */}
+          <div className="bg-[#FE6000] text-white p-5 lg:p-6 rounded-md shadow-sm border border-orange-600/30 flex flex-col justify-between group hover:shadow-md transition-all duration-200">
+            <div>
+              <div className="flex items-start justify-between gap-3">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-orange-100 leading-tight">
+                  Awaiting Review
+                </span>
+                <div className="w-10 h-10 rounded-md bg-white/20 flex items-center justify-center text-white shrink-0 shadow-inner">
+                  <Clock className="w-5 h-5 text-white" />
+                </div>
+              </div>
+
+              <div className="mt-3">
+                <div className="text-3xl lg:text-4xl font-extrabold tracking-tight text-white leading-none">
+                  {stats ? stats.newEnquiries : '—'}
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-4 pt-3 border-t border-white/15 flex items-center justify-between text-xs">
+              <span className="text-orange-100/90 truncate pr-2">
+                Awaiting review
+              </span>
+              <span className="text-xs text-white/90 font-medium shrink-0">
+                Action Required
+              </span>
+            </div>
+          </div>
+
+          {/* Card 3: Upcoming Consultations — Sophisticated Teal (#0D9488) */}
+          <div className="bg-[#0D9488] text-white p-5 lg:p-6 rounded-md shadow-sm border border-teal-700/30 flex flex-col justify-between group hover:shadow-md transition-all duration-200">
+            <div>
+              <div className="flex items-start justify-between gap-3">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-teal-100 leading-tight">
+                  Upcoming Consultations
+                </span>
+                <div className="w-10 h-10 rounded-md bg-white/20 flex items-center justify-center text-white shrink-0 shadow-inner">
+                  <CalendarDays className="w-5 h-5 text-white" />
+                </div>
+              </div>
+
+              <div className="mt-3">
+                <div className="text-3xl lg:text-4xl font-extrabold tracking-tight text-white leading-none">
+                  {stats ? stats.upcomingAppointments : '—'}
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-4 pt-3 border-t border-white/15 flex items-center justify-between text-xs">
+              <span className="text-teal-100/90 truncate pr-2">
+                Scheduled consultations
+              </span>
+              <span className="text-xs text-white/90 font-medium shrink-0">
+                Confirmed
+              </span>
+            </div>
+          </div>
+
+          {/* Card 4: Callback Requests — Muted Gold / Warm Amber (#D97706) */}
+          <div className="bg-[#D97706] text-white p-5 lg:p-6 rounded-md shadow-sm border border-amber-700/30 flex flex-col justify-between group hover:shadow-md transition-all duration-200">
+            <div>
+              <div className="flex items-start justify-between gap-3">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-amber-100 leading-tight">
+                  Callback Requests
+                </span>
+                <div className="w-10 h-10 rounded-md bg-white/20 flex items-center justify-center text-white shrink-0 shadow-inner">
+                  <PhoneCall className="w-5 h-5 text-white" />
+                </div>
+              </div>
+
+              <div className="mt-3">
+                <div className="text-3xl lg:text-4xl font-extrabold tracking-tight text-white leading-none">
+                  {stats ? stats.pendingHandoffs : '—'}
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-4 pt-3 border-t border-white/15 flex items-center justify-between text-xs">
+              <span className="text-amber-100/90 truncate pr-2">
+                Customers awaiting a call
+              </span>
+              <span className="text-xs text-white/90 font-medium shrink-0">
+                Action Required
+              </span>
+            </div>
+          </div>
         </div>
 
-        {/* Metric 2: Action Required */}
-        <div className="bg-white rounded-xl p-5 border border-black/[0.06] shadow-xs flex flex-col justify-between border-l-3 border-l-[#FE6000]">
-          <div className="text-xs font-medium text-[#FE6000] tracking-wide uppercase">
-            Action Required
-          </div>
-          <div className="my-2.5">
-            <div className="text-3xl font-semibold text-[#FE6000] tracking-tight">
-              {loading ? '—' : stats?.newEnquiries ?? 0}
-            </div>
-            <p className="text-xs text-zinc-500 mt-0.5">Awaiting first review</p>
-          </div>
-          <div className="text-[11px] text-zinc-400">&lt; 2-hour response goal</div>
-        </div>
+        {/* Right: Tall 60-Day Enquiry Activity Chart Panel (approx 45% width on desktop) */}
+        <div className="lg:col-span-5 bg-[#25002D] text-white rounded-md p-6 shadow-sm border border-purple-900/40 flex flex-col justify-between">
+          <div>
+            {/* Chart Header */}
+            <div className="flex items-start justify-between gap-3 mb-2">
+              <div>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-base font-bold text-white tracking-tight">
+                    Enquiry Activity Over Time
+                  </h2>
+                </div>
+                <p className="text-xs text-purple-200/70 mt-0.5">
+                  Enquiries received in the last 60 days
+                </p>
+              </div>
 
-        {/* Metric 3: Pipeline */}
-        <div className="bg-white rounded-xl p-5 border border-black/[0.06] shadow-xs flex flex-col justify-between">
-          <div className="text-xs font-medium text-zinc-500 tracking-wide uppercase">
-            In Pipeline
-          </div>
-          <div className="my-2.5">
-            <div className="text-3xl font-semibold text-zinc-900 tracking-tight">
-              {loading ? '—' : (stats?.reviewed ?? 0) + (stats?.scheduled ?? 0)}
+              <span className="text-xs font-medium text-purple-200/90 px-2.5 py-1 rounded-md bg-white/10 border border-white/10 shrink-0">
+                Last 60 Days
+              </span>
             </div>
-            <p className="text-xs text-zinc-400 mt-0.5">Reviewed or scheduled</p>
-          </div>
-          <div className="text-[11px] text-zinc-400">
-            {stats?.reviewed ?? 0} reviewed • {stats?.scheduled ?? 0} scheduled
-          </div>
-        </div>
 
-        {/* Metric 4: Customer Follow-ups */}
-        <div className="bg-white rounded-xl p-5 border border-black/[0.06] shadow-xs flex flex-col justify-between">
-          <div className="text-xs font-medium text-zinc-500 tracking-wide uppercase">
-            Customer Follow-ups
-          </div>
-          <div className="my-2.5">
-            <div className="text-3xl font-semibold text-zinc-900 tracking-tight">
-              {loading ? '—' : stats?.pendingHandoffs ?? 0}
+            {/* Micro Metrics Summary Bar */}
+            <div className="flex items-center gap-4 sm:gap-6 mt-3 pt-3 border-t border-purple-800/40 text-xs">
+              <div>
+                <span className="text-purple-200/60 block text-[10px] uppercase font-bold tracking-wider">
+                  60-Day Total
+                </span>
+                <span className="text-white font-extrabold text-base">
+                  {total60DayVolume}
+                </span>
+              </div>
+              <div>
+                <span className="text-purple-200/60 block text-[10px] uppercase font-bold tracking-wider">
+                  Peak Day
+                </span>
+                <span className="text-[#C8E80B] font-extrabold text-base">
+                  {peakDayCount}
+                </span>
+              </div>
+              <div>
+                <span className="text-purple-200/60 block text-[10px] uppercase font-bold tracking-wider">
+                  Region
+                </span>
+                <span className="text-white font-extrabold text-base">
+                  Ottawa, ON
+                </span>
+              </div>
             </div>
-            <p className="text-xs text-zinc-400 mt-0.5">Requests awaiting staff follow-up</p>
           </div>
-          <div className="text-[11px] text-zinc-400">Callback & inquiry follow-ups</div>
+
+          {/* Chart Display Area */}
+          <div className="h-48 sm:h-56 lg:h-52 w-full mt-3">
+            {mounted && timelineChartData.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart
+                  data={timelineChartData}
+                  margin={{ top: 10, right: 10, left: -24, bottom: 0 }}
+                >
+                  <defs>
+                    <linearGradient id="limeChartGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#C8E80B" stopOpacity={0.35} />
+                      <stop offset="85%" stopColor="#C8E80B" stopOpacity={0.02} />
+                      <stop offset="100%" stopColor="#C8E80B" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    vertical={false}
+                    stroke="rgba(255, 255, 255, 0.08)"
+                  />
+                  <XAxis
+                    dataKey="label"
+                    stroke="#D4D4D8"
+                    fontSize={10}
+                    tickLine={false}
+                    axisLine={{ stroke: 'rgba(255, 255, 255, 0.12)' }}
+                    minTickGap={28}
+                  />
+                  <YAxis
+                    stroke="#D4D4D8"
+                    fontSize={10}
+                    tickLine={false}
+                    axisLine={false}
+                    allowDecimals={false}
+                  />
+                  <Tooltip content={<CustomChartTooltip />} />
+                  <Area
+                    type="monotone"
+                    dataKey="count"
+                    stroke="#C8E80B"
+                    strokeWidth={2.5}
+                    fillOpacity={1}
+                    fill="url(#limeChartGradient)"
+                    name="Enquiries"
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-full flex items-center justify-center text-xs text-purple-200/50">
+                {loading ? 'Loading enquiry activity...' : 'No historical enquiry activity recorded in this period.'}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* Executive Operational Overview - Coherent control surface, no boxes inside boxes */}
-      <div className="bg-white rounded-xl border border-black/[0.06] shadow-xs p-6">
-        <div className="flex items-center justify-between pb-4 border-b border-black/[0.06]">
-          <div>
-            <h2 className="text-sm font-semibold text-zinc-900">Operational Priority Checklist</h2>
-            <p className="text-xs text-zinc-500 mt-0.5">Key daily touchpoints requiring lead coordinator response.</p>
-          </div>
-          <span className="text-[11px] text-zinc-400 font-medium">Daily Target: 100% Qualified</span>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-black/[0.06] pt-4">
-          {/* Column 1 */}
-          <div className="py-3 md:py-0 md:pr-6">
-            <div className="flex items-center justify-between mb-1.5">
-              <span className="text-xs font-semibold text-zinc-800">Unreviewed Inquiries</span>
-              <span className="text-xs font-bold text-[#FE6000]">{stats?.newEnquiries ?? 0}</span>
+      {/* ========================================================================= */}
+      {/* 2. LOWER OPERATIONAL SECTION — CRM Data Table & Service Demand Breakdown  */}
+      {/* ========================================================================= */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* Recent Inbound Enquiries Table (8 cols on desktop) */}
+        <div className="lg:col-span-8 bg-white rounded-md border border-zinc-200/80 shadow-sm overflow-hidden">
+          <div className="p-5 border-b border-zinc-200/80 flex items-center justify-between">
+            <div>
+              <h2 className="text-sm font-bold text-zinc-900">Recent Customer Enquiries</h2>
+              <p className="text-xs text-zinc-500 mt-0.5">
+                Latest customer submissions awaiting assessment or dispatch
+              </p>
             </div>
-            <p className="text-xs text-zinc-500 leading-relaxed">
-              {(stats?.newEnquiries ?? 0) > 0
-                ? `${stats?.newEnquiries} customer lead(s) require qualification and estimate dispatch.`
-                : 'All inbound quote requests have been reviewed and processed.'}
-            </p>
-            <Link
-              href="/admin/enquiries?status=new"
-              className="inline-flex items-center gap-1 text-xs font-medium text-[#49056B] hover:text-[#5B0785] mt-2.5 transition-colors"
-            >
-              <span>Review pending leads</span>
-              <ArrowRight className="w-3 h-3" />
-            </Link>
-          </div>
-
-          {/* Column 2 */}
-          <div className="py-3 md:py-0 md:px-6">
-            <div className="flex items-center justify-between mb-1.5">
-              <span className="text-xs font-semibold text-zinc-800">Customer Callback Requests</span>
-              <span className="text-xs font-bold text-zinc-900">{stats?.pendingHandoffs ?? 0}</span>
-            </div>
-            <p className="text-xs text-zinc-500 leading-relaxed">
-              {(stats?.pendingHandoffs ?? 0) > 0
-                ? `${stats?.pendingHandoffs} visitor chat session(s) awaiting telephone or email follow-up.`
-                : 'No pending callback requests requiring follow-up.'}
-            </p>
             <Link
               href="/admin/enquiries"
-              className="inline-flex items-center gap-1 text-xs font-medium text-[#49056B] hover:text-[#5B0785] mt-2.5 transition-colors"
+              className="text-xs font-semibold text-[#390044] hover:text-[#520062] inline-flex items-center gap-1.5 transition-colors"
             >
-              <span>View callback requests</span>
-              <ArrowRight className="w-3 h-3" />
+              <span>View All ({stats ? stats.totalEnquiries : 0})</span>
+              <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           </div>
 
-          {/* Column 3 */}
-          <div className="py-3 md:py-0 md:pl-6">
-            <div className="flex items-center justify-between mb-1.5">
-              <span className="text-xs font-semibold text-zinc-800">
-                {(stats?.failedDeliveries ?? 0) > 0
-                  ? 'Email Notifications Needing Attention'
-                  : 'Dispatch Notifications'}
-              </span>
-              <span className={`text-xs font-medium ${(stats?.failedDeliveries ?? 0) > 0 ? 'text-amber-600 font-bold' : 'text-emerald-600'}`}>
-                {(stats?.failedDeliveries ?? 0) > 0 ? `${stats?.failedDeliveries} Alert` : 'Active'}
-              </span>
-            </div>
-            <p className="text-xs text-zinc-500 leading-relaxed">
-              {(stats?.failedDeliveries ?? 0) === 0
-                ? 'Outbound email notifications operational. Zero delivery failures logged.'
-                : `${stats?.failedDeliveries} email notification(s) needing attention.`}
-            </p>
-            <span className="inline-block text-[11px] text-zinc-400 mt-2.5">
-              Automated logging enabled
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* Upcoming Customer Consultations */}
-      <div className="bg-white rounded-xl border border-black/[0.06] shadow-xs overflow-hidden">
-        <div className="px-6 py-4 border-b border-black/[0.06] flex items-center justify-between">
-          <div>
-            <h2 className="text-sm font-semibold text-zinc-900">Upcoming Customer Consultations</h2>
-            <p className="text-xs text-zinc-500 mt-0.5">
-              Scheduled calls, property assessments, and video meetings in Ottawa local time.
-            </p>
-          </div>
-          <Link
-            href="/admin/appointments"
-            className="text-xs font-semibold text-[#49056B] hover:text-[#5B0785] inline-flex items-center gap-1 transition-colors"
-          >
-            <span>View Calendar</span>
-            <ArrowRight className="w-3.5 h-3.5" />
-          </Link>
-        </div>
-
-        <div className="p-6">
-          {upcomingAppointments.length === 0 ? (
-            <div className="py-6 text-center text-xs text-zinc-400">
-              No upcoming consultations scheduled. Consultations booked via customer enquiries will appear here.
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-              {upcomingAppointments.map((apt) => {
-                const statusBadge = formatAppointmentStatus(apt.status);
-                return (
-                  <Link
-                    key={apt.id}
-                    href="/admin/appointments"
-                    className="p-3.5 rounded-xl border border-black/[0.06] bg-zinc-50/60 hover:bg-zinc-50 hover:border-[#49056B]/20 transition-all flex flex-col justify-between space-y-2.5"
-                  >
-                    <div>
-                      <div className="flex items-center justify-between gap-2 mb-1.5">
-                        <span
-                          className={`px-2 py-0.5 rounded text-[10px] font-bold border uppercase tracking-wider ${statusBadge.color} ${statusBadge.bg}`}
-                        >
-                          {statusBadge.label}
-                        </span>
-                        <span className="text-[11px] text-zinc-400 font-medium">
-                          {formatAppointmentType(apt.appointmentType)}
-                        </span>
-                      </div>
-                      <div className="text-xs font-bold text-zinc-900 truncate">{apt.title}</div>
-                      <div className="text-[11px] text-zinc-500">{apt.customerName}</div>
-                    </div>
-
-                    <div className="pt-2 border-t border-black/[0.04] text-[11px] text-zinc-600 flex items-center justify-between">
-                      <span className="font-medium text-[#49056B]">
-                        {formatOttawaDate(apt.scheduledStart)} · {formatOttawaTime(apt.scheduledStart)}
-                      </span>
-                      <span>{apt.durationMinutes}m</span>
-                    </div>
-                  </Link>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Recent Enquiries Table - Editorial, calm typography */}
-      <div className="bg-white rounded-xl border border-black/[0.06] shadow-xs overflow-hidden">
-        <div className="px-6 py-4 border-b border-black/[0.06] flex items-center justify-between">
-          <div>
-            <h2 className="text-sm font-semibold text-zinc-900">Recent Customer Inquiries</h2>
-            <p className="text-xs text-zinc-500 mt-0.5">
-              Latest submissions received via website estimate forms and contact routes.
-            </p>
-          </div>
-          <Link
-            href="/admin/enquiries"
-            className="text-xs font-semibold text-[#49056B] hover:text-[#5B0785] inline-flex items-center gap-1 transition-colors"
-          >
-            <span>View All ({stats?.totalEnquiries ?? 0})</span>
-            <ArrowRight className="w-3.5 h-3.5" />
-          </Link>
-        </div>
-
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse text-xs">
-            <thead>
-              <tr className="bg-zinc-50/60 border-b border-black/[0.06] text-zinc-400 font-semibold uppercase tracking-wider text-[10px]">
-                <th className="py-3 px-6">Reference</th>
-                <th className="py-3 px-6">Customer</th>
-                <th className="py-3 px-6">Services</th>
-                <th className="py-3 px-6">Location</th>
-                <th className="py-3 px-6">Status</th>
-                <th className="py-3 px-6 text-right">Action</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-black/[0.04]">
-              {recentEnquiries.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="py-10 text-center text-zinc-400">
-                    {loading ? 'Loading records...' : 'No enquiries found.'}
-                  </td>
-                </tr>
-              ) : (
-                recentEnquiries.map((enq) => (
-                  <tr key={enq.id} className="hover:bg-zinc-50/60 transition-colors">
-                    <td className="py-3.5 px-6 text-zinc-500 text-[11px]">
-                      <div className="font-semibold text-zinc-900 tracking-tight">{enq.id}</div>
-                      <div className="text-zinc-500 text-[10px]">
-                        {formatCanadianDate(enq.createdAt)} · {formatEnquirySource(enq.source)}
-                      </div>
-                    </td>
-                    <td className="py-3.5 px-6">
-                      <div className="font-medium text-zinc-900">{enq.customer.name}</div>
-                      <div className="text-zinc-400 text-[11px]">{enq.customer.email}</div>
-                    </td>
-                    <td className="py-3.5 px-6">
-                      <span className="text-xs text-zinc-700 capitalize font-medium">
-                        {enq.services.join(' • ')}
-                      </span>
-                    </td>
-                    <td className="py-3.5 px-6 text-zinc-600">
-                      {enq.serviceLocation || 'Ottawa, ON'}
-                    </td>
-                    <td className="py-3.5 px-6">
-                      {renderStatus(enq.status)}
-                    </td>
-                    <td className="py-3.5 px-6 text-right">
-                      <Link
-                        href={`/admin/enquiries?id=${enq.id}`}
-                        className="inline-flex items-center text-xs font-semibold text-[#49056B] hover:text-[#FE6000] transition-colors"
-                      >
-                        Inspect
-                      </Link>
-                    </td>
+          <div className="overflow-x-auto">
+            {recentEnquiries.length > 0 ? (
+              <table className="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr className="bg-zinc-50/80 border-b border-zinc-200/80 text-[11px] font-bold uppercase tracking-wider text-zinc-500">
+                    <th className="py-3 px-5">Customer</th>
+                    <th className="py-3 px-4">Services</th>
+                    <th className="py-3 px-4 hidden md:table-cell">Received</th>
+                    <th className="py-3 px-4">Status</th>
+                    <th className="py-3 px-5 text-right">Action</th>
                   </tr>
-                ))
+                </thead>
+                <tbody className="divide-y divide-zinc-100">
+                  {recentEnquiries.map((enq) => (
+                    <tr
+                      key={enq.id}
+                      className="hover:bg-zinc-50/70 transition-colors group"
+                    >
+                      <td className="py-3.5 px-5">
+                        <div className="font-semibold text-zinc-900 text-sm">{enq.customer.name}</div>
+                        <div className="text-xs text-zinc-500 truncate max-w-[200px]">
+                          {enq.customer.email}
+                        </div>
+                      </td>
+                      <td className="py-3.5 px-4">
+                        <div className="flex flex-wrap gap-1">
+                          {enq.services.map((svc) => (
+                            <span
+                              key={svc}
+                              className="px-2 py-0.5 rounded-[4px] text-xs font-medium bg-zinc-100 text-zinc-700 capitalize border border-zinc-200"
+                            >
+                              {svc}
+                            </span>
+                          ))}
+                        </div>
+                      </td>
+                      <td className="py-3.5 px-4 text-zinc-500 hidden md:table-cell text-xs">
+                        {formatCanadianDate(enq.createdAt)}
+                      </td>
+                      <td className="py-3.5 px-4">
+                        {renderStatusBadge(enq.status)}
+                      </td>
+                      <td className="py-3.5 px-5 text-right">
+                        <Link
+                          href={`/admin/enquiries?id=${enq.id}`}
+                          className="inline-flex items-center gap-1 text-xs font-semibold text-[#390044] hover:text-[#520062] px-2.5 py-1 rounded-md hover:bg-purple-50 transition-colors"
+                        >
+                          <span>Review</span>
+                          <ChevronRight className="w-3.5 h-3.5" />
+                        </Link>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : (
+              <div className="p-8 text-center text-xs text-zinc-400">
+                {loading ? 'Loading customer enquiries...' : 'No enquiries found.'}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Right Column: Service Demand, Upcoming Consultations & Attention (4 cols on desktop) */}
+        <div className="lg:col-span-4 space-y-6">
+          {/* Secondary Card: Service Demand Breakdown */}
+          <div className="bg-white p-5 sm:p-6 rounded-md border border-zinc-200/80 shadow-sm flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h2 className="text-sm font-bold text-zinc-900">Service Demand</h2>
+                  <p className="text-[11px] text-zinc-500 mt-0.5">Distribution by service category</p>
+                </div>
+              </div>
+
+              {serviceChartData.length > 0 ? (
+                <div className="space-y-3.5 my-2">
+                  {serviceChartData.map((item) => {
+                    const total = stats?.totalEnquiries || 1;
+                    const pct = Math.round((item.count / total) * 100);
+                    const color = SERVICE_COLORS[item.name] || '#6B7280';
+                    return (
+                      <div key={item.name} className="space-y-1">
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="font-semibold text-zinc-800">{item.name}</span>
+                          <span className="text-zinc-500 font-medium">
+                            {item.count} ({pct}%)
+                          </span>
+                        </div>
+                        <div className="w-full h-2 rounded-[2px] bg-zinc-100 overflow-hidden">
+                          <div
+                            className="h-full rounded-[2px] transition-all duration-300"
+                            style={{ width: `${Math.min(pct, 100)}%`, backgroundColor: color }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="h-36 flex items-center justify-center text-xs text-zinc-400">
+                  {loading ? 'Loading service breakdown...' : 'No service data available.'}
+                </div>
               )}
-            </tbody>
-          </table>
+            </div>
+
+            <div className="pt-4 mt-2 border-t border-zinc-100 flex items-center justify-between text-[11px] text-zinc-500">
+              <span>Primary Focus: Ottawa & Region</span>
+              <Link
+                href="/admin/enquiries"
+                className="text-[#390044] font-semibold hover:underline inline-flex items-center gap-1"
+              >
+                <span>View Enquiries</span>
+                <ArrowRight className="w-3 h-3" />
+              </Link>
+            </div>
+          </div>
+
+          {/* Upcoming Consultations Box */}
+          <div className="bg-white p-5 sm:p-6 rounded-md border border-zinc-200/80 shadow-sm">
+            <div className="flex items-center justify-between mb-3.5 pb-2.5 border-b border-zinc-100">
+              <h2 className="text-sm font-bold text-zinc-900">Upcoming Consultations</h2>
+              <Link
+                href="/admin/appointments"
+                className="text-xs font-semibold text-[#390044] hover:underline"
+              >
+                Schedule
+              </Link>
+            </div>
+
+            {upcomingAppointments.length > 0 ? (
+              <div className="space-y-3">
+                {upcomingAppointments.map((apt) => (
+                  <div
+                    key={apt.id}
+                    className="p-3 rounded-md bg-zinc-50/80 border border-zinc-200/60 text-xs space-y-1.5 hover:border-zinc-300 transition-colors"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="font-semibold text-zinc-900 truncate pr-2">
+                        {apt.title}
+                      </span>
+                      <span className="px-2 py-0.5 rounded-[4px] text-xs font-medium bg-white border border-zinc-200 text-zinc-700 capitalize shrink-0">
+                        {apt.status}
+                      </span>
+                    </div>
+                    <div className="text-zinc-600 text-[11px]">
+                      Customer: {apt.customerName}
+                    </div>
+                    <div className="flex items-center gap-2 text-[11px] text-zinc-500 pt-0.5">
+                      <Clock className="w-3.5 h-3.5 text-zinc-400" />
+                      <span>{formatOttawaDate(apt.scheduledStart)} at {formatOttawaTime(apt.scheduledStart)}</span>
+                    </div>
+                    {apt.assignedStaffName && (
+                      <div className="text-[10px] text-zinc-400">
+                        Staff: {apt.assignedStaffName}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="py-6 text-center text-xs text-zinc-400">
+                No consultations currently scheduled.
+              </div>
+            )}
+          </div>
+
+          {/* Restrained Needs Attention Section */}
+          <div className="bg-white p-5 sm:p-6 rounded-md border border-zinc-200/80 shadow-sm">
+            <div className="flex items-center justify-between mb-3.5 pb-2.5 border-b border-zinc-100">
+              <h2 className="text-sm font-bold text-zinc-900">Needs Attention</h2>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">
+                Staff Tasks
+              </span>
+            </div>
+
+            <div className="space-y-2.5 text-xs">
+              <div className="flex items-start gap-2.5 p-3 rounded-md bg-orange-50/50 border border-orange-200/60">
+                <Clock className="w-4 h-4 text-[#FE6000] shrink-0 mt-0.5" />
+                <div className="min-w-0">
+                  <p className="font-semibold text-zinc-900">
+                    {stats?.newEnquiries || 0} enquiries awaiting review
+                  </p>
+                  <p className="text-[11px] text-zinc-500 mt-0.5">
+                    Assess service requirements and confirm estimates with customers.
+                  </p>
+                </div>
+              </div>
+
+              {stats?.pendingHandoffs && stats.pendingHandoffs > 0 ? (
+                <div className="flex items-start gap-2.5 p-3 rounded-md bg-amber-50/50 border border-amber-200/60">
+                  <PhoneCall className="w-4 h-4 text-[#D97706] shrink-0 mt-0.5" />
+                  <div className="min-w-0">
+                    <p className="font-semibold text-zinc-900">
+                      {stats.pendingHandoffs} customers awaiting a call
+                    </p>
+                    <p className="text-[11px] text-zinc-500 mt-0.5">
+                      Respond to customer telephone callback inquiries.
+                    </p>
+                  </div>
+                </div>
+              ) : null}
+            </div>
+          </div>
         </div>
       </div>
     </div>

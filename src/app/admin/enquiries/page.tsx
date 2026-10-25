@@ -18,27 +18,32 @@ import {
   CalendarPlus,
   ChevronDown,
   ChevronRight,
-  CalendarCheck,
   RotateCcw,
   Ban,
   Check,
   ExternalLink,
+  AlertCircle,
+  FilterX,
+  Copy,
+  CheckCircle2,
+  Video,
 } from 'lucide-react';
 import {
   formatEnquirySource,
   formatCanadianDate,
   formatCanadianDateTime,
   formatEnquiryReceivedHeader,
-  formatNoteAuthor,
-  formatNoteContent,
   formatServiceParamLabel,
   formatServiceParamValue,
-  formatOttawaDate,
-  formatOttawaTimeRange,
+  formatOttawaAppointmentDate,
+  formatOttawaAppointmentTimeRange,
   formatAppointmentType,
   formatAppointmentStatus,
 } from '@/lib/utils/formatters';
 import ScheduleMeetingModal from '@/components/admin/ScheduleMeetingModal';
+import { AdminBadge } from '@/components/admin/ui/AdminBadge';
+import { AdminButton } from '@/components/admin/ui/AdminButton';
+import { ConfirmDialog } from '@/components/admin/ui/ConfirmDialog';
 
 interface EnquiryItem {
   id: string;
@@ -91,7 +96,9 @@ export default function AdminEnquiriesPage() {
   const [serviceFilter, setServiceFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
 
+  const [totalDbCount, setTotalDbCount] = useState<number | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
+  const [apiError, setApiError] = useState<string | null>(null);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState<boolean>(false);
   const [newNoteText, setNewNoteText] = useState<string>('');
   const [statusError, setStatusError] = useState<string>('');
@@ -103,6 +110,17 @@ export default function AdminEnquiriesPage() {
   const [enquiryAppointments, setEnquiryAppointments] = useState<any[]>([]);
   const [loadingAppointments, setLoadingAppointments] = useState(false);
   const [appointmentActionMsg, setAppointmentActionMsg] = useState<string | null>(null);
+
+  // Custom confirmation dialog for cancellations
+  const [cancelDialogState, setCancelDialogState] = useState<{
+    isOpen: boolean;
+    appointmentId: string | null;
+    isLoading: boolean;
+  }>({
+    isOpen: false,
+    appointmentId: null,
+    isLoading: false,
+  });
 
   const loadEnquiryAppointments = async (enquiryId: string) => {
     try {
@@ -163,29 +181,41 @@ export default function AdminEnquiriesPage() {
     }
   };
 
-  const handleCancelAppointment = async (aptId: string) => {
-    const reason = window.prompt('Please provide a reason for cancelling this appointment:');
-    if (!reason || !reason.trim()) return;
+  const openCancelDialog = (aptId: string) => {
+    setCancelDialogState({
+      isOpen: true,
+      appointmentId: aptId,
+      isLoading: false,
+    });
+  };
+
+  const handleConfirmCancelAppointment = async (reason?: string) => {
+    if (!cancelDialogState.appointmentId) return;
 
     try {
-      const res = await fetch(`/api/admin/appointments/${aptId}/cancel`, {
+      setCancelDialogState((prev) => ({ ...prev, isLoading: true }));
+      const res = await fetch(`/api/admin/appointments/${cancelDialogState.appointmentId}/cancel`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ reason: reason.trim(), notifyCustomer: true }),
+        body: JSON.stringify({ reason: reason || 'Cancelled by staff coordinator', notifyCustomer: true }),
       });
+
       if (res.ok && selectedEnquiry) {
         await loadEnquiryAppointments(selectedEnquiry.id);
-        setAppointmentActionMsg('Consultation cancelled.');
+        setAppointmentActionMsg('Consultation cancelled successfully.');
         setTimeout(() => setAppointmentActionMsg(null), 3500);
       }
     } catch (err) {
       console.error('Cancellation failed:', err);
+    } finally {
+      setCancelDialogState({ isOpen: false, appointmentId: null, isLoading: false });
     }
   };
 
   const loadData = async () => {
     try {
       setLoading(true);
+      setApiError(null);
       const [enqRes, handoffsRes] = await Promise.all([
         fetch('/api/admin/enquiries?limit=200', { cache: 'no-store' }),
         fetch('/api/admin/handoffs', { cache: 'no-store' }),
@@ -195,6 +225,7 @@ export default function AdminEnquiriesPage() {
         const enqData = await enqRes.json();
         const list: EnquiryItem[] = enqData.enquiries || [];
         setEnquiries(list);
+        setTotalDbCount(typeof enqData.total === 'number' ? enqData.total : list.length);
 
         if (initialEnquiryId) {
           const match = list.find((e) => e.id === initialEnquiryId);
@@ -203,14 +234,18 @@ export default function AdminEnquiriesPage() {
           const updated = list.find((e) => e.id === selectedEnquiry.id);
           if (updated) setSelectedEnquiry(updated);
         }
+      } else {
+        const errData = await enqRes.json().catch(() => ({}));
+        setApiError(errData.error || `Server responded with status ${enqRes.status}`);
       }
 
       if (handoffsRes.ok) {
         const hData = await handoffsRes.json();
         setHandoffs(hData.handoffs || []);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('[Enquiries Page Load Error]:', err);
+      setApiError('Unable to connect to administrative services. Please check network or server status.');
     } finally {
       setLoading(false);
     }
@@ -286,370 +321,434 @@ export default function AdminEnquiriesPage() {
     return true;
   });
 
-  // Clean, restrained status presentation without decorative dots or badge-heavy styling
-  const renderStatus = (status: string) => {
-    switch (status) {
-      case 'new':
-        return <span className="text-xs font-semibold text-[#FE6000]">New Lead</span>;
-      case 'reviewed':
-        return <span className="text-xs font-medium text-zinc-700">Reviewed</span>;
-      case 'quoted':
-        return <span className="text-xs font-medium text-[#49056B]">Quoted</span>;
-      case 'scheduled':
-        return <span className="text-xs font-medium text-emerald-700">Scheduled</span>;
-      case 'closed':
-        return <span className="text-xs text-zinc-400">Closed</span>;
-      default:
-        return <span className="text-xs text-zinc-500 capitalize">{status}</span>;
-    }
+  const clearAllFilters = () => {
+    setSearchQuery('');
+    setStatusFilter('all');
+    setServiceFilter('all');
   };
+
+  const hasActiveFilters = searchQuery.trim() !== '' || statusFilter !== 'all' || serviceFilter !== 'all';
 
   return (
     <div className="space-y-6">
-      {/* Title & View Segmented Control */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-2">
+      {/* Top Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-1">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-zinc-900">
-            Customer Enquiries & Dispatch
+          <h1 className="text-2xl sm:text-[26px] font-bold tracking-tight text-zinc-900">
+            Customer Enquiries
           </h1>
-          <p className="text-sm text-zinc-500 mt-1">
-            Review inbound quote requests, qualify leads, and manage customer communications.
+          <p className="text-sm text-zinc-500 mt-0.5">
+            Manage incoming quote requests, customer consultations, and Ottawa dispatch.
           </p>
         </div>
 
-        <div className="flex items-center p-1 bg-zinc-200/60 rounded-[10px] self-start sm:self-auto">
+        <div className="flex items-center gap-3">
+          <AdminButton
+            variant="outline"
+            size="sm"
+            onClick={loadData}
+            isLoading={loading}
+            leftIcon={<RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />}
+          >
+            Refresh
+          </AdminButton>
+        </div>
+      </div>
+
+      {apiError && (
+        <div className="p-4 rounded-md bg-amber-50 border border-amber-200 text-amber-900 text-sm flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <AlertCircle className="w-5 h-5 text-amber-600 shrink-0" />
+            <span>{apiError}</span>
+          </div>
+          <button
+            onClick={loadData}
+            className="text-amber-800 font-semibold underline hover:no-underline ml-4"
+          >
+            Retry
+          </button>
+        </div>
+      )}
+
+      {/* Tabs */}
+      <div className="border-b border-zinc-200">
+        <nav className="flex space-x-6">
           <button
             onClick={() => setActiveTab('enquiries')}
-            className={`px-3.5 py-1.5 rounded-md text-xs font-semibold transition-all ${
+            className={`py-3 text-sm font-semibold border-b-2 transition-colors ${
               activeTab === 'enquiries'
-                ? 'bg-white text-zinc-900 shadow-2xs'
-                : 'text-zinc-600 hover:text-zinc-900'
+                ? 'border-[#49056B] text-[#49056B]'
+                : 'border-transparent text-zinc-500 hover:text-zinc-700 hover:border-zinc-300'
             }`}
           >
-            Inbound Enquiries ({enquiries.length})
+            Enquiries List
+            <span className="ml-2 px-2 py-0.5 text-xs rounded-[4px] bg-zinc-100 text-zinc-600">
+              {enquiries.length}
+            </span>
           </button>
           <button
             onClick={() => setActiveTab('handoffs')}
-            className={`px-3.5 py-1.5 rounded-md text-xs font-semibold transition-all ${
+            className={`py-3 text-sm font-semibold border-b-2 transition-colors ${
               activeTab === 'handoffs'
-                ? 'bg-white text-zinc-900 shadow-2xs'
-                : 'text-zinc-600 hover:text-zinc-900'
+                ? 'border-[#49056B] text-[#49056B]'
+                : 'border-transparent text-zinc-500 hover:text-zinc-700 hover:border-zinc-300'
             }`}
           >
-            Callback Requests ({handoffs.length})
+            Assistant Callbacks
+            {handoffs.length > 0 && (
+              <span className="ml-2 px-2 py-0.5 text-xs rounded-[4px] bg-orange-100 text-[#FE6000] font-bold">
+                {handoffs.length}
+              </span>
+            )}
           </button>
-        </div>
+        </nav>
       </div>
 
-      {/* Filter & Search Bar - Clean, calm, restrained */}
-      <div className="bg-white rounded-xl p-3.5 border border-black/[0.06] shadow-xs">
-        <div className="flex flex-col md:flex-row gap-3">
-          {/* Search Box */}
-          <div className="relative flex-1">
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search by customer name, email, phone, location or ID..."
-              className="w-full pl-9 pr-4 py-2 bg-[#F8F7F4] border border-black/10 rounded-[10px] text-xs text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#49056B] focus:border-transparent transition-all"
-            />
-            <Search className="w-4 h-4 text-zinc-400 absolute left-3 top-2.5" />
+      {/* ========================================================================= */}
+      {/* TOOLBAR: WowDash & Geex Inspired Consistent Controls (44px height)         */}
+      {/* ========================================================================= */}
+      {activeTab === 'enquiries' && (
+        <div className="bg-white p-4 sm:p-5 rounded-md border border-zinc-200 shadow-sm space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
+            {/* Search Input (6 cols) */}
+            <div className="md:col-span-6 relative flex items-center">
+              <Search className="w-4 h-4 text-zinc-400 absolute left-3.5 pointer-events-none" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search by customer, email, phone, reference..."
+                className="w-full h-11 pl-10 pr-10 text-sm bg-white text-zinc-900 border border-zinc-300 rounded-lg placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#49056B]/20 focus:border-[#49056B] transition-all"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-3 text-zinc-400 hover:text-zinc-600 p-1"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+
+            {/* Status Filter Dropdown (3 cols) */}
+            <div className="md:col-span-3">
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="w-full h-11 px-3.5 text-sm bg-white text-zinc-900 border border-zinc-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#49056B]/20 focus:border-[#49056B] transition-all"
+              >
+                <option value="all">All Statuses</option>
+                <option value="new">Awaiting Review</option>
+                <option value="reviewed">Reviewed</option>
+                <option value="quoted">Quoted</option>
+                <option value="scheduled">Scheduled</option>
+                <option value="closed">Closed</option>
+              </select>
+            </div>
+
+            {/* Service Filter Dropdown (3 cols) */}
+            <div className="md:col-span-3 flex items-center gap-2">
+              <select
+                value={serviceFilter}
+                onChange={(e) => setServiceFilter(e.target.value)}
+                className="w-full h-11 px-3.5 text-sm bg-white text-zinc-900 border border-zinc-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#49056B]/20 focus:border-[#49056B] transition-all"
+              >
+                <option value="all">All Services</option>
+                <option value="moving">Moving</option>
+                <option value="cleaning">Cleaning</option>
+                <option value="storage">Storage</option>
+              </select>
+
+              {hasActiveFilters && (
+                <AdminButton
+                  variant="ghost"
+                  size="sm"
+                  onClick={clearAllFilters}
+                  className="shrink-0 text-zinc-500 hover:text-[#49056B] h-11"
+                  leftIcon={<FilterX className="w-4 h-4" />}
+                >
+                  Reset
+                </AdminButton>
+              )}
+            </div>
           </div>
 
-          <div className="flex items-center gap-2 overflow-x-auto pb-1 md:pb-0">
-            {/* Status Filter */}
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              aria-label="Filter by status"
-              className="px-3 py-2 bg-[#F8F7F4] border border-black/10 rounded-[10px] text-xs font-medium text-zinc-700 focus:outline-none focus:ring-2 focus:ring-[#49056B]"
-            >
-              <option value="all">All Statuses</option>
-              <option value="new">New Leads</option>
-              <option value="reviewed">Reviewed</option>
-              <option value="quoted">Quoted</option>
-              <option value="scheduled">Scheduled</option>
-              <option value="closed">Closed</option>
-            </select>
-
-            {/* Service Filter */}
-            <select
-              value={serviceFilter}
-              onChange={(e) => setServiceFilter(e.target.value)}
-              aria-label="Filter by service"
-              className="px-3 py-2 bg-[#F8F7F4] border border-black/10 rounded-[10px] text-xs font-medium text-zinc-700 focus:outline-none focus:ring-2 focus:ring-[#49056B]"
-            >
-              <option value="all">All Services</option>
-              <option value="cleaning">Cleaning</option>
-              <option value="moving">Moving</option>
-              <option value="storage">Storage</option>
-              <option value="general">General</option>
-            </select>
-
-            <button
-              onClick={loadData}
-              title="Refresh"
-              aria-label="Refresh data"
-              className="p-2 rounded-[10px] bg-[#F8F7F4] border border-black/10 text-zinc-500 hover:text-[#49056B] transition-colors"
-            >
-              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-[#49056B]' : ''}`} />
-            </button>
+          <div className="flex items-center justify-between text-xs text-zinc-500 pt-2 border-t border-zinc-100">
+            <span>
+              Showing <strong className="text-zinc-900 font-semibold">{filteredEnquiries.length}</strong> of{' '}
+              <strong className="text-zinc-900 font-semibold">{enquiries.length}</strong> enquiries
+              {hasActiveFilters && ' (filtered)'}
+            </span>
+            <span>Ottawa Dispatch Region</span>
           </div>
         </div>
-      </div>
+      )}
 
-      {/* Main Content Area */}
-      {activeTab === 'enquiries' ? (
-        <div className="bg-white rounded-xl border border-black/[0.06] shadow-xs overflow-hidden">
+      {/* ========================================================================= */}
+      {/* DATA TABLE: WowDash & Geex Inspired Complete Container                     */}
+      {/* ========================================================================= */}
+      {activeTab === 'enquiries' && (
+        <div className="bg-white rounded-md border border-zinc-200 shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse text-xs">
-              <thead>
-                <tr className="bg-zinc-50/60 border-b border-black/[0.06] text-zinc-400 font-semibold uppercase tracking-wider text-[10px]">
-                  <th className="py-3 px-6">Reference</th>
-                  <th className="py-3 px-6">Customer</th>
-                  <th className="py-3 px-6">Services</th>
-                  <th className="py-3 px-6">Location</th>
-                  <th className="py-3 px-6">Preferred Timing</th>
-                  <th className="py-3 px-6">Status</th>
-                  <th className="py-3 px-6 text-right">Details</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-black/[0.04]">
-                {loading && enquiries.length === 0 ? (
-                  <tr>
-                    <td colSpan={7} className="py-12 text-center text-zinc-400">
-                      <div className="flex flex-col items-center justify-center gap-2.5" role="status" aria-busy="true">
-                        <div className="relative w-6 h-6 motion-safe:animate-pulse">
-                          <Image
-                            src="/assets/brand/laurrel-symbol.png"
-                            alt="Loading"
-                            fill
-                            sizes="24px"
-                            className="object-contain"
-                          />
-                        </div>
-                        <span className="text-xs text-zinc-400 font-medium tracking-wide">
-                          Loading records from database...
-                        </span>
-                      </div>
-                    </td>
+            {filteredEnquiries.length > 0 ? (
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-zinc-50/80 border-b border-zinc-200 text-xs font-semibold uppercase tracking-wider text-zinc-500">
+                    <th className="py-3.5 px-5">Reference</th>
+                    <th className="py-3.5 px-5">Customer</th>
+                    <th className="py-3.5 px-4">Services</th>
+                    <th className="py-3.5 px-4 hidden md:table-cell">Location</th>
+                    <th className="py-3.5 px-4 hidden lg:table-cell">Received</th>
+                    <th className="py-3.5 px-4">Status</th>
+                    <th className="py-3.5 px-5 text-right">Action</th>
                   </tr>
-                ) : filteredEnquiries.length === 0 ? (
-                  <tr>
-                    <td colSpan={7} className="py-12 text-center text-zinc-400">
-                      No customer enquiries matched your search criteria.
-                    </td>
-                  </tr>
-                ) : (
-                  filteredEnquiries.map((enq) => {
+                </thead>
+                <tbody className="divide-y divide-zinc-100 text-sm">
+                  {filteredEnquiries.map((enq) => {
                     const isSelected = selectedEnquiry?.id === enq.id;
                     return (
                       <tr
                         key={enq.id}
                         onClick={() => setSelectedEnquiry(enq)}
                         className={`cursor-pointer transition-colors ${
-                          isSelected ? 'bg-[#49056B]/[0.04]' : 'hover:bg-zinc-50/60'
+                          isSelected ? 'bg-purple-50/50' : 'hover:bg-zinc-50/80'
                         }`}
                       >
-                        <td className="py-3.5 px-6 text-[11px] text-zinc-500">
-                          <div className="font-semibold text-zinc-900 tracking-tight">{enq.id}</div>
-                          <div className="text-zinc-500 text-[10px]">
-                            {formatCanadianDate(enq.createdAt)} · {formatEnquirySource(enq.source)}
-                          </div>
-                        </td>
-                        <td className="py-3.5 px-6">
-                          <div className="font-medium text-zinc-900">{enq.customer.name}</div>
-                          <div className="text-zinc-400 text-[11px]">{enq.customer.email}</div>
-                          {enq.customer.phone && (
-                            <div className="text-zinc-400 text-[11px]">{enq.customer.phone}</div>
-                          )}
-                        </td>
-                        <td className="py-3.5 px-6">
-                          <span className="text-xs text-zinc-700 capitalize font-medium">
-                            {enq.services.join(' • ')}
+                        {/* Reference */}
+                        <td className="py-3.5 px-5 whitespace-nowrap">
+                          <span className="font-mono text-xs font-semibold text-zinc-600 bg-zinc-100 px-2 py-0.5 rounded">
+                            #{enq.id.slice(0, 8)}
                           </span>
                         </td>
-                        <td className="py-3.5 px-6 text-zinc-600">
-                          {enq.serviceLocation || 'Ottawa Area'}
+
+                        {/* Customer */}
+                        <td className="py-3.5 px-5">
+                          <div className="font-semibold text-zinc-900">{enq.customer.name}</div>
+                          <div className="text-xs text-zinc-500 mt-0.5 flex items-center gap-2">
+                            <span>{enq.customer.email}</span>
+                            {enq.customer.phone && (
+                              <span>• {enq.customer.phone}</span>
+                            )}
+                          </div>
                         </td>
-                        <td className="py-3.5 px-6 text-zinc-600">
-                          {enq.preferredTiming || 'Flexible'}
+
+                        {/* Services */}
+                        <td className="py-3.5 px-4">
+                          <div className="flex flex-wrap gap-1">
+                            {enq.services.map((svc) => (
+                              <span
+                                key={svc}
+                                className="px-2 py-0.5 rounded-md text-xs font-medium bg-zinc-100 text-zinc-700 capitalize"
+                              >
+                                {svc}
+                              </span>
+                            ))}
+                          </div>
                         </td>
-                        <td className="py-3.5 px-6">
-                          {renderStatus(enq.status)}
+
+                        {/* Location */}
+                        <td className="py-3.5 px-4 hidden md:table-cell text-zinc-600 text-xs">
+                          <div className="flex items-center gap-1.5 max-w-[160px] truncate">
+                            <MapPin className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
+                            <span className="truncate">{enq.serviceLocation || 'Ottawa, ON'}</span>
+                          </div>
                         </td>
-                        <td className="py-3.5 px-6 text-right">
-                          <button
+
+                        {/* Received */}
+                        <td className="py-3.5 px-4 hidden lg:table-cell text-zinc-500 text-xs whitespace-nowrap">
+                          {formatCanadianDate(enq.createdAt)}
+                        </td>
+
+                        {/* Status */}
+                        <td className="py-3.5 px-4">
+                          <AdminBadge status={enq.status} />
+                        </td>
+
+                        {/* Action */}
+                        <td className="py-3.5 px-5 text-right whitespace-nowrap">
+                          <AdminButton
+                            variant="ghost"
+                            size="sm"
                             onClick={(e) => {
                               e.stopPropagation();
                               setSelectedEnquiry(enq);
                             }}
-                            className="inline-flex items-center text-xs font-semibold text-[#49056B] hover:text-[#FE6000] transition-colors"
+                            className="text-[#49056B] hover:text-[#390044] hover:bg-purple-50"
+                            rightIcon={<ChevronRight className="w-4 h-4" />}
                           >
-                            Inspect
-                          </button>
+                            Review
+                          </AdminButton>
                         </td>
                       </tr>
                     );
-                  })
+                  })}
+                </tbody>
+              </table>
+            ) : (
+              <div className="py-16 text-center space-y-3">
+                <div className="w-12 h-12 rounded-md bg-zinc-100 flex items-center justify-center mx-auto text-zinc-400">
+                  <Search className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="text-base font-semibold text-zinc-900">No matching enquiries</h3>
+                  <p className="text-sm text-zinc-500 mt-1">
+                    {hasActiveFilters
+                      ? 'Try clearing your filters or search keywords.'
+                      : 'No customer enquiries recorded yet.'}
+                  </p>
+                </div>
+                {hasActiveFilters && (
+                  <AdminButton variant="outline" size="sm" onClick={clearAllFilters}>
+                    Clear all filters
+                  </AdminButton>
                 )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      ) : (
-        /* Customer Callback Requests Tab */
-        <div className="bg-white rounded-xl border border-black/[0.06] shadow-xs overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse text-xs">
-              <thead>
-                <tr className="bg-zinc-50/60 border-b border-black/[0.06] text-zinc-400 font-semibold uppercase tracking-wider text-[10px]">
-                  <th className="py-3 px-6">Reference</th>
-                  <th className="py-3 px-6">Customer Contact</th>
-                  <th className="py-3 px-6">Callback Details</th>
-                  <th className="py-3 px-6">Services</th>
-                  <th className="py-3 px-6">Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-black/[0.04]">
-                {handoffs.length === 0 ? (
-                  <tr>
-                    <td colSpan={5} className="py-12 text-center text-zinc-400">
-                      No customer callback requests on record.
-                    </td>
-                  </tr>
-                ) : (
-                  handoffs.map((h) => (
-                    <tr key={h.id} className="hover:bg-zinc-50/60 transition-colors">
-                      <td className="py-3.5 px-6 text-[11px] text-zinc-500">
-                        <div className="font-semibold text-zinc-900 tracking-tight">{h.id}</div>
-                        <div className="text-zinc-500 text-[10px]">
-                          {formatCanadianDate(h.createdAt)}
-                        </div>
-                      </td>
-                      <td className="py-3.5 px-6">
-                        <div className="font-medium text-zinc-900">
-                          {h.customerName || 'Laurrel Visitor'}
-                        </div>
-                        <div className="text-zinc-400 text-[11px]">{h.customerEmail}</div>
-                        {h.customerPhone && (
-                          <div className="text-zinc-400 text-[11px]">{h.customerPhone}</div>
-                        )}
-                      </td>
-                      <td className="py-3.5 px-6 max-w-sm text-zinc-600">
-                        {h.reason}
-                      </td>
-                      <td className="py-3.5 px-6">
-                        <span className="text-xs text-zinc-700 capitalize font-medium">
-                          {(h.services || ['general']).join(' • ')}
-                        </span>
-                      </td>
-                      <td className="py-3.5 px-6">
-                        <span className="text-xs font-medium text-zinc-700 capitalize">
-                          {h.status}
-                        </span>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+              </div>
+            )}
           </div>
         </div>
       )}
 
-      {/* Refined CRM Slide-Over Drawer - No heavy boxed fragments, clean typographic structure */}
+      {/* Assistant Handoffs Tab */}
+      {activeTab === 'handoffs' && (
+        <div className="bg-white rounded-md border border-zinc-200 shadow-sm overflow-hidden">
+          <div className="p-5 border-b border-zinc-200">
+            <h2 className="text-base font-bold text-zinc-900">Customer Callback Requests</h2>
+            <p className="text-xs text-zinc-500 mt-0.5">
+              Direct telephone or escalation requests received via the interactive assistant.
+            </p>
+          </div>
+
+          <div className="divide-y divide-zinc-100">
+            {handoffs.length > 0 ? (
+              handoffs.map((h) => (
+                <div key={h.id} className="p-5 hover:bg-zinc-50/70 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold text-zinc-900 text-sm">
+                        {h.customerName || 'Anonymous Customer'}
+                      </span>
+                      <span className="px-2 py-0.5 rounded-[4px] text-xs font-semibold bg-orange-100 text-[#FE6000]">
+                        {h.status}
+                      </span>
+                    </div>
+                    <div className="text-xs text-zinc-500 flex flex-wrap gap-3">
+                      <span>Email: {h.customerEmail}</span>
+                      {h.customerPhone && <span>Phone: {h.customerPhone}</span>}
+                      <span>Location: {h.serviceLocation || 'Ottawa'}</span>
+                    </div>
+                    <p className="text-sm text-zinc-700 pt-1">
+                      Reason: {h.reason}
+                    </p>
+                  </div>
+                  <div className="text-xs text-zinc-400 sm:text-right">
+                    {formatCanadianDateTime(h.createdAt)}
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="py-16 text-center text-sm text-zinc-400">
+                No customer callback requests recorded.
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* DRAWER: Redesigned Customer Workspace Slide-Over                          */}
+      {/* ========================================================================= */}
       {selectedEnquiry && (
-        <div className="fixed inset-0 z-50 flex items-center justify-end bg-black/30 backdrop-blur-xs">
-          <div className="w-full max-w-lg h-full bg-white shadow-2xl flex flex-col border-l border-black/[0.08] overflow-hidden">
+        <div className="fixed inset-0 z-50 flex items-center justify-end bg-black/40 backdrop-blur-2xs">
+          <div className="w-full max-w-xl h-full bg-white shadow-2xl flex flex-col border-l border-zinc-200 overflow-hidden animate-in slide-in-from-right duration-200">
             {/* Drawer Header */}
-            <div className="px-6 py-4.5 border-b border-black/[0.06] flex items-center justify-between bg-zinc-50/60">
+            <div className="px-6 py-5 border-b border-zinc-200 flex items-center justify-between bg-zinc-50/80">
               <div>
                 <div className="flex items-center gap-2.5">
-                  <span className="text-xs font-semibold text-zinc-900 tracking-tight">
-                    {selectedEnquiry.id}
-                  </span>
-                  {renderStatus(selectedEnquiry.status)}
+                  <h2 className="text-lg font-bold text-zinc-900 tracking-tight">
+                    {selectedEnquiry.customer.name}
+                  </h2>
+                  <AdminBadge status={selectedEnquiry.status} />
                 </div>
-                <p className="text-[11px] text-zinc-500 mt-0.5">
+                <p className="text-xs text-zinc-500 mt-1">
+                  Ref: <span className="font-semibold text-zinc-700">#{selectedEnquiry.id.slice(0, 8)}</span> •{' '}
                   {formatEnquiryReceivedHeader(selectedEnquiry.createdAt, selectedEnquiry.source)}
                 </p>
               </div>
               <button
                 onClick={() => setSelectedEnquiry(null)}
-                className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-900 hover:bg-black/5 transition-colors"
+                className="p-2 rounded-lg text-zinc-400 hover:text-zinc-700 hover:bg-zinc-200/60 transition-colors"
+                aria-label="Close details"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            {/* Drawer Content Body */}
-            <div className="flex-1 overflow-y-auto px-6 py-5 space-y-6">
-              {/* 1. Customer Name and Contact */}
-              <div className="space-y-3 pb-5 border-b border-black/[0.06]">
-                <div className="text-[10px] font-semibold uppercase tracking-widest text-zinc-400">
-                  Customer Contact
-                </div>
-                <div>
-                  <h3 className="text-lg font-bold text-zinc-900 tracking-tight">
-                    {selectedEnquiry.customer.name}
-                  </h3>
+            {/* Drawer Body */}
+            <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6">
+              {/* 1. Customer Contact Card */}
+              <div className="p-4 rounded-md bg-zinc-50/80 border border-zinc-200 space-y-3">
+                <div className="text-xs font-bold uppercase tracking-wider text-zinc-500">
+                  Customer Contact Information
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs pt-1">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
                   <a
                     href={`mailto:${selectedEnquiry.customer.email}`}
-                    className="inline-flex items-center gap-2 text-zinc-700 hover:text-[#49056B] transition-colors"
+                    className="flex items-center gap-2.5 p-3 rounded-lg bg-white border border-zinc-200 text-zinc-800 hover:border-[#49056B] transition-colors"
                   >
-                    <Mail className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
-                    <span className="truncate">{selectedEnquiry.customer.email}</span>
+                    <Mail className="w-4 h-4 text-[#49056B] shrink-0" />
+                    <span className="truncate font-medium">{selectedEnquiry.customer.email}</span>
                   </a>
 
-                  {selectedEnquiry.customer.phone && (
+                  {selectedEnquiry.customer.phone ? (
                     <a
                       href={`tel:${selectedEnquiry.customer.phone}`}
-                      className="inline-flex items-center gap-2 text-zinc-700 hover:text-[#49056B] transition-colors"
+                      className="flex items-center gap-2.5 p-3 rounded-lg bg-white border border-zinc-200 text-zinc-800 hover:border-[#FE6000] transition-colors"
                     >
-                      <Phone className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
-                      <span>{selectedEnquiry.customer.phone}</span>
+                      <Phone className="w-4 h-4 text-[#FE6000] shrink-0" />
+                      <span className="font-medium">{selectedEnquiry.customer.phone}</span>
                     </a>
+                  ) : (
+                    <div className="flex items-center gap-2.5 p-3 rounded-lg bg-white border border-zinc-200 text-zinc-400">
+                      <Phone className="w-4 h-4 shrink-0" />
+                      <span>No phone provided</span>
+                    </div>
                   )}
                 </div>
               </div>
 
-              {/* 2. Requested Services */}
-              <div className="space-y-3 pb-5 border-b border-black/[0.06]">
-                <div className="text-[10px] font-semibold uppercase tracking-widest text-zinc-400">
-                  Requested Services
+              {/* 2. Requested Services & Scope */}
+              <div className="space-y-3 pb-5 border-b border-zinc-100">
+                <div className="text-xs font-bold uppercase tracking-wider text-zinc-500">
+                  Requested Services & Scope
                 </div>
-                <div className="flex flex-wrap gap-1.5">
+                <div className="flex flex-wrap gap-2">
                   {selectedEnquiry.services.map((svc) => (
                     <span
                       key={svc}
-                      className="px-2.5 py-1 rounded-md bg-zinc-100 text-zinc-800 text-xs font-semibold capitalize"
+                      className="px-3 py-1 rounded-lg bg-purple-50 text-[#49056B] border border-purple-200 text-xs font-semibold capitalize"
                     >
                       {svc}
                     </span>
                   ))}
                 </div>
 
-                {/* Service-Specific Parameters (Human Readable) */}
                 {selectedEnquiry.serviceDetails && Object.keys(selectedEnquiry.serviceDetails).length > 0 && (
-                  <div className="mt-3 p-3.5 bg-zinc-50/80 rounded-[10px] border border-black/[0.06] space-y-2">
-                    <div className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
-                      Service Scope & Details
+                  <div className="mt-3 p-4 bg-zinc-50 rounded-md border border-zinc-200 space-y-2">
+                    <div className="text-xs font-bold uppercase tracking-wider text-zinc-500">
+                      Scope Specifications
                     </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                       {Object.entries(selectedEnquiry.serviceDetails).flatMap(([cat, catVal]) => {
                         if (catVal && typeof catVal === 'object' && !Array.isArray(catVal)) {
                           return Object.entries(catVal)
                             .filter(([_, v]) => v !== undefined && v !== null && v !== '')
                             .map(([subK, subV]) => (
                               <div key={`${cat}_${subK}`} className="space-y-0.5">
-                                <span className="text-[10px] text-zinc-400 font-medium block">
+                                <span className="text-[11px] text-zinc-400 font-medium block">
                                   {formatServiceParamLabel(subK)}
                                 </span>
-                                <span className="text-zinc-800 font-medium text-xs block">
+                                <span className="text-zinc-800 font-semibold text-xs block">
                                   {formatServiceParamValue(subV)}
                                 </span>
                               </div>
@@ -658,10 +757,10 @@ export default function AdminEnquiriesPage() {
                         if (catVal !== undefined && catVal !== null && catVal !== '') {
                           return [
                             <div key={cat} className="space-y-0.5">
-                              <span className="text-[10px] text-zinc-400 font-medium block">
+                              <span className="text-[11px] text-zinc-400 font-medium block">
                                 {formatServiceParamLabel(cat)}
                               </span>
-                              <span className="text-zinc-800 font-medium text-xs block">
+                              <span className="text-zinc-800 font-semibold text-xs block">
                                 {formatServiceParamValue(catVal)}
                               </span>
                             </div>,
@@ -670,308 +769,291 @@ export default function AdminEnquiriesPage() {
                         return [];
                       })}
                     </div>
-
-                    {/* Authorised Diagnostic Access (Owner Only) - Hidden from ordinary staff */}
-                    {userRole === 'owner' && (
-                      <details className="mt-3 pt-2 border-t border-black/[0.04] text-[10px] text-zinc-400">
-                        <summary className="cursor-pointer hover:text-zinc-600 transition-colors">
-                          Authorised Diagnostic Payload (System Owner)
-                        </summary>
-                        <pre className="mt-1.5 p-2 bg-white rounded border border-black/[0.06] font-mono text-[10px] overflow-x-auto text-zinc-600">
-                          {JSON.stringify(selectedEnquiry.serviceDetails, null, 2)}
-                        </pre>
-                      </details>
-                    )}
                   </div>
                 )}
               </div>
 
-              {/* 3. Service Location & Preferred Timing */}
-              <div className="space-y-3 pb-5 border-b border-black/[0.06]">
-                <div className="text-[10px] font-semibold uppercase tracking-widest text-zinc-400">
-                  Service Location & Timing
+              {/* 3. Location & Timing */}
+              <div className="space-y-3 pb-5 border-b border-zinc-100">
+                <div className="text-xs font-bold uppercase tracking-wider text-zinc-500">
+                  Location & Timing
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-                  <div className="inline-flex items-center gap-2 text-zinc-700">
-                    <MapPin className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                  <div className="flex items-center gap-2 text-zinc-700">
+                    <MapPin className="w-4 h-4 text-zinc-400 shrink-0" />
                     <span>{selectedEnquiry.serviceLocation || 'Ottawa, ON Area'}</span>
                   </div>
 
-                  <div className="inline-flex items-center gap-2 text-zinc-700">
-                    <Calendar className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
-                    <span>{selectedEnquiry.preferredTiming || 'Flexible schedule'}</span>
+                  <div className="flex items-center gap-2 text-zinc-700">
+                    <Calendar className="w-4 h-4 text-zinc-400 shrink-0" />
+                    <span>{selectedEnquiry.preferredTiming || 'Flexible / As soon as possible'}</span>
                   </div>
                 </div>
               </div>
 
-              {/* 4. Request Details */}
-              <div className="space-y-2 pb-5 border-b border-black/[0.06]">
-                <div className="text-[10px] font-semibold uppercase tracking-widest text-zinc-400">
-                  Customer Notes & Requirements
+              {/* 4. Customer Project Description */}
+              {selectedEnquiry.details && (
+                <div className="space-y-2 pb-5 border-b border-zinc-100">
+                  <div className="text-xs font-bold uppercase tracking-wider text-zinc-500">
+                    Customer Project Notes
+                  </div>
+                  <div className="p-3.5 bg-zinc-50 rounded-md border border-zinc-200 text-sm text-zinc-700 leading-relaxed whitespace-pre-wrap">
+                    {selectedEnquiry.details}
+                  </div>
                 </div>
-                <div className="border-l-2 border-[#49056B]/40 pl-3.5 py-0.5 text-xs text-zinc-700 leading-relaxed whitespace-pre-wrap">
-                  {selectedEnquiry.details || 'No additional details provided.'}
-                </div>
-              </div>
+              )}
 
-              {/* 5. Appointments & Meeting Scheduling */}
-              <div className="space-y-3 pb-5 border-b border-black/[0.06]">
+              {/* 5. Scheduled Consultations Section */}
+              <div className="space-y-4 pb-5 border-b border-zinc-100">
                 <div className="flex items-center justify-between">
-                  <div className="text-[10px] font-semibold uppercase tracking-widest text-zinc-400">
-                    Appointments & Consultations
+                  <div className="text-xs font-bold uppercase tracking-wider text-zinc-500">
+                    Scheduled Consultations
                   </div>
-                  <span className="text-[11px] text-zinc-400">Ottawa Local Time</span>
+                  <AdminButton
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setRescheduleAppointmentId(null);
+                      setIsScheduleModalOpen(true);
+                    }}
+                    leftIcon={<CalendarPlus className="w-4 h-4 text-[#49056B]" />}
+                  >
+                    Schedule Meeting
+                  </AdminButton>
                 </div>
 
                 {appointmentActionMsg && (
-                  <div className="p-2.5 rounded-lg bg-zinc-100 border border-black/[0.06] text-xs text-zinc-800">
+                  <div className="p-3 rounded-lg bg-purple-50 border border-purple-200 text-purple-900 text-xs font-medium">
                     {appointmentActionMsg}
                   </div>
                 )}
 
                 {loadingAppointments ? (
-                  <div className="p-4 rounded-xl bg-zinc-50 border border-black/[0.06] text-center text-xs text-zinc-400">
+                  <div className="py-6 text-center text-sm text-zinc-400">
                     Loading consultations...
                   </div>
-                ) : enquiryAppointments.length > 0 ? (
+                ) : enquiryAppointments.length === 0 ? (
+                  <div className="p-4 rounded-md bg-zinc-50 border border-zinc-200 text-sm text-zinc-500 text-center">
+                    No consultations scheduled yet for this enquiry.
+                  </div>
+                ) : (
                   <div className="space-y-3">
                     {enquiryAppointments.map((apt) => {
-                      const statusBadge = formatAppointmentStatus(apt.status);
-                      const isUpcoming = ['pending', 'confirmed', 'rescheduled'].includes(apt.status);
-                      const isJoinableUrl = apt.locationOrLink && /^https?:\/\//i.test(apt.locationOrLink);
+                      const isPhone = apt.appointmentType === 'telephone';
+                      const isVideo = ['google_meet', 'ms_teams', 'zoom'].includes(apt.appointmentType);
+                      const isSiteOrPerson = ['on_site', 'in_person'].includes(apt.appointmentType);
+
+                      const rawLoc = apt.locationOrLink?.trim() || '';
+                      const isPlaceholderPhone =
+                        !rawLoc ||
+                        /phone number to be confirmed/i.test(rawLoc) ||
+                        /customer telephone number/i.test(rawLoc) ||
+                        /telephone call to customer/i.test(rawLoc);
+
+                      const resolvedPhone = !isPlaceholderPhone ? rawLoc : (selectedEnquiry?.customer?.phone?.trim() || null);
+                      const hasValidVideoUrl = isVideo && (rawLoc.startsWith('http://') || rawLoc.startsWith('https://'));
+                      const coordinator = apt.assignedStaffName?.trim() || 'Coordinator not assigned';
 
                       return (
                         <div
                           key={apt.id}
-                          className="p-4 rounded-xl bg-zinc-50 border border-black/[0.08] space-y-3 shadow-2xs"
+                          className="p-5 rounded-md bg-white border border-zinc-200 shadow-sm space-y-4 transition-all"
                         >
-                          {/* Card Header */}
-                          <div className="flex items-start justify-between gap-2">
+                          {/* Header */}
+                          <div className="flex items-start justify-between gap-3">
                             <div>
-                              <div className="flex items-center gap-2">
-                                <span
-                                  className={`px-2 py-0.5 rounded-md text-[10px] font-bold border uppercase tracking-wider ${statusBadge.color} ${statusBadge.bg}`}
-                                >
-                                  {statusBadge.label}
-                                </span>
-                                <span className="text-xs font-semibold text-zinc-900">{apt.title}</span>
-                              </div>
-                              <p className="text-[11px] text-zinc-500 mt-1">
-                                {formatAppointmentType(apt.appointmentType)} · {apt.durationMinutes} mins
+                              <h4 className="text-sm font-bold text-zinc-900">
+                                {apt.title}
+                              </h4>
+                              <p className="text-xs text-zinc-500 mt-0.5">
+                                {formatAppointmentType(apt.appointmentType)}
                               </p>
+                            </div>
+                            <AdminBadge status={apt.status} />
+                          </div>
+
+                          {/* Standardized Consultation Summary */}
+                          <div className="p-3.5 rounded-lg bg-zinc-50 border border-zinc-200/80 space-y-2 text-sm text-zinc-700">
+                            <div>
+                              <strong className="text-zinc-900 font-semibold">Date:</strong>{' '}
+                              <span>{formatOttawaAppointmentDate(apt.scheduledStart)}</span>
+                            </div>
+                            <div>
+                              <strong className="text-zinc-900 font-semibold">Time:</strong>{' '}
+                              <span>{formatOttawaAppointmentTimeRange(apt.scheduledStart, apt.scheduledEnd)}</span>
+                            </div>
+                            <div>
+                              <strong className="text-zinc-900 font-semibold">Format:</strong>{' '}
+                              <span>{formatAppointmentType(apt.appointmentType)}</span>
+                            </div>
+                            <div>
+                              <strong className="text-zinc-900 font-semibold">Coordinator:</strong>{' '}
+                              <span>{coordinator}</span>
                             </div>
                           </div>
 
-                          {/* Time & Location Details */}
-                          <div className="grid grid-cols-1 gap-1.5 text-xs">
-                            <div className="inline-flex items-center gap-2 text-zinc-800 font-medium">
-                              <Calendar className="w-3.5 h-3.5 text-[#49056B] shrink-0" />
-                              <span>{formatOttawaTimeRange(apt.scheduledStart, apt.scheduledEnd)}</span>
-                            </div>
+                          {/* Location / Meeting Link */}
+                          <div className="space-y-2 text-xs">
+                            {isPhone && resolvedPhone && (
+                              <div className="flex items-center gap-2 text-zinc-800">
+                                <Phone className="w-4 h-4 text-zinc-400" />
+                                <span>Customer phone: <strong className="font-semibold">{resolvedPhone}</strong></span>
+                              </div>
+                            )}
 
-                            {apt.locationOrLink && (
-                              <div className="inline-flex items-center gap-2 text-zinc-700">
-                                <MapPin className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
-                                {isJoinableUrl ? (
+                            {isVideo && (
+                              <div>
+                                {hasValidVideoUrl ? (
                                   <a
-                                    href={apt.locationOrLink}
+                                    href={rawLoc}
                                     target="_blank"
-                                    rel="noreferrer"
-                                    className="text-[#49056B] hover:underline inline-flex items-center gap-1 font-medium"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg bg-[#49056B] text-white hover:bg-[#390044] text-xs font-semibold transition-colors"
                                   >
-                                    <span>Join Meeting Link</span>
-                                    <ExternalLink className="w-3 h-3" />
+                                    <Video className="w-4 h-4" />
+                                    <span>Join Meeting</span>
+                                    <ExternalLink className="w-3.5 h-3.5" />
                                   </a>
                                 ) : (
-                                  <span className="truncate">{apt.locationOrLink}</span>
+                                  <div className="text-xs text-zinc-400 italic">
+                                    Meeting link will be provided once meeting is confirmed.
+                                  </div>
                                 )}
                               </div>
                             )}
 
-                            {apt.assignedStaffName && (
-                              <div className="inline-flex items-center gap-2 text-zinc-600">
-                                <User className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
-                                <span>Coordinator: {apt.assignedStaffName}</span>
+                            {isSiteOrPerson && rawLoc && !isPlaceholderPhone && (
+                              <div className="flex items-start gap-2 text-zinc-700">
+                                <MapPin className="w-4 h-4 text-zinc-400 shrink-0 mt-0.5" />
+                                <span>{rawLoc}</span>
                               </div>
                             )}
                           </div>
 
-                          {/* Notification Indicator */}
-                          <div className="pt-2 border-t border-black/[0.04] flex items-center justify-between text-[11px]">
-                            <span className="text-zinc-500">
-                              {apt.notificationSent
-                                ? '✓ Customer invitation sent'
-                                : 'Invitation not delivered'}
-                            </span>
-                            {apt.cancellationReason && (
-                              <span className="text-red-600 italic">
-                                Reason: {apt.cancellationReason}
-                              </span>
+                          {/* Actions */}
+                          <div className="flex flex-wrap items-center gap-2 pt-3 border-t border-zinc-100">
+                            {apt.status === 'pending' && (
+                              <AdminButton
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleUpdateAppointmentStatus(apt.id, 'confirmed')}
+                                className="text-emerald-700 hover:bg-emerald-50 border-emerald-200"
+                              >
+                                Confirm Meeting
+                              </AdminButton>
                             )}
-                          </div>
 
-                          {/* Quick Actions (if active) */}
-                          {isUpcoming && (
-                            <div className="pt-2 border-t border-black/[0.06] flex flex-wrap gap-2">
-                              {apt.status === 'pending' && (
-                                <button
-                                  type="button"
-                                  onClick={() => handleUpdateAppointmentStatus(apt.id, 'confirmed')}
-                                  className="px-2.5 py-1 rounded-md bg-emerald-50 text-emerald-700 hover:bg-emerald-100 text-[11px] font-semibold border border-emerald-200 transition-colors"
-                                >
-                                  Confirm
-                                </button>
-                              )}
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setRescheduleAppointmentId(apt.id);
-                                  setIsScheduleModalOpen(true);
-                                }}
-                                className="px-2.5 py-1 rounded-md bg-white text-zinc-700 hover:bg-zinc-100 text-[11px] font-medium border border-black/[0.1] transition-colors"
-                              >
-                                Reschedule
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => handleResendInvite(apt.id)}
-                                className="px-2.5 py-1 rounded-md bg-white text-zinc-700 hover:bg-zinc-100 text-[11px] font-medium border border-black/[0.1] transition-colors"
-                              >
-                                Resend Invite
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => handleUpdateAppointmentStatus(apt.id, 'completed')}
-                                className="px-2.5 py-1 rounded-md bg-white text-zinc-700 hover:bg-zinc-100 text-[11px] font-medium border border-black/[0.1] transition-colors"
-                              >
-                                Complete
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => handleCancelAppointment(apt.id)}
-                                className="px-2.5 py-1 rounded-md bg-red-50 text-red-700 hover:bg-red-100 text-[11px] font-semibold border border-red-200 transition-colors"
+                            <AdminButton
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                setRescheduleAppointmentId(apt.id);
+                                setIsScheduleModalOpen(true);
+                              }}
+                            >
+                              Reschedule
+                            </AdminButton>
+
+                            <AdminButton
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleResendInvite(apt.id)}
+                            >
+                              Resend Invite
+                            </AdminButton>
+
+                            {apt.status !== 'cancelled' && (
+                              <AdminButton
+                                variant="outline"
+                                size="sm"
+                                onClick={() => openCancelDialog(apt.id)}
+                                className="text-red-700 hover:bg-red-50 border-red-200 ml-auto"
                               >
                                 Cancel
-                              </button>
-                            </div>
-                          )}
+                              </AdminButton>
+                            )}
+                          </div>
                         </div>
                       );
                     })}
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setRescheduleAppointmentId(null);
-                        setIsScheduleModalOpen(true);
-                      }}
-                      className="w-full py-2 rounded-lg border border-dashed border-black/[0.15] text-xs font-semibold text-[#49056B] hover:bg-[#49056B]/5 transition-colors"
-                    >
-                      + Schedule Another Consultation
-                    </button>
-                  </div>
-                ) : (
-                  <div className="p-3.5 rounded-[10px] bg-zinc-50 border border-black/[0.06] flex items-center justify-between">
-                    <div className="flex items-center gap-2.5">
-                      <CalendarPlus className="w-4 h-4 text-zinc-400" />
-                      <span className="text-xs text-zinc-600">No appointment scheduled</span>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setRescheduleAppointmentId(null);
-                        setIsScheduleModalOpen(true);
-                      }}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#49056B] text-white text-xs font-semibold hover:bg-[#5B0785] transition-all shadow-2xs"
-                    >
-                      <span>Schedule Meeting</span>
-                    </button>
                   </div>
                 )}
               </div>
 
-              {/* 6. Lead Status Pipeline Transition Control */}
-              <div className="space-y-2 pb-5 border-b border-black/[0.06]">
-                <div className="text-[10px] font-semibold uppercase tracking-widest text-zinc-400">
-                  Lead Status Pipeline
+              {/* 6. Lead Status & Internal Notes */}
+              <div className="space-y-4">
+                <div className="text-xs font-bold uppercase tracking-wider text-zinc-500">
+                  Enquiry Status & Coordination Notes
                 </div>
-                <div className="grid grid-cols-5 p-1 bg-zinc-100 rounded-[10px] gap-1">
-                  {(['new', 'reviewed', 'quoted', 'scheduled', 'closed'] as const).map((s) => (
+
+                {statusError && (
+                  <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-xs text-red-800">
+                    {statusError}
+                  </div>
+                )}
+
+                <div className="flex flex-wrap gap-2">
+                  {(['new', 'reviewed', 'quoted', 'scheduled', 'closed'] as const).map((st) => (
                     <button
-                      key={s}
+                      key={st}
+                      type="button"
                       disabled={isUpdatingStatus}
-                      onClick={() => handleStatusUpdate(s)}
-                      className={`py-1.5 rounded-md text-xs font-semibold capitalize transition-all ${
-                        selectedEnquiry.status === s
-                          ? 'bg-[#49056B] text-white shadow-2xs'
-                          : 'text-zinc-600 hover:text-zinc-900'
+                      onClick={() => handleStatusUpdate(st)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
+                        selectedEnquiry.status === st
+                          ? 'bg-[#49056B] text-white border-[#49056B]'
+                          : 'bg-white text-zinc-700 border-zinc-200 hover:border-zinc-300'
                       }`}
                     >
-                      {s}
+                      {st === 'new'
+                        ? 'Awaiting Review'
+                        : st.charAt(0).toUpperCase() + st.slice(1)}
                     </button>
                   ))}
                 </div>
-                {statusError && (
-                  <p className="text-xs text-red-600 font-medium">{statusError}</p>
-                )}
-              </div>
 
-              {/* 7. Activity & Notes */}
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-semibold uppercase tracking-widest text-zinc-400">
-                    Activity & Notes
-                  </span>
-                  <span className="text-xs text-zinc-500 font-medium">
-                    {selectedEnquiry.internalNotes?.length || 0}{' '}
-                    {selectedEnquiry.internalNotes?.length === 1 ? 'note' : 'notes'}
-                  </span>
-                </div>
-
-                {/* Timeline Entries */}
-                <div className="space-y-3 relative pl-4 before:absolute before:left-1.5 before:top-2 before:bottom-2 before:w-[1px] before:bg-zinc-200">
-                  {selectedEnquiry.internalNotes && selectedEnquiry.internalNotes.length > 0 ? (
-                    selectedEnquiry.internalNotes.map((note) => (
-                      <div key={note.id} className="relative space-y-1">
-                        <div className="absolute -left-4 top-1.5 w-2 h-2 rounded-full bg-zinc-300 ring-4 ring-white" />
-                        <div className="flex items-center justify-between text-[11px]">
-                          <span className="font-semibold text-zinc-800">
-                            {formatNoteAuthor(note.author)}
-                          </span>
-                          <span className="text-zinc-400 text-[10px]">
-                            {formatCanadianDateTime(note.createdAt)}
-                          </span>
-                        </div>
-                        <p className="text-xs text-zinc-600 leading-relaxed">
-                          {formatNoteContent(note.note)}
-                        </p>
-                      </div>
-                    ))
-                  ) : (
-                    <p className="text-xs text-zinc-400 italic">No notes recorded yet.</p>
-                  )}
-                </div>
-
-                {/* Add Note Form */}
-                <form onSubmit={handleAddNoteOnly} className="space-y-2 pt-3">
+                <form onSubmit={handleAddNoteOnly} className="space-y-2 pt-2">
                   <textarea
-                    rows={2}
+                    rows={3}
                     value={newNoteText}
                     onChange={(e) => setNewNoteText(e.target.value)}
-                    placeholder="Record customer contact, estimated hours, or dispatch instructions..."
-                    className="w-full p-2.5 bg-[#F8F7F4] border border-black/10 rounded-[10px] text-xs text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#49056B] focus:border-transparent transition-all"
+                    placeholder="Add an internal coordinator note regarding this enquiry..."
+                    className="w-full p-3 text-sm bg-white text-zinc-900 border border-zinc-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#49056B]/20 focus:border-[#49056B] transition-all"
                   />
                   <div className="flex justify-end">
-                    <button
+                    <AdminButton
                       type="submit"
-                      disabled={isUpdatingStatus || !newNoteText.trim()}
-                      className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-[8px] bg-[#49056B] text-white text-xs font-semibold hover:bg-[#5B0785] disabled:opacity-50 transition-all shadow-2xs"
+                      variant="primary"
+                      size="sm"
+                      disabled={!newNoteText.trim() || isUpdatingStatus}
+                      isLoading={isUpdatingStatus}
+                      leftIcon={<Send className="w-3.5 h-3.5" />}
                     >
-                      <Send className="w-3 h-3 text-orange-400" />
-                      <span>Save Note</span>
-                    </button>
+                      Save Note
+                    </AdminButton>
                   </div>
                 </form>
+
+                {/* Notes History */}
+                {selectedEnquiry.internalNotes && selectedEnquiry.internalNotes.length > 0 && (
+                  <div className="space-y-2.5 pt-2">
+                    <div className="text-xs font-bold uppercase tracking-wider text-zinc-500">
+                      Historical Notes
+                    </div>
+                    {selectedEnquiry.internalNotes.map((note) => (
+                      <div
+                        key={note.id}
+                        className="p-3.5 rounded-lg bg-zinc-50 border border-zinc-200 text-xs space-y-1"
+                      >
+                        <div className="flex items-center justify-between text-zinc-500 font-medium">
+                          <span>{note.author}</span>
+                          <span>{formatCanadianDateTime(note.createdAt)}</span>
+                        </div>
+                        <p className="text-zinc-800 text-sm">{note.note}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -979,27 +1061,40 @@ export default function AdminEnquiriesPage() {
       )}
 
       {/* Schedule Meeting Modal */}
-      {isScheduleModalOpen && selectedEnquiry && (
+      {isScheduleModalOpen && (
         <ScheduleMeetingModal
           isOpen={isScheduleModalOpen}
           onClose={() => {
             setIsScheduleModalOpen(false);
             setRescheduleAppointmentId(null);
           }}
-          onScheduled={async (apt) => {
-            await loadEnquiryAppointments(selectedEnquiry.id);
-            setAppointmentActionMsg(`Consultation "${apt.title}" booked successfully.`);
-            setTimeout(() => setAppointmentActionMsg(null), 4000);
+          onSuccess={async () => {
+            if (selectedEnquiry) {
+              await loadEnquiryAppointments(selectedEnquiry.id);
+              await loadData();
+            }
           }}
-          enquiry={selectedEnquiry}
+          enquiry={selectedEnquiry || undefined}
           rescheduleAppointmentId={rescheduleAppointmentId}
-          initialAppointment={
-            rescheduleAppointmentId
-              ? enquiryAppointments.find((a) => a.id === rescheduleAppointmentId)
-              : null
-          }
         />
       )}
+
+      {/* Custom Confirmation Dialog for Cancellations (replaces window.prompt!) */}
+      <ConfirmDialog
+        isOpen={cancelDialogState.isOpen}
+        title="Cancel Consultation"
+        description="Please provide a reason for cancelling this appointment. This note will be recorded in the system audit log and shared with the customer if notifications are enabled."
+        confirmLabel="Cancel Appointment"
+        cancelLabel="Keep Appointment"
+        variant="danger"
+        requiresInput={true}
+        inputRequired={true}
+        inputLabel="Cancellation Reason"
+        inputPlaceholder="e.g. Schedule conflict, customer requested cancellation..."
+        isLoading={cancelDialogState.isLoading}
+        onConfirm={handleConfirmCancelAppointment}
+        onCancel={() => setCancelDialogState({ isOpen: false, appointmentId: null, isLoading: false })}
+      />
     </div>
   );
 }

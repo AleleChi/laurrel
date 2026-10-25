@@ -103,17 +103,18 @@ export function MediaDetailDrawer({
 
   const handleToggleArchive = async () => {
     try {
-      const res = await fetch(`/api/admin/media/${asset.id}/archive`, {
-        method: 'POST',
+      const nextArchived = !asset.isArchived;
+      const res = await fetch(`/api/admin/media/${asset.id}`, {
+        method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ isArchived: !asset.isArchived }),
+        body: JSON.stringify({ isArchived: nextArchived }),
       });
       const data = await res.json();
-      if (data.success) {
+      if (res.ok && data.success) {
         onUpdated(data.data);
       }
-    } catch (err: any) {
-      setErrorMsg(err.message || 'Failed to toggle archive status.');
+    } catch (err) {
+      console.error('Failed to toggle archive status:', err);
     }
   };
 
@@ -132,9 +133,8 @@ export function MediaDetailDrawer({
       }
 
       onDeleted(asset.id);
-      onClose();
     } catch (err: any) {
-      setErrorMsg(err.message || 'Error deleting asset.');
+      setErrorMsg(err.message || 'Deletion blocked.');
       setConfirmDelete(false);
     } finally {
       setIsDeleting(false);
@@ -148,56 +148,56 @@ export function MediaDetailDrawer({
     return `${Math.round(bytes / 1024)} KB`;
   };
 
-  const isVideo = asset.assetType === 'video';
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-end bg-black/30 backdrop-blur-xs">
-      <div className="w-full max-w-lg h-full bg-white shadow-2xl flex flex-col border-l border-black/[0.08] overflow-hidden">
-        {/* Header */}
-        <div className="px-6 py-4.5 border-b border-black/[0.06] flex items-center justify-between bg-zinc-50/60">
-          <div>
-            <h2 className="text-sm font-bold text-zinc-900 tracking-tight">Asset Details</h2>
-            <p className="text-[11px] text-zinc-400 truncate max-w-[340px]">{asset.originalFilename}</p>
+    <div className="fixed inset-0 z-50 flex items-center justify-end bg-black/30 backdrop-blur-2xs">
+      <div className="w-full max-w-lg h-full bg-white shadow-2xl flex flex-col border-l border-zinc-200 overflow-hidden animate-in slide-in-from-right duration-200">
+        {/* Drawer Header */}
+        <div className="px-6 py-4 border-b border-zinc-200/80 flex items-center justify-between bg-zinc-50/70">
+          <div className="min-w-0 pr-3">
+            <h2 className="text-sm font-bold text-zinc-900 truncate tracking-tight">
+              {asset.originalFilename}
+            </h2>
+            <p className="text-[11px] text-zinc-500 font-mono mt-0.5">
+              ID: {asset.id}
+            </p>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-900 hover:bg-black/5 transition-colors cursor-pointer"
+            className="p-1.5 rounded-md text-zinc-400 hover:text-zinc-700 hover:bg-zinc-100 transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Content */}
-        <div className="flex-1 overflow-y-auto px-6 py-5 space-y-6">
+        {/* Drawer Body */}
+        <div className="flex-1 overflow-y-auto p-6 space-y-5">
           {errorMsg && (
-            <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-xs text-red-700 flex items-start gap-2.5">
+            <div className="p-3 rounded-md bg-red-50 border border-red-200 text-xs text-red-700 flex items-start gap-2">
               <AlertCircle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
               <span>{errorMsg}</span>
             </div>
           )}
 
           {saveSuccess && (
-            <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-700 flex items-center gap-2">
+            <div className="p-3 rounded-md bg-emerald-50 border border-emerald-200 text-xs text-emerald-800 flex items-center gap-2">
               <Check className="w-4 h-4 text-emerald-600 shrink-0" />
-              <span>Metadata updated successfully.</span>
+              <span>Metadata saved successfully.</span>
             </div>
           )}
 
           {/* Media Preview Box */}
-          <div className="rounded-xl overflow-hidden border border-black/10 bg-zinc-950 flex items-center justify-center relative min-h-[200px]">
-            {isVideo ? (
+          <div className="rounded-md border border-zinc-200/80 bg-zinc-950/5 p-2 flex items-center justify-center overflow-hidden">
+            {asset.assetType === 'video' ? (
               <video
                 src={asset.publicUrl}
-                poster={asset.thumbnailUrl || undefined}
                 controls
-                preload="metadata"
-                className="w-full max-h-[280px] object-contain"
+                className="w-full max-h-[260px] rounded object-contain bg-black"
               />
             ) : (
               <img
                 src={asset.publicUrl}
                 alt={asset.altText || asset.originalFilename}
-                className="w-full max-h-[280px] object-contain"
+                className="w-full max-h-[260px] object-contain"
                 onError={(e) => {
                   (e.target as HTMLImageElement).src = '/assets/brand/laurrel-symbol.png';
                   (e.target as HTMLImageElement).className = 'w-16 h-16 object-contain opacity-40';
@@ -207,14 +207,14 @@ export function MediaDetailDrawer({
           </div>
 
           {/* Core File Metadata Table */}
-          <div className="bg-[#F8F7F4] p-4 rounded-xl border border-black/[0.06] space-y-2 text-xs">
+          <div className="bg-zinc-50 p-4 rounded-md border border-zinc-200/70 space-y-2 text-xs">
             <div className="flex items-center justify-between">
               <span className="text-zinc-400 font-medium">Public URL</span>
               <div className="flex items-center gap-2">
-                <span className="text-zinc-600 truncate max-w-[200px] text-[11px]">{asset.publicUrl}</span>
+                <span className="text-zinc-600 truncate max-w-[200px] text-[11px] font-mono">{asset.publicUrl}</span>
                 <button
                   onClick={handleCopyUrl}
-                  className="p-1 hover:bg-black/5 rounded text-zinc-600 transition-colors cursor-pointer"
+                  className="p-1 hover:bg-zinc-200 rounded text-zinc-600 transition-colors"
                   title="Copy public URL"
                 >
                   {copiedUrl ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
@@ -246,7 +246,7 @@ export function MediaDetailDrawer({
 
             <div className="flex items-center justify-between">
               <span className="text-zinc-400 font-medium">Uploaded</span>
-              <span className="text-zinc-700">{new Date(asset.createdAt).toLocaleDateString()}</span>
+              <span className="text-zinc-700">{new Date(asset.createdAt).toLocaleDateString('en-CA')}</span>
             </div>
           </div>
 
@@ -263,7 +263,7 @@ export function MediaDetailDrawer({
             </div>
 
             {asset.usage && asset.usage.length > 0 ? (
-              <div className="divide-y divide-black/[0.04] rounded-xl border border-black/[0.06] overflow-hidden bg-white">
+              <div className="divide-y divide-zinc-100 rounded-md border border-zinc-200/80 overflow-hidden bg-white">
                 {asset.usage.map((u, i) => (
                   <div key={i} className="p-3 flex items-center justify-between text-xs">
                     <div>
@@ -272,11 +272,11 @@ export function MediaDetailDrawer({
                     </div>
                     <div>
                       {u.inPublished ? (
-                        <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                        <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
                           Live Site
                         </span>
                       ) : (
-                        <span className="text-[10px] font-semibold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200">
+                        <span className="text-[10px] font-semibold text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
                           Draft Only
                         </span>
                       )}
@@ -285,61 +285,69 @@ export function MediaDetailDrawer({
                 ))}
               </div>
             ) : (
-              <div className="p-3.5 rounded-xl border border-black/[0.06] bg-zinc-50 text-xs text-zinc-400 text-center">
-                This asset is not currently referenced in any page sections. Safe to delete or replace.
-              </div>
+              <p className="text-xs text-zinc-400 italic bg-zinc-50 p-3 rounded-md border border-zinc-200/60">
+                This asset is not currently referenced in published or draft website sections.
+              </p>
             )}
           </div>
 
-          {/* Metadata Editing Fields */}
-          <div className="space-y-4 pt-2 border-t border-black/[0.06]">
-            <h3 className="text-xs font-bold text-zinc-900 tracking-tight">Editable Asset Metadata</h3>
+          {/* Editable Metadata Form */}
+          <div className="space-y-3 pt-3 border-t border-zinc-100">
+            <h3 className="text-xs font-bold text-zinc-900 tracking-tight">Editorial Metadata</h3>
 
             <div>
-              <label className="block text-xs font-semibold text-zinc-900 mb-1">Alt Text</label>
+              <label className="block text-xs font-semibold text-zinc-700 mb-1">
+                Alt Text (Accessibility & SEO)
+              </label>
               <input
                 type="text"
                 value={altText}
                 onChange={(e) => setAltText(e.target.value)}
-                placeholder="Accessible description"
-                className="w-full px-3 py-2 bg-[#F8F7F4] border border-black/10 rounded-[10px] text-xs text-zinc-900 focus:outline-none focus:ring-2 focus:ring-[#49056B]"
+                placeholder="Descriptive alt text for screen readers..."
+                className="w-full px-3 py-2 bg-zinc-50 border border-zinc-200/80 rounded-md text-xs text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#49056B] focus:bg-white transition-all"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-zinc-900 mb-1">Caption / Internal Notes</label>
-              <input
-                type="text"
+              <label className="block text-xs font-semibold text-zinc-700 mb-1">
+                Caption
+              </label>
+              <textarea
                 value={caption}
                 onChange={(e) => setCaption(e.target.value)}
-                placeholder="Display caption or internal guidelines"
-                className="w-full px-3 py-2 bg-[#F8F7F4] border border-black/10 rounded-[10px] text-xs text-zinc-900 focus:outline-none focus:ring-2 focus:ring-[#49056B]"
+                placeholder="Optional editorial caption..."
+                rows={2}
+                className="w-full px-3 py-2 bg-zinc-50 border border-zinc-200/80 rounded-md text-xs text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#49056B] focus:bg-white transition-all"
               />
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-semibold text-zinc-900 mb-1">Folder</label>
+                <label className="block text-xs font-semibold text-zinc-700 mb-1">
+                  Folder
+                </label>
                 <select
                   value={folder}
                   onChange={(e) => setFolder(e.target.value)}
-                  className="w-full px-3 py-2 bg-[#F8F7F4] border border-black/10 rounded-[10px] text-xs text-zinc-900 focus:outline-none focus:ring-2 focus:ring-[#49056B]"
+                  className="w-full px-3 py-2 bg-zinc-50 border border-zinc-200/80 rounded-md text-xs text-zinc-900 focus:outline-none focus:ring-2 focus:ring-[#49056B]"
                 >
                   <option value="general">General</option>
-                  <option value="hero">Hero Section</option>
-                  <option value="about">About Page</option>
-                  <option value="services">Services Page</option>
-                  <option value="videos">Hero Videos</option>
+                  <option value="hero">Hero</option>
+                  <option value="about">About</option>
+                  <option value="services">Services</option>
+                  <option value="videos">Videos</option>
                   <option value="brand">Brand</option>
                 </select>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-zinc-900 mb-1">Focal Positioning</label>
+                <label className="block text-xs font-semibold text-zinc-700 mb-1">
+                  Focal Point
+                </label>
                 <select
                   value={focalPoint}
                   onChange={(e) => setFocalPoint(e.target.value)}
-                  className="w-full px-3 py-2 bg-[#F8F7F4] border border-black/10 rounded-[10px] text-xs text-zinc-900 focus:outline-none focus:ring-2 focus:ring-[#49056B]"
+                  className="w-full px-3 py-2 bg-zinc-50 border border-zinc-200/80 rounded-md text-xs text-zinc-900 focus:outline-none focus:ring-2 focus:ring-[#49056B]"
                 >
                   <option value="center">Center</option>
                   <option value="top">Top</option>
@@ -355,14 +363,14 @@ export function MediaDetailDrawer({
               id="save-media-metadata-btn"
               onClick={handleSaveMetadata}
               disabled={isSaving}
-              className="w-full py-2 bg-[#49056B] text-white text-xs font-semibold rounded-xl hover:bg-[#5B0785] transition-colors disabled:opacity-50 cursor-pointer shadow-xs"
+              className="w-full py-2 bg-[#49056B] text-white text-xs font-semibold rounded-md hover:bg-[#390044] transition-colors disabled:opacity-50 cursor-pointer shadow-2xs"
             >
               {isSaving ? 'Saving Changes...' : 'Save Metadata'}
             </button>
           </div>
 
           {/* Danger / Administrative Actions */}
-          <div className="pt-4 border-t border-black/[0.06] space-y-3">
+          <div className="pt-4 border-t border-zinc-100 space-y-3">
             <div className="flex items-center justify-between">
               <button
                 onClick={handleToggleArchive}
@@ -386,13 +394,13 @@ export function MediaDetailDrawer({
                   <button
                     onClick={handleDelete}
                     disabled={isDeleting}
-                    className="px-2.5 py-1 bg-red-600 text-white text-xs font-semibold rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 cursor-pointer"
+                    className="px-2.5 py-1 bg-red-600 text-white text-xs font-semibold rounded hover:bg-red-700 transition-colors disabled:opacity-50 cursor-pointer"
                   >
                     {isDeleting ? 'Deleting...' : 'Yes, Delete'}
                   </button>
                   <button
                     onClick={() => setConfirmDelete(false)}
-                    className="px-2 py-1 bg-zinc-100 text-zinc-600 text-xs rounded-lg hover:bg-zinc-200 transition-colors cursor-pointer"
+                    className="px-2 py-1 bg-zinc-100 text-zinc-600 text-xs rounded hover:bg-zinc-200 transition-colors cursor-pointer"
                   >
                     Cancel
                   </button>

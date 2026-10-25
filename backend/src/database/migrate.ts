@@ -111,6 +111,173 @@ const MIGRATION_PIPELINE: MigrationStep[] = [
       console.log('[Migration] Appointments tables and indexes created successfully.');
     },
   },
+  {
+    version: '20261024_stage_b_self_service_booking_and_integrations',
+    description: 'Add appointment_settings, provider_integrations, and self-service booking columns',
+    run: async (client) => {
+      await client.query(`
+        -- 1. Make enquiry_id nullable to support direct public bookings
+        ALTER TABLE appointments ALTER COLUMN enquiry_id DROP NOT NULL;
+
+        -- 2. Add self-service booking & provider tracking columns to appointments
+        ALTER TABLE appointments ADD COLUMN IF NOT EXISTS management_token VARCHAR(128) UNIQUE;
+        ALTER TABLE appointments ADD COLUMN IF NOT EXISTS calendar_event_id VARCHAR(255);
+        ALTER TABLE appointments ADD COLUMN IF NOT EXISTS provider_connection_id VARCHAR(64);
+        ALTER TABLE appointments ADD COLUMN IF NOT EXISTS service_address TEXT;
+        ALTER TABLE appointments ADD COLUMN IF NOT EXISTS booking_source VARCHAR(64) DEFAULT 'admin_staff';
+        ALTER TABLE appointments ADD COLUMN IF NOT EXISTS customer_timezone VARCHAR(64) DEFAULT 'America/Toronto';
+        ALTER TABLE appointments ADD COLUMN IF NOT EXISTS customer_notes TEXT;
+
+        CREATE INDEX IF NOT EXISTS idx_appointments_management_token ON appointments(management_token);
+        CREATE INDEX IF NOT EXISTS idx_appointments_calendar_event_id ON appointments(calendar_event_id);
+        CREATE INDEX IF NOT EXISTS idx_appointments_booking_source ON appointments(booking_source);
+
+        -- 3. Create appointment_settings table
+        CREATE TABLE IF NOT EXISTS appointment_settings (
+          id VARCHAR(32) PRIMARY KEY DEFAULT 'default',
+          working_days JSONB NOT NULL DEFAULT '{
+            "monday": {"enabled": true, "start": "08:00", "end": "18:00"},
+            "tuesday": {"enabled": true, "start": "08:00", "end": "18:00"},
+            "wednesday": {"enabled": true, "start": "08:00", "end": "18:00"},
+            "thursday": {"enabled": true, "start": "08:00", "end": "18:00"},
+            "friday": {"enabled": true, "start": "08:00", "end": "18:00"},
+            "saturday": {"enabled": true, "start": "09:00", "end": "16:00"},
+            "sunday": {"enabled": false, "start": "09:00", "end": "16:00"}
+          }'::jsonb,
+          buffer_minutes INT NOT NULL DEFAULT 15,
+          min_notice_hours INT NOT NULL DEFAULT 2,
+          max_booking_days INT NOT NULL DEFAULT 30,
+          slot_duration_minutes INT NOT NULL DEFAULT 30,
+          allowed_channels JSONB NOT NULL DEFAULT '["telephone", "on_site", "in_person", "google_meet"]'::jsonb,
+          auto_confirm BOOLEAN NOT NULL DEFAULT TRUE,
+          blocked_dates JSONB NOT NULL DEFAULT '[]'::jsonb,
+          channel_instructions JSONB NOT NULL DEFAULT '{}'::jsonb,
+          updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+          updated_by VARCHAR(64) REFERENCES admin_users(id) ON DELETE SET NULL
+        );
+
+        INSERT INTO appointment_settings (id)
+        VALUES ('default')
+        ON CONFLICT (id) DO NOTHING;
+
+        -- 4. Create provider_integrations table
+        CREATE TABLE IF NOT EXISTS provider_integrations (
+          id VARCHAR(64) PRIMARY KEY,
+          provider_name VARCHAR(64) NOT NULL,
+          status VARCHAR(32) NOT NULL DEFAULT 'disconnected',
+          account_email VARCHAR(255),
+          encrypted_credentials TEXT,
+          sync_calendar_conflicts BOOLEAN NOT NULL DEFAULT TRUE,
+          last_synced_at TIMESTAMPTZ,
+          last_error TEXT,
+          created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+          updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_provider_integrations_provider_name ON provider_integrations(provider_name);
+        CREATE INDEX IF NOT EXISTS idx_provider_integrations_status ON provider_integrations(status);
+
+        INSERT INTO provider_integrations (id, provider_name, status)
+        VALUES 
+          ('prov_google_meet', 'google_meet', 'disconnected'),
+          ('prov_ms_teams', 'ms_teams', 'disconnected'),
+          ('prov_zoom', 'zoom', 'disconnected')
+        ON CONFLICT (id) DO NOTHING;
+      `);
+      console.log('[Migration] Stage B self-service booking and provider tables created successfully.');
+    },
+  },
+  {
+    version: '20261024_stage_b_acceptance_corrections',
+    description: 'Add oauth_states table and conference_status column to appointments',
+    run: async (client) => {
+      await client.query(`
+        -- 1. Create oauth_states table for secure multi-instance OAuth state verification
+        CREATE TABLE IF NOT EXISTS oauth_states (
+          state VARCHAR(128) PRIMARY KEY,
+          provider VARCHAR(64) NOT NULL,
+          admin_user_id VARCHAR(64) NOT NULL REFERENCES admin_users(id) ON DELETE CASCADE,
+          redirect_uri TEXT NOT NULL,
+          created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+          expires_at TIMESTAMPTZ NOT NULL,
+          used BOOLEAN NOT NULL DEFAULT FALSE
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_oauth_states_admin_user_id ON oauth_states(admin_user_id);
+        CREATE INDEX IF NOT EXISTS idx_oauth_states_expires_at ON oauth_states(expires_at);
+
+        -- 2. Add conference_status and conference_id to appointments
+        ALTER TABLE appointments ADD COLUMN IF NOT EXISTS conference_status VARCHAR(32) DEFAULT 'none';
+        ALTER TABLE appointments ADD COLUMN IF NOT EXISTS conference_id VARCHAR(128);
+
+        CREATE INDEX IF NOT EXISTS idx_appointments_conference_status ON appointments(conference_status);
+      `);
+      console.log('[Migration] Stage B acceptance corrections tables and columns created successfully.');
+    },
+  },
+  {
+    version: '20261024_stage_b_google_sync_tracking',
+    description: 'Add google_sync_status and google_sync_error columns to appointments',
+    run: async (client) => {
+      await client.query(`
+        ALTER TABLE appointments ADD COLUMN IF NOT EXISTS google_sync_status VARCHAR(32) DEFAULT 'not_applicable';
+        ALTER TABLE appointments ADD COLUMN IF NOT EXISTS google_sync_error TEXT;
+
+        CREATE INDEX IF NOT EXISTS idx_appointments_google_sync_status ON appointments(google_sync_status);
+      `);
+      console.log('[Migration] Stage B Google sync tracking columns created successfully.');
+    },
+  },
+  {
+    version: '20261024_stage_b_final_integration_acceptance',
+    description: 'Add durable reconciliation queue, verified office location, and shared rate limits',
+    run: async (client) => {
+      await client.query(`
+        -- 1. Durable Google Meet reconciliation tracking
+        ALTER TABLE appointments ADD COLUMN IF NOT EXISTS conference_retry_count INT NOT NULL DEFAULT 0;
+        ALTER TABLE appointments ADD COLUMN IF NOT EXISTS conference_next_retry_at TIMESTAMPTZ;
+        ALTER TABLE appointments ADD COLUMN IF NOT EXISTS conference_reconciled_at TIMESTAMPTZ;
+
+        CREATE INDEX IF NOT EXISTS idx_appointments_reconciliation_queue 
+          ON appointments(conference_status, conference_next_retry_at) 
+          WHERE conference_status = 'pending_details';
+
+        -- 2. Verified office location on appointment_settings
+        ALTER TABLE appointment_settings ADD COLUMN IF NOT EXISTS office_address TEXT DEFAULT NULL;
+
+        -- 3. Shared rate limiting store for multi-instance deployments
+        CREATE TABLE IF NOT EXISTS public_rate_limits (
+          key VARCHAR(160) PRIMARY KEY,
+          count INT NOT NULL,
+          reset_at TIMESTAMPTZ NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS idx_public_rate_limits_reset_at ON public_rate_limits(reset_at);
+      `);
+      console.log('[Migration] Stage B final integration acceptance tables and columns created successfully.');
+    },
+  },
+  {
+    version: '20261025_notification_outbox_resilience',
+    description: 'Add notification_status to appointments and retry tracking to appointment_notifications',
+    run: async (client) => {
+      await client.query(`
+        -- 1. Track notification status directly on appointments
+        ALTER TABLE appointments ADD COLUMN IF NOT EXISTS notification_status VARCHAR(32) DEFAULT 'none';
+        ALTER TABLE appointments ADD COLUMN IF NOT EXISTS notification_error TEXT;
+
+        CREATE INDEX IF NOT EXISTS idx_appointments_notification_status ON appointments(notification_status);
+
+        -- 2. Outbox retry schedule on appointment_notifications
+        ALTER TABLE appointment_notifications ADD COLUMN IF NOT EXISTS retry_count INT NOT NULL DEFAULT 0;
+        ALTER TABLE appointment_notifications ADD COLUMN IF NOT EXISTS next_retry_at TIMESTAMPTZ;
+
+        CREATE INDEX IF NOT EXISTS idx_appointment_notifications_outbox 
+          ON appointment_notifications(status, next_retry_at) 
+          WHERE status IN ('pending', 'failed', 'dispatching');
+      `);
+      console.log('[Migration] Notification outbox resilience columns created successfully.');
+    },
+  },
 ];
 
 export async function runMigrations(): Promise<{ success: boolean; message: string; appliedCount?: number }> {
@@ -168,7 +335,7 @@ export async function runMigrations(): Promise<{ success: boolean; message: stri
           await client.query(
             'INSERT INTO schema_migrations (version, applied_at) VALUES ($1, NOW())',
             [step.version]
-          );
+      );
           newCount++;
           console.log(`[Migration] Successfully applied ${step.version}.`);
         }

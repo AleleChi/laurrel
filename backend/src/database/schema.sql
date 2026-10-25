@@ -311,6 +311,22 @@ CREATE TABLE IF NOT EXISTS appointments (
     cancellation_reason TEXT,
     rescheduled_from_id VARCHAR(32) REFERENCES appointments(id) ON DELETE SET NULL,
     created_by VARCHAR(64) REFERENCES admin_users(id) ON DELETE SET NULL,
+    management_token VARCHAR(128) UNIQUE,
+    calendar_event_id VARCHAR(255),
+    provider_connection_id VARCHAR(64),
+    service_address TEXT,
+    booking_source VARCHAR(64) DEFAULT 'admin_staff',
+    customer_timezone VARCHAR(64) DEFAULT 'America/Toronto',
+    customer_notes TEXT,
+    conference_status VARCHAR(32) DEFAULT 'none',
+    conference_id VARCHAR(128),
+    google_sync_status VARCHAR(32) DEFAULT 'not_applicable',
+    google_sync_error TEXT,
+    conference_retry_count INT NOT NULL DEFAULT 0,
+    conference_next_retry_at TIMESTAMPTZ,
+    conference_reconciled_at TIMESTAMPTZ,
+    notification_status VARCHAR(32) DEFAULT 'none',
+    notification_error TEXT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -321,6 +337,13 @@ CREATE INDEX IF NOT EXISTS idx_appointments_status ON appointments(status);
 CREATE INDEX IF NOT EXISTS idx_appointments_assigned_staff_id ON appointments(assigned_staff_id);
 CREATE INDEX IF NOT EXISTS idx_appointments_idempotency_key ON appointments(idempotency_key);
 CREATE INDEX IF NOT EXISTS idx_appointments_created_at ON appointments(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_appointments_management_token ON appointments(management_token);
+CREATE INDEX IF NOT EXISTS idx_appointments_calendar_event_id ON appointments(calendar_event_id);
+CREATE INDEX IF NOT EXISTS idx_appointments_booking_source ON appointments(booking_source);
+CREATE INDEX IF NOT EXISTS idx_appointments_conference_status ON appointments(conference_status);
+CREATE INDEX IF NOT EXISTS idx_appointments_google_sync_status ON appointments(google_sync_status);
+CREATE INDEX IF NOT EXISTS idx_appointments_reconciliation_queue ON appointments(conference_status, conference_next_retry_at) WHERE conference_status = 'pending_details';
+CREATE INDEX IF NOT EXISTS idx_appointments_notification_status ON appointments(notification_status);
 
 CREATE TABLE IF NOT EXISTS appointment_activity (
     id VARCHAR(64) PRIMARY KEY,
@@ -342,9 +365,77 @@ CREATE TABLE IF NOT EXISTS appointment_notifications (
     notification_type VARCHAR(64) NOT NULL, -- 'invitation', 'rescheduled', 'cancellation'
     status VARCHAR(32) NOT NULL, -- 'sent', 'failed'
     error_message TEXT,
+    retry_count INT NOT NULL DEFAULT 0,
+    next_retry_at TIMESTAMPTZ,
     sent_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE INDEX IF NOT EXISTS idx_appointment_notifications_appointment_id ON appointment_notifications(appointment_id);
 CREATE INDEX IF NOT EXISTS idx_appointment_notifications_sent_at ON appointment_notifications(sent_at DESC);
+CREATE INDEX IF NOT EXISTS idx_appointment_notifications_outbox ON appointment_notifications(status, next_retry_at) WHERE status IN ('pending', 'failed', 'dispatching');
 
+
+-- 10. Appointment Settings Table (Stage B)
+CREATE TABLE IF NOT EXISTS appointment_settings (
+    id VARCHAR(32) PRIMARY KEY DEFAULT 'default',
+    working_days JSONB NOT NULL DEFAULT '{
+      "monday": {"enabled": true, "start": "08:00", "end": "18:00"},
+      "tuesday": {"enabled": true, "start": "08:00", "end": "18:00"},
+      "wednesday": {"enabled": true, "start": "08:00", "end": "18:00"},
+      "thursday": {"enabled": true, "start": "08:00", "end": "18:00"},
+      "friday": {"enabled": true, "start": "08:00", "end": "18:00"},
+      "saturday": {"enabled": true, "start": "09:00", "end": "16:00"},
+      "sunday": {"enabled": false, "start": "09:00", "end": "16:00"}
+    }'::jsonb,
+    buffer_minutes INT NOT NULL DEFAULT 15,
+    min_notice_hours INT NOT NULL DEFAULT 2,
+    max_booking_days INT NOT NULL DEFAULT 30,
+    slot_duration_minutes INT NOT NULL DEFAULT 30,
+    allowed_channels JSONB NOT NULL DEFAULT '["telephone", "on_site", "in_person", "google_meet"]'::jsonb,
+    auto_confirm BOOLEAN NOT NULL DEFAULT TRUE,
+    blocked_dates JSONB NOT NULL DEFAULT '[]'::jsonb,
+    channel_instructions JSONB NOT NULL DEFAULT '{}'::jsonb,
+    office_address TEXT DEFAULT NULL,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_by VARCHAR(64) REFERENCES admin_users(id) ON DELETE SET NULL
+);
+
+-- 11. Provider Integrations Table (Stage B)
+CREATE TABLE IF NOT EXISTS provider_integrations (
+    id VARCHAR(64) PRIMARY KEY,
+    provider_name VARCHAR(64) NOT NULL,
+    status VARCHAR(32) NOT NULL DEFAULT 'disconnected',
+    account_email VARCHAR(255),
+    encrypted_credentials TEXT,
+    sync_calendar_conflicts BOOLEAN NOT NULL DEFAULT TRUE,
+    last_synced_at TIMESTAMPTZ,
+    last_error TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_provider_integrations_provider_name ON provider_integrations(provider_name);
+CREATE INDEX IF NOT EXISTS idx_provider_integrations_status ON provider_integrations(status);
+
+-- OAuth States for Multi-Instance CSRF Protection
+CREATE TABLE IF NOT EXISTS oauth_states (
+  state VARCHAR(128) PRIMARY KEY,
+  provider VARCHAR(64) NOT NULL,
+  admin_user_id VARCHAR(64) NOT NULL REFERENCES admin_users(id) ON DELETE CASCADE,
+  redirect_uri TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  expires_at TIMESTAMPTZ NOT NULL,
+  used BOOLEAN NOT NULL DEFAULT FALSE
+);
+
+CREATE INDEX IF NOT EXISTS idx_oauth_states_admin_user_id ON oauth_states(admin_user_id);
+CREATE INDEX IF NOT EXISTS idx_oauth_states_expires_at ON oauth_states(expires_at);
+
+-- 13. Public Shared Rate Limits (Stage B)
+CREATE TABLE IF NOT EXISTS public_rate_limits (
+  key VARCHAR(160) PRIMARY KEY,
+  count INT NOT NULL,
+  reset_at TIMESTAMPTZ NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_public_rate_limits_reset_at ON public_rate_limits(reset_at);

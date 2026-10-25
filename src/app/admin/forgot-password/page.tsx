@@ -2,8 +2,8 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
-import { ArrowLeft, Mail, Loader2, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, Mail, Loader2, CheckCircle2, ShieldCheck } from 'lucide-react';
+import { Logo } from '@/components/ui/Logo';
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
@@ -56,46 +56,102 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <main className="min-h-screen flex items-center justify-center bg-[#F8F7F4] px-4 py-12 font-sans antialiased text-[#202024]">
-      <div className="w-full max-w-[400px]">
-        {/* Return to login link */}
-        <div className="mb-5">
-          <Link
-            href="/admin/login"
-            className="inline-flex items-center gap-1.5 text-xs font-medium text-zinc-500 hover:text-zinc-900 transition-colors"
+    <main className="min-h-screen grid grid-cols-1 lg:grid-cols-12 bg-white text-[#202024] font-sans antialiased selection:bg-[#49056B] selection:text-white">
+      {/* ========================================================================= */}
+      {/* LEFT: Stexo-Inspired Geometric Brand Panel (Desktop only)                */}
+      {/* ========================================================================= */}
+      <div className="hidden lg:flex lg:col-span-5 xl:col-span-5 relative bg-[#390044] text-white p-12 xl:p-16 flex-col justify-between overflow-hidden">
+        {/* Subtle geometric background shapes */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          <div className="absolute -top-24 -left-24 w-96 h-96 bg-[#49056B]/40 rounded-full blur-3xl" />
+          <div className="absolute top-1/3 -right-20 w-80 h-80 bg-purple-900/40 rounded-3xl rotate-45 transform" />
+          <div className="absolute -bottom-20 left-10 w-96 h-96 bg-[#25002D] rounded-3xl -rotate-12 border border-purple-800/20" />
+          <svg
+            className="absolute inset-0 w-full h-full opacity-10"
+            xmlns="http://www.w3.org/2000/svg"
           >
-            <ArrowLeft className="w-3.5 h-3.5" />
-            <span>Return to Sign In</span>
-          </Link>
+            <defs>
+              <pattern id="stexo-grid-fp" width="48" height="48" patternUnits="userSpaceOnUse">
+                <path d="M 48 0 L 0 0 0 48" fill="none" stroke="white" strokeWidth="0.8" />
+              </pattern>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#stexo-grid-fp)" />
+          </svg>
         </div>
 
-        {/* Card */}
-        <div className="bg-white rounded-2xl p-7 sm:p-9 border border-black/[0.08] shadow-xs">
-          {/* Logo & Heading */}
-          <div className="flex flex-col items-center text-center mb-6">
-            <Link href="/" className="relative h-9 w-40 mb-3 select-none block">
-              <Image
-                src="/assets/brand/laurrel-logo-primary.png"
-                alt="Laurrel Services"
-                fill
-                sizes="160px"
-                className="object-contain"
-                priority
-              />
-            </Link>
-            <h1 className="text-lg font-bold tracking-tight text-zinc-900">
-              Password Recovery
+        {/* Top Header on Left Panel */}
+        <div className="relative z-10">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-md bg-white/10 backdrop-blur-xs flex items-center justify-center border border-white/15">
+              <ShieldCheck className="w-5 h-5 text-purple-200" />
+            </div>
+            <div>
+              <span className="text-xs font-bold tracking-widest uppercase text-purple-200">
+                Staff Operations Portal
+              </span>
+              <p className="text-xs text-white/70">Account Security & Recovery</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Center Content on Left Panel */}
+        <div className="relative z-10 my-auto py-8">
+          <div className="inline-flex items-center px-2.5 py-1 rounded-md bg-white/10 text-xs font-medium text-purple-200 mb-6 border border-white/15">
+            Secure Verification
+          </div>
+
+          <h2 className="text-3xl xl:text-4xl font-extrabold tracking-tight text-white leading-tight">
+            Protected Staff Authentication
+          </h2>
+
+          <p className="text-sm text-purple-200/80 mt-4 leading-relaxed max-w-md">
+            If you have forgotten your password or need to reset your staff credentials, submit your registered administrator address.
+          </p>
+        </div>
+
+        {/* Bottom Left Panel Footer */}
+        <div className="relative z-10 pt-6 border-t border-white/10 flex items-center justify-between text-xs text-purple-200/70">
+          <span>LAURREL SERVICES • Operations</span>
+          <span>Ottawa, ON</span>
+        </div>
+      </div>
+
+      {/* ========================================================================= */}
+      {/* RIGHT: Dribbble-Inspired Balanced Authentication Surface                 */}
+      {/* ========================================================================= */}
+      <div className="col-span-1 lg:col-span-7 xl:col-span-7 flex flex-col justify-between p-6 sm:p-12 lg:p-16 min-h-screen">
+        {/* Top return link */}
+        <div className="flex items-center justify-between">
+          <Link
+            href="/admin/login"
+            className="inline-flex items-center gap-2 text-xs font-semibold text-zinc-500 hover:text-[#49056B] transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span>Back to sign in</span>
+          </Link>
+          <span className="text-xs text-zinc-400 hidden sm:inline-block">Password Recovery</span>
+        </div>
+
+        {/* Center Form Container */}
+        <div className="w-full max-w-[420px] mx-auto py-8">
+          {/* Logo & Welcome Header */}
+          <div className="mb-8">
+            <div className="mb-6">
+              <Logo priority />
+            </div>
+            <h1 className="text-2xl sm:text-[26px] font-bold tracking-tight text-zinc-900">
+              Reset your password
             </h1>
-            <p className="text-xs text-zinc-500 mt-1">
-              Enter your administrator email to receive reset instructions
+            <p className="text-sm text-zinc-500 mt-1">
+              Enter your email address and we'll send you a reset link.
             </p>
           </div>
 
-          {/* Error notice */}
+          {/* Accessible Error Alert */}
           {errorMessage && (
             <div
               role="alert"
-              className="mb-5 p-3 rounded-lg bg-red-50/80 border border-red-200/80 text-xs text-red-800 leading-relaxed flex items-start gap-2"
+              className="mb-5 p-3.5 rounded-md bg-red-50 border border-red-200 text-xs text-red-800 leading-relaxed flex items-start gap-2.5"
             >
               <span className="font-semibold shrink-0 text-red-700">Notice:</span>
               <span>{errorMessage}</span>
@@ -103,79 +159,78 @@ export default function ForgotPasswordPage() {
           )}
 
           {isSubmitted ? (
-            <div className="text-center py-2 space-y-4">
-              <div className="w-12 h-12 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-600 flex items-center justify-center mx-auto">
-                <CheckCircle2 className="w-6 h-6" />
+            <div className="p-6 rounded-md bg-zinc-50 border border-zinc-200/80 text-center space-y-4">
+              <div className="w-11 h-11 rounded-md bg-emerald-50 border border-emerald-200 text-emerald-600 flex items-center justify-center mx-auto">
+                <CheckCircle2 className="w-5 h-5" />
               </div>
               <div>
-                <h2 className="text-sm font-semibold text-zinc-900">
-                  Recovery Instructions Dispatched
-                </h2>
-                <p className="text-xs text-zinc-600 mt-2 leading-relaxed">
-                  If an authorized administrator account exists for{' '}
-                  <strong className="text-zinc-900">{email}</strong>, password reset instructions have
-                  been sent.
+                <h2 className="text-base font-bold text-zinc-900">Check your inbox</h2>
+                <p className="text-sm text-zinc-600 mt-1.5 leading-relaxed">
+                  If an account exists for <strong>{email}</strong>, a password reset link has been sent. Please check your spam folder if it doesn't arrive shortly.
                 </p>
-                <div className="mt-3 p-3 bg-zinc-50 border border-black/[0.06] rounded-lg text-[11px] text-zinc-500 text-left leading-relaxed">
-                  • The reset link is single-use and expires in <strong>30 minutes</strong>.<br />
-                  • Check your junk or spam folder if the email does not arrive within a few minutes.
-                </div>
               </div>
-              <Link
-                href="/admin/login"
-                className="inline-block w-full mt-3 py-2.5 px-4 rounded-[10px] bg-[#49056B] text-white text-xs font-semibold shadow-xs hover:bg-[#5B0785] transition-all text-center"
-              >
-                Back to Sign In
-              </Link>
+              <div className="pt-2">
+                <Link
+                  href="/admin/login"
+                  className="inline-flex items-center justify-center w-full h-11 px-4 rounded-md bg-[#49056B] hover:bg-[#390044] text-white text-sm font-semibold transition-colors"
+                >
+                  Return to sign in
+                </Link>
+              </div>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label
-                  htmlFor="recovery-email"
-                  className="block text-xs font-semibold text-zinc-700 mb-1.5"
+                  htmlFor="admin-email"
+                  className="block text-[13px] font-medium text-zinc-700 mb-1.5"
                 >
-                  Administrator Email
+                  Email address <span className="text-red-500">*</span>
                 </label>
-                <div className="relative">
-                  <input
-                    id="recovery-email"
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="e.g. owner@laurrelservices.ca"
-                    required
-                    autoFocus
-                    autoComplete="email"
-                    className="w-full px-3.5 py-2.5 bg-[#F8F7F4] border border-black/10 rounded-[10px] text-xs text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#49056B] focus:border-transparent transition-all"
-                  />
-                  <Mail className="w-4 h-4 text-zinc-400 absolute right-3 top-2.5 pointer-events-none" />
-                </div>
+                <input
+                  id="admin-email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="name@laurrelservices.ca"
+                  required
+                  autoFocus
+                  autoComplete="email"
+                  className="w-full h-11 px-3.5 bg-white border border-zinc-300 rounded-md text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#49056B]/20 focus:border-[#49056B] transition-all"
+                />
               </div>
 
+              {/* Submit Button */}
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full mt-2 py-2.5 px-4 rounded-[10px] bg-[#49056B] text-white text-xs font-semibold shadow-xs hover:bg-[#5B0785] focus:outline-none focus:ring-2 focus:ring-[#49056B] focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
+                className="w-full h-11 mt-2 rounded-md bg-[#49056B] text-white text-sm font-semibold hover:bg-[#390044] focus:outline-none focus:ring-2 focus:ring-[#49056B] focus:ring-offset-1 disabled:opacity-50 transition-colors flex items-center justify-center gap-2 shadow-xs cursor-pointer"
               >
                 {isLoading ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin text-white" />
-                    <span>Sending Reset Link...</span>
+                    <span>Sending reset link...</span>
                   </>
                 ) : (
-                  <span>Send Reset Link</span>
+                  <span>Send reset link</span>
                 )}
               </button>
+
+              <div className="text-center pt-2">
+                <Link
+                  href="/admin/login"
+                  className="text-xs font-semibold text-zinc-500 hover:text-[#49056B] transition-colors"
+                >
+                  Remember your password? Sign in
+                </Link>
+              </div>
             </form>
           )}
+        </div>
 
-          {/* Footer note */}
-          <div className="mt-7 pt-5 border-t border-black/[0.06] text-center">
-            <p className="text-[10px] text-zinc-400 tracking-wider uppercase font-medium">
-              Laurrel Services • Ottawa Operations
-            </p>
-          </div>
+        {/* Footer */}
+        <div className="text-center text-xs text-zinc-400 py-4 border-t border-zinc-100">
+          <p>© {new Date().getFullYear()} Laurrel Services. All rights reserved.</p>
         </div>
       </div>
     </main>
