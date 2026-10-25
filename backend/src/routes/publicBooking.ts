@@ -1102,8 +1102,14 @@ publicBookingRouter.post(
         SET
           status = 'cancelled',
           cancellation_reason = $1,
+          notification_status = 'cancelled',
           updated_at = NOW()
-        WHERE id = $2
+        WHERE id = $2;
+
+        UPDATE appointment_notifications
+        SET status = 'cancelled', error_message = 'Appointment was cancelled by customer before notification delivery'
+        WHERE appointment_id = $2
+          AND status IN ('pending', 'dispatching', 'failed')
         `,
         [cancelReason, apt.id]
       );

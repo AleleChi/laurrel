@@ -343,7 +343,19 @@ appointmentsRouter.get(
       }
 
       const activity = await getAppointmentActivity(id);
-      res.status(200).json({ appointment, activity });
+      const pool = getDbPool();
+      let notifications: any[] = [];
+      if (pool) {
+        const notifRes = await pool.query(
+          `SELECT id, notification_type, status, error_message, retry_count, next_retry_at, sent_at
+           FROM appointment_notifications
+           WHERE appointment_id = $1
+           ORDER BY sent_at DESC`,
+          [id]
+        );
+        notifications = notifRes.rows;
+      }
+      res.status(200).json({ appointment, activity, notifications });
     } catch (err: any) {
       res.status(500).json({ error: err.message });
     }
@@ -684,6 +696,25 @@ appointmentsRouter.post(
         dispatchRes.success ? 'sent' : 'failed',
         dispatchRes.error
       );
+
+      const pool = getDbPool();
+      if (pool) {
+        if (dispatchRes.success) {
+          await pool.query(
+            `UPDATE appointments
+             SET notification_sent = TRUE, notification_sent_at = NOW(), notification_status = 'sent', notification_error = NULL
+             WHERE id = $1`,
+            [appointment.id]
+          );
+        } else {
+          await pool.query(
+            `UPDATE appointments
+             SET notification_status = 'failed', notification_error = $1
+             WHERE id = $2`,
+            [dispatchRes.error || 'Failed to dispatch manual invitation', appointment.id]
+          );
+        }
+      }
 
       res.status(200).json({
         success: dispatchRes.success,

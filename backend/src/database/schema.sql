@@ -325,6 +325,8 @@ CREATE TABLE IF NOT EXISTS appointments (
     conference_retry_count INT NOT NULL DEFAULT 0,
     conference_next_retry_at TIMESTAMPTZ,
     conference_reconciled_at TIMESTAMPTZ,
+    notification_status VARCHAR(32) DEFAULT 'none',
+    notification_error TEXT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -341,6 +343,7 @@ CREATE INDEX IF NOT EXISTS idx_appointments_booking_source ON appointments(booki
 CREATE INDEX IF NOT EXISTS idx_appointments_conference_status ON appointments(conference_status);
 CREATE INDEX IF NOT EXISTS idx_appointments_google_sync_status ON appointments(google_sync_status);
 CREATE INDEX IF NOT EXISTS idx_appointments_reconciliation_queue ON appointments(conference_status, conference_next_retry_at) WHERE conference_status = 'pending_details';
+CREATE INDEX IF NOT EXISTS idx_appointments_notification_status ON appointments(notification_status);
 
 CREATE TABLE IF NOT EXISTS appointment_activity (
     id VARCHAR(64) PRIMARY KEY,
@@ -362,11 +365,14 @@ CREATE TABLE IF NOT EXISTS appointment_notifications (
     notification_type VARCHAR(64) NOT NULL, -- 'invitation', 'rescheduled', 'cancellation'
     status VARCHAR(32) NOT NULL, -- 'sent', 'failed'
     error_message TEXT,
+    retry_count INT NOT NULL DEFAULT 0,
+    next_retry_at TIMESTAMPTZ,
     sent_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE INDEX IF NOT EXISTS idx_appointment_notifications_appointment_id ON appointment_notifications(appointment_id);
 CREATE INDEX IF NOT EXISTS idx_appointment_notifications_sent_at ON appointment_notifications(sent_at DESC);
+CREATE INDEX IF NOT EXISTS idx_appointment_notifications_outbox ON appointment_notifications(status, next_retry_at) WHERE status IN ('pending', 'failed', 'dispatching');
 
 
 -- 10. Appointment Settings Table (Stage B)

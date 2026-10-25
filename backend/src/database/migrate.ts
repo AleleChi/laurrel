@@ -256,6 +256,28 @@ const MIGRATION_PIPELINE: MigrationStep[] = [
       console.log('[Migration] Stage B final integration acceptance tables and columns created successfully.');
     },
   },
+  {
+    version: '20261025_notification_outbox_resilience',
+    description: 'Add notification_status to appointments and retry tracking to appointment_notifications',
+    run: async (client) => {
+      await client.query(`
+        -- 1. Track notification status directly on appointments
+        ALTER TABLE appointments ADD COLUMN IF NOT EXISTS notification_status VARCHAR(32) DEFAULT 'none';
+        ALTER TABLE appointments ADD COLUMN IF NOT EXISTS notification_error TEXT;
+
+        CREATE INDEX IF NOT EXISTS idx_appointments_notification_status ON appointments(notification_status);
+
+        -- 2. Outbox retry schedule on appointment_notifications
+        ALTER TABLE appointment_notifications ADD COLUMN IF NOT EXISTS retry_count INT NOT NULL DEFAULT 0;
+        ALTER TABLE appointment_notifications ADD COLUMN IF NOT EXISTS next_retry_at TIMESTAMPTZ;
+
+        CREATE INDEX IF NOT EXISTS idx_appointment_notifications_outbox 
+          ON appointment_notifications(status, next_retry_at) 
+          WHERE status IN ('pending', 'failed', 'dispatching');
+      `);
+      console.log('[Migration] Notification outbox resilience columns created successfully.');
+    },
+  },
 ];
 
 export async function runMigrations(): Promise<{ success: boolean; message: string; appliedCount?: number }> {
