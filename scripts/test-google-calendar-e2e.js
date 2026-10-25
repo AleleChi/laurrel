@@ -165,7 +165,7 @@ async function runGoogleCalendarE2ESuite() {
 
   assertOffline(reconciliationCode.includes('conference_status = \'reconciling\''), 'Atomic state transition to reconciling prevents parallel claims');
   assertOffline(reconciliationCode.includes('recoverAbandonedReconciliations'), 'Stale/abandoned reconciling jobs (>5 min) automatically recovered on restart');
-  assertOffline(reconciliationCode.includes('appointment_notifications') && reconciliationCode.includes('notif_ready_'), 'Persistent outbox dispatch claim prevents duplicate customer emails');
+  assertOffline(reconciliationCode.includes('appointment_notifications') && (reconciliationCode.includes('notif_meet_') || reconciliationCode.includes('notif_ready_')), 'Persistent outbox dispatch claim prevents duplicate customer emails');
 
   // 8. Rescheduling & Cancellation Sync Failure Tracking
   console.log('\n8. Verifying Sync Status & Error Tracking...');

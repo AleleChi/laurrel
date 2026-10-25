@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 import { IEmailProvider, EmailDispatchResult, escapeHtml } from './types';
 import { EnquiryRecord } from '../../database/enquiryRepo';
 
@@ -377,12 +378,20 @@ export class ResendEmailProvider implements IEmailProvider {
     `;
 
     try {
+      const headers: Record<string, string> = {
+        Authorization: `Bearer ${this.apiKey}`,
+        'Content-Type': 'application/json',
+      };
+      if (data.appointmentId) {
+        const linkHash = data.locationOrLink
+          ? crypto.createHash('sha256').update(data.locationOrLink).digest('hex').substring(0, 8)
+          : 'v1';
+        headers['Idempotency-Key'] = `notif_meet_${data.appointmentId}_${linkHash}`;
+      }
+
       const response = await fetch('https://api.resend.com/emails', {
         method: 'POST',
-        headers: {
-          Authorization: `Bearer ${this.apiKey}`,
-          'Content-Type': 'application/json',
-        },
+        headers,
         body: JSON.stringify({
           from: this.fromAddress,
           to: data.customerEmail,
@@ -481,7 +490,10 @@ export class ResendEmailProvider implements IEmailProvider {
         'Content-Type': 'application/json',
       };
       if (data.appointmentId) {
-        headers['Idempotency-Key'] = `notif_${changeType}_${data.appointmentId}`;
+        const linkHash = data.locationOrLink
+          ? crypto.createHash('sha256').update(data.locationOrLink).digest('hex').substring(0, 8)
+          : 'v1';
+        headers['Idempotency-Key'] = `notif_${changeType}_${data.appointmentId}_${linkHash}`;
       }
 
       const response = await fetch('https://api.resend.com/emails', {

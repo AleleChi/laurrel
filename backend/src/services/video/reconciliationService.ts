@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 import { getDbPool } from '../../database/pool';
 import { reconcileGoogleMeetConference } from './googleCalendarClient';
 import { getEmailProvider } from '../email';
@@ -164,16 +165,23 @@ export async function processNotificationOutboxItem(notificationId: string): Pro
     });
 
     if (sendRes.success) {
-      await pool.query(
+      // Guard against concurrent cancellation while email dispatch was in flight
+      const finalNotifRes = await pool.query(
         `UPDATE appointment_notifications
          SET status = 'sent', error_message = NULL, sent_at = NOW()
-         WHERE id = $1`,
+         WHERE id = $1 AND status != 'cancelled'
+         RETURNING id`,
         [notif.id]
       );
+
+      if (finalNotifRes.rows.length === 0) {
+        return { dispatched: false, status: 'cancelled', error: 'Appointment was cancelled during notification dispatch' };
+      }
+
       await pool.query(
         `UPDATE appointments
          SET notification_sent = TRUE, notification_sent_at = NOW(), notification_status = 'sent', notification_error = NULL
-         WHERE id = $1`,
+         WHERE id = $1 AND status != 'cancelled'`,
         [appointment.id]
       );
       await pool.query(
@@ -194,18 +202,18 @@ export async function processNotificationOutboxItem(notificationId: string): Pro
       await pool.query(
         `UPDATE appointment_notifications
          SET
-           status = 'failed',
+           status = CASE WHEN status = 'cancelled' THEN 'cancelled' ELSE 'failed' END,
            retry_count = $1,
            next_retry_at = $2,
            error_message = $3,
            sent_at = NOW()
-         WHERE id = $4`,
+         WHERE id = $4 AND status != 'cancelled'`,
         [newRetries, nextRetryAt, isPermanent ? `Permanent failure (${MAX_NOTIFICATION_RETRIES} attempts): ${errMsg}` : errMsg, notif.id]
       );
       await pool.query(
         `UPDATE appointments
-         SET notification_status = 'failed', notification_error = $1
-         WHERE id = $2`,
+         SET notification_status = CASE WHEN status = 'cancelled' THEN 'cancelled' ELSE 'failed' END, notification_error = $1
+         WHERE id = $2 AND status != 'cancelled'`,
         [isPermanent ? `Permanent delivery failure: ${errMsg}` : errMsg, appointment.id]
       );
 
@@ -229,18 +237,18 @@ export async function processNotificationOutboxItem(notificationId: string): Pro
     await pool.query(
       `UPDATE appointment_notifications
        SET
-         status = 'failed',
+         status = CASE WHEN status = 'cancelled' THEN 'cancelled' ELSE 'failed' END,
          retry_count = $1,
          next_retry_at = $2,
          error_message = $3,
          sent_at = NOW()
-       WHERE id = $4`,
+       WHERE id = $4 AND status != 'cancelled'`,
       [newRetries, nextRetryAt, isPermanent ? `Permanent failure (${MAX_NOTIFICATION_RETRIES} attempts): ${errMsg}` : errMsg, notif.id]
     );
     await pool.query(
       `UPDATE appointments
-       SET notification_status = 'failed', notification_error = $1
-       WHERE id = $2`,
+       SET notification_status = CASE WHEN status = 'cancelled' THEN 'cancelled' ELSE 'failed' END, notification_error = $1
+       WHERE id = $2 AND status != 'cancelled'`,
       [isPermanent ? `Permanent delivery failure: ${errMsg}` : errMsg, appointment.id]
     );
 
@@ -329,16 +337,20 @@ export async function claimAndReconcileAppointment(
   // 3. Apply state transition based on Google Calendar API result
   if (rec.status === 'ready' && rec.joinUrl) {
     const meetUrl = rec.joinUrl;
-    const notifClaimId = `notif_ready_${appointment.id}`;
+    // Version notification claim ID with a hash of the verified Meet URL.
+    // This guarantees that genuinely new or changed Google Meet links generate appropriately
+    // versioned outbox items without colliding with older or stale notification keys.
+    const linkHash = crypto.createHash('sha256').update(meetUrl).digest('hex').substring(0, 8);
+    const notifClaimId = `notif_meet_${appointment.id}_${linkHash}`;
 
-    // REQUIREMENT 1: Persist the successful conference status and pending customer notification
-    // in a single database transaction.
+    // Persist the successful conference status and pending customer notification
+    // in a single database transaction with atomic concurrency guard preventing cancelled revival.
     const txClient = await pool.connect();
     try {
       await txClient.query('BEGIN');
 
-      // Update appointment to ready with verified meet link
-      await txClient.query(
+      // Concurrency guard: update ONLY if appointment was NOT cancelled while Google was queried
+      const updateRes = await txClient.query(
         `
         UPDATE appointments
         SET
@@ -351,9 +363,30 @@ export async function claimAndReconcileAppointment(
           notification_error = NULL,
           updated_at = NOW()
         WHERE id = $2
+          AND status != 'cancelled'
+          AND conference_status = 'reconciling'
+        RETURNING id, status
         `,
         [meetUrl, appointment.id]
       );
+
+      // Verify affected row count inside the same transaction as notification enqueueing
+      if (updateRes.rows.length === 0) {
+        await txClient.query('ROLLBACK');
+        console.warn(`[Reconciliation Concurrency Guard] Appointment ${appointment.id} was cancelled or modified during conference retrieval. Ready transition and notification enqueue suppressed.`);
+
+        const currentCheck = await pool.query('SELECT status, conference_status FROM appointments WHERE id = $1', [appointment.id]);
+        const isCancelled = currentCheck.rows[0]?.status === 'cancelled';
+
+        return {
+          reconciled: false,
+          joinUrl: null,
+          status: isCancelled ? 'cancelled' : (currentCheck.rows[0]?.conference_status || 'aborted'),
+          error: isCancelled
+            ? 'Appointment was cancelled while Google Meet conference was being provisioned'
+            : 'Concurrency conflict: appointment is no longer in reconciling state',
+        };
+      }
 
       // Audit activity
       await txClient.query(
@@ -364,7 +397,7 @@ export async function claimAndReconcileAppointment(
         [`act_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`, appointment.id, performedBy]
       );
 
-      // Enqueue notification in outbox in the same transaction
+      // Enqueue versioned notification in outbox in the same transaction
       await txClient.query(
         `
         INSERT INTO appointment_notifications (
@@ -390,8 +423,7 @@ export async function claimAndReconcileAppointment(
       txClient.release();
     }
 
-    // REQUIREMENT 2: Process customer notification delivery independently of conference generation.
-    // If the process crashes immediately or Resend rejects, outbox processor will reliably retry.
+    // Process customer notification delivery independently of conference generation.
     processNotificationOutboxItem(notifClaimId).catch((err) =>
       console.warn(`[Outbox Initial Dispatch Warning] Notification ID ${notifClaimId}:`, err.message)
     );
@@ -399,7 +431,7 @@ export async function claimAndReconcileAppointment(
     return { reconciled: true, joinUrl: meetUrl, status: 'ready' };
   } else if (rec.status === 'failed') {
     const errorMsg = rec.error || 'Google Workspace video conference generation failed';
-    await pool.query(
+    const failRes = await pool.query(
       `
       UPDATE appointments
       SET
@@ -408,17 +440,22 @@ export async function claimAndReconcileAppointment(
         google_sync_error = $1,
         updated_at = NOW()
       WHERE id = $2
+        AND status != 'cancelled'
+        AND conference_status = 'reconciling'
+      RETURNING id
       `,
       [errorMsg, appointment.id]
     );
 
-    await pool.query(
-      `
-      INSERT INTO appointment_activity (id, appointment_id, action, performed_by, details)
-      VALUES ($1, $2, 'conference_failed', $3, $4)
-      `,
-      [`act_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`, appointment.id, performedBy, errorMsg]
-    );
+    if (failRes.rows.length > 0) {
+      await pool.query(
+        `
+        INSERT INTO appointment_activity (id, appointment_id, action, performed_by, details)
+        VALUES ($1, $2, 'conference_failed', $3, $4)
+        `,
+        [`act_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`, appointment.id, performedBy, errorMsg]
+      );
+    }
 
     return { reconciled: false, joinUrl: null, status: 'failed', error: errorMsg };
   } else {
@@ -464,6 +501,9 @@ export async function claimAndReconcileAppointment(
         conference_next_retry_at = $2,
         updated_at = NOW()
       WHERE id = $3
+        AND status != 'cancelled'
+        AND conference_status = 'reconciling'
+      RETURNING id
       `,
       [newRetryCount, nextRetryAt, appointment.id]
     );

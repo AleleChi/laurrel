@@ -751,24 +751,29 @@ export default function AdminAppointmentsPage() {
                   Customer Email Notification
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
-                  {selectedAppointment.notificationStatus === 'sent' || selectedAppointment.notificationSent ? (
+                  {selectedAppointment.notificationStatus === 'delivered' ? (
                     <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-[4px] text-xs font-medium bg-emerald-50 text-emerald-800 border border-emerald-200">
                       <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                      Email Delivered
+                      Delivered to Recipient
+                    </span>
+                  ) : selectedAppointment.notificationStatus === 'sent' || selectedAppointment.notificationSent ? (
+                    <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-[4px] text-xs font-medium bg-emerald-50 text-emerald-800 border border-emerald-200">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                      Accepted by Provider
                     </span>
                   ) : selectedAppointment.notificationStatus === 'failed' ? (
                     <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-[4px] text-xs font-medium bg-rose-50 text-rose-800 border border-rose-200">
                       <AlertCircle className="w-3.5 h-3.5 text-rose-600" />
-                      Delivery Failed
+                      Dispatch Failed
                     </span>
                   ) : selectedAppointment.status === 'cancelled' ? (
                     <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-[4px] text-xs font-medium bg-zinc-100 text-zinc-600 border border-zinc-200">
-                      Cancelled (No Email Sent)
+                      Cancelled (Suppressed)
                     </span>
                   ) : (
                     <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-[4px] text-xs font-medium bg-amber-50 text-amber-800 border border-amber-200">
                       <Clock className="w-3.5 h-3.5 text-amber-600" />
-                      Delivery Queued
+                      Dispatch Queued
                     </span>
                   )}
                 </div>
