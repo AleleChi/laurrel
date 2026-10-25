@@ -9,11 +9,12 @@ import {
   MapPin,
   Video,
   User,
-  Mail,
   AlertCircle,
-  CheckCircle2,
   Loader2,
   CalendarDays,
+  CheckCircle2,
+  Bell,
+  FileText,
 } from 'lucide-react';
 import {
   AppointmentType,
@@ -24,6 +25,7 @@ import {
   utcToOttawaDate,
   utcToOttawaTime,
 } from '@/lib/utils/formatters';
+import { AdminButton } from '@/components/admin/ui/AdminButton';
 
 interface StaffUser {
   id: string;
@@ -72,7 +74,7 @@ export default function ScheduleMeetingModal({
 }: ScheduleMeetingModalProps) {
   const isReschedule = Boolean(rescheduleAppointmentId);
 
-  // Normalize enquiry and customer data from flexible props
+  // Normalize enquiry and customer data
   const resolvedEnquiryId = enquiry?.id || enquiryId || '';
   const resolvedCustomer = enquiry?.customer || customer || { name: 'Customer', email: '' };
   const resolvedServices = enquiry?.services || [];
@@ -83,7 +85,6 @@ export default function ScheduleMeetingModal({
     if (onSuccess) onSuccess(apt);
   };
 
-  // Form states
   const defaultServicesTitle =
     resolvedServices.length > 0
       ? `${resolvedServices.map((s) => s.charAt(0).toUpperCase() + s.slice(1)).join(' & ')} Consultation`
@@ -99,7 +100,7 @@ export default function ScheduleMeetingModal({
     initialAppointment?.appointmentType || 'telephone'
   );
 
-  // Date and Time (default to tomorrow at 10:00 AM Ottawa time)
+  // Default to tomorrow at 10:00 AM Ottawa time
   const tomorrowOttawa = (() => {
     const d = new Date();
     d.setDate(d.getDate() + 1);
@@ -137,14 +138,16 @@ export default function ScheduleMeetingModal({
   const [rescheduleReason, setRescheduleReason] = useState<string>('');
   const [notifyCustomer, setNotifyCustomer] = useState<boolean>(true);
 
-  // Stable idempotency key for this logical booking attempt across retries
+  // Idempotency key
   const [bookingIdempotencyKey, setBookingIdempotencyKey] = useState<string>(() =>
     `idemp_${resolvedEnquiryId}_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`
   );
 
   useEffect(() => {
     if (isOpen && !isReschedule) {
-      setBookingIdempotencyKey(`idemp_${resolvedEnquiryId}_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`);
+      setBookingIdempotencyKey(
+        `idemp_${resolvedEnquiryId}_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`
+      );
     }
   }, [isOpen, resolvedEnquiryId, isReschedule]);
 
@@ -154,7 +157,7 @@ export default function ScheduleMeetingModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
-  // Load available staff members
+  // Load staff members
   useEffect(() => {
     if (!isOpen) return;
 
@@ -188,7 +191,7 @@ export default function ScheduleMeetingModal({
     }
   }, [appointmentType, resolvedCustomer.phone, resolvedLocation]);
 
-  // Check schedule conflicts when staff or time changes
+  // Check schedule conflicts
   useEffect(() => {
     if (!selectedStaffId || !dateStr || !timeStr) return;
 
@@ -302,83 +305,95 @@ export default function ScheduleMeetingModal({
     }
   };
 
+  const formatOptions = [
+    { type: 'telephone', label: 'Telephone', icon: Phone },
+    { type: 'in_person', label: 'In-Person', icon: User },
+    { type: 'on_site', label: 'On-Site Assessment', icon: MapPin },
+    { type: 'google_meet', label: 'Google Meet', icon: Video },
+    { type: 'ms_teams', label: 'Teams', icon: Video },
+    { type: 'zoom', label: 'Zoom', icon: Video },
+  ] as const;
+
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-black/40 backdrop-blur-2xs flex items-center justify-center p-4">
-      <div className="relative w-full max-w-xl bg-white rounded-md shadow-xl border border-zinc-200 overflow-hidden flex flex-col max-h-[90vh]">
-        {/* Header */}
-        <div className="px-6 py-4 border-b border-zinc-200/80 flex items-center justify-between bg-zinc-50/70">
+      <div className="relative w-full max-w-2xl bg-white rounded-xl shadow-2xl border border-zinc-200 overflow-hidden flex flex-col max-h-[92vh]">
+        {/* Modal Header */}
+        <div className="px-6 py-4 border-b border-zinc-200 flex items-center justify-between bg-zinc-50/80">
           <div>
-            <h2 className="text-sm font-bold text-zinc-900 tracking-tight">
+            <h2 className="text-base font-bold text-zinc-900 tracking-tight">
               {isReschedule ? 'Reschedule Consultation' : 'Schedule Customer Consultation'}
             </h2>
             <p className="text-xs text-zinc-500 mt-0.5">
-              Customer: {resolvedCustomer.name} • Ref: <span className="font-mono text-zinc-600">{resolvedEnquiryId}</span>
+              Customer: <span className="font-semibold text-zinc-800">{resolvedCustomer.name}</span>
+              {resolvedEnquiryId && (
+                <span> • Ref: #{resolvedEnquiryId.slice(0, 8)}</span>
+              )}
             </p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 rounded-md text-zinc-400 hover:text-zinc-700 hover:bg-zinc-100 transition-colors"
+            className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-700 hover:bg-zinc-200/60 transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Body Form */}
-        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto px-6 py-5 space-y-4">
+        {/* Modal Form */}
+        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto px-6 py-6 space-y-6">
           {formError && (
-            <div className="p-3 rounded-md bg-red-50 border border-red-200 text-xs text-red-700 flex items-start gap-2.5">
+            <div className="p-3.5 rounded-lg bg-red-50 border border-red-200 text-xs text-red-800 flex items-start gap-2.5">
               <AlertCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
               <span>{formError}</span>
             </div>
           )}
 
-          {/* Meeting Title & Purpose */}
-          <div className="space-y-3">
-            <div>
-              <label className="block text-xs font-semibold text-zinc-700 mb-1">
-                Meeting Title <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                required
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                className="w-full px-3 py-2 rounded-md bg-zinc-50 border border-zinc-200/80 text-xs text-zinc-900 placeholder:text-zinc-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#49056B] transition-all"
-                placeholder="e.g. Residential Move Consultation"
-              />
+          {/* Section 1: Customer and Consultation Purpose */}
+          <div className="space-y-4">
+            <div className="text-xs font-bold uppercase tracking-wider text-zinc-500 pb-1 border-b border-zinc-100 flex items-center gap-2">
+              <FileText className="w-3.5 h-3.5 text-[#49056B]" />
+              <span>1. Consultation Purpose</span>
             </div>
 
-            <div>
-              <label className="block text-xs font-semibold text-zinc-700 mb-1">
-                Consultation Scope / Purpose
-              </label>
-              <input
-                type="text"
-                value={purpose}
-                onChange={(e) => setPurpose(e.target.value)}
-                className="w-full px-3 py-2 rounded-md bg-zinc-50 border border-zinc-200/80 text-xs text-zinc-900 placeholder:text-zinc-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#49056B] transition-all"
-                placeholder="Brief purpose of the consultation"
-              />
+            <div className="grid grid-cols-1 gap-4">
+              <div>
+                <label className="block text-[13px] font-medium text-zinc-700 mb-1.5">
+                  Meeting Title <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  className="w-full h-11 px-3.5 rounded-lg bg-white border border-zinc-300 text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#49056B]/20 focus:border-[#49056B] transition-all"
+                  placeholder="e.g. Residential Move Consultation"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[13px] font-medium text-zinc-700 mb-1.5">
+                  Consultation Scope / Scope Notes
+                </label>
+                <input
+                  type="text"
+                  value={purpose}
+                  onChange={(e) => setPurpose(e.target.value)}
+                  className="w-full h-11 px-3.5 rounded-lg bg-white border border-zinc-300 text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#49056B]/20 focus:border-[#49056B] transition-all"
+                  placeholder="Scope review, packing assessment, inventory inspection..."
+                />
+              </div>
             </div>
           </div>
 
-          {/* Format Selector */}
-          <div>
-            <label className="block text-xs font-semibold text-zinc-700 mb-1.5">
-              Consultation Format
-            </label>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-              {(
-                [
-                  { type: 'telephone', label: 'Telephone', icon: Phone },
-                  { type: 'in_person', label: 'In-Person', icon: User },
-                  { type: 'on_site', label: 'On-Site Assessment', icon: MapPin },
-                  { type: 'google_meet', label: 'Google Meet', icon: Video },
-                  { type: 'ms_teams', label: 'Teams', icon: Video },
-                  { type: 'zoom', label: 'Zoom', icon: Video },
-                ] as const
-              ).map((item) => {
+          {/* Section 2: Consultation Format */}
+          <div className="space-y-3">
+            <div className="text-xs font-bold uppercase tracking-wider text-zinc-500 pb-1 border-b border-zinc-100 flex items-center gap-2">
+              <Video className="w-3.5 h-3.5 text-[#49056B]" />
+              <span>2. Consultation Format</span>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+              {formatOptions.map((item) => {
                 const Icon = item.icon;
                 const isSelected = appointmentType === item.type;
                 return (
@@ -386,217 +401,215 @@ export default function ScheduleMeetingModal({
                     key={item.type}
                     type="button"
                     onClick={() => setAppointmentType(item.type)}
-                    className={`flex items-center gap-2 p-2.5 rounded-md border text-xs font-medium text-left transition-all ${
+                    className={`flex items-center gap-2.5 p-3 rounded-lg border text-sm text-left transition-all ${
                       isSelected
-                        ? 'border-[#49056B] bg-[#49056B]/10 text-[#49056B] font-semibold'
-                        : 'border-zinc-200/80 hover:border-zinc-300 text-zinc-700 bg-white'
+                        ? 'border-[#49056B] bg-purple-50/70 text-[#49056B] font-semibold ring-1 ring-[#49056B]'
+                        : 'border-zinc-300 hover:border-zinc-400 text-zinc-700 bg-white'
                     }`}
                   >
-                    <Icon className={`w-3.5 h-3.5 ${isSelected ? 'text-[#49056B]' : 'text-zinc-400'}`} />
+                    <Icon className={`w-4 h-4 ${isSelected ? 'text-[#49056B]' : 'text-zinc-400'}`} />
                     <span className="truncate">{item.label}</span>
                   </button>
                 );
               })}
             </div>
+          </div>
 
-            {/* Video provider credentials notice */}
-            {(appointmentType === 'google_meet' ||
-              appointmentType === 'ms_teams' ||
-              appointmentType === 'zoom') && (
-              <p className="text-[11px] text-zinc-500 mt-2 bg-zinc-50 p-2.5 rounded-md border border-zinc-200/70">
-                <strong>Meeting Link Notice:</strong> Automated video links require external OAuth connection. Enter meeting URL below or arrange manually.
-              </p>
+          {/* Section 3: Date, Ottawa Time & Duration */}
+          <div className="space-y-4">
+            <div className="text-xs font-bold uppercase tracking-wider text-zinc-500 pb-1 border-b border-zinc-100 flex items-center gap-2">
+              <Clock className="w-3.5 h-3.5 text-[#49056B]" />
+              <span>3. Schedule & Ottawa Timing</span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div>
+                <label className="block text-[13px] font-medium text-zinc-700 mb-1.5">
+                  Date <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="date"
+                  required
+                  value={dateStr}
+                  onChange={(e) => setDateStr(e.target.value)}
+                  className="w-full h-11 px-3.5 rounded-lg bg-white border border-zinc-300 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-[#49056B]/20 focus:border-[#49056B]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[13px] font-medium text-zinc-700 mb-1.5">
+                  Time (Ottawa) <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="time"
+                  required
+                  value={timeStr}
+                  onChange={(e) => setTimeStr(e.target.value)}
+                  className="w-full h-11 px-3.5 rounded-lg bg-white border border-zinc-300 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-[#49056B]/20 focus:border-[#49056B]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[13px] font-medium text-zinc-700 mb-1.5">
+                  Duration
+                </label>
+                <select
+                  value={durationMinutes}
+                  onChange={(e) => setDurationMinutes(parseInt(e.target.value, 10))}
+                  className="w-full h-11 px-3.5 rounded-lg bg-white border border-zinc-300 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-[#49056B]/20 focus:border-[#49056B]"
+                >
+                  <option value={15}>15 minutes</option>
+                  <option value={30}>30 minutes</option>
+                  <option value={45}>45 minutes</option>
+                  <option value={60}>60 minutes</option>
+                  <option value={90}>90 minutes</option>
+                </select>
+              </div>
+            </div>
+
+            <p className="text-xs text-zinc-500">
+              Times are scheduled in Eastern Time (America/Toronto / Ottawa, ON).
+            </p>
+          </div>
+
+          {/* Section 4: Assigned Coordinator */}
+          <div className="space-y-3">
+            <div className="text-xs font-bold uppercase tracking-wider text-zinc-500 pb-1 border-b border-zinc-100 flex items-center gap-2">
+              <User className="w-3.5 h-3.5 text-[#49056B]" />
+              <span>4. Assigned Staff Coordinator</span>
+            </div>
+
+            <div>
+              <label className="block text-[13px] font-medium text-zinc-700 mb-1.5">
+                Staff Member
+              </label>
+              <select
+                value={selectedStaffId}
+                onChange={(e) => setSelectedStaffId(e.target.value)}
+                disabled={loadingStaff}
+                className="w-full h-11 px-3.5 rounded-lg bg-white border border-zinc-300 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-[#49056B]/20 focus:border-[#49056B]"
+              >
+                {staffList.length === 0 ? (
+                  <option value="">{loadingStaff ? 'Loading staff...' : 'No staff available'}</option>
+                ) : (
+                  staffList.map((staff) => (
+                    <option key={staff.id} value={staff.id}>
+                      {staff.name} ({staff.role})
+                    </option>
+                  ))
+                )}
+              </select>
+            </div>
+
+            {conflictWarning && (
+              <div className="p-3 rounded-lg bg-amber-50 border border-amber-200 text-xs text-amber-800 flex items-start gap-2">
+                <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                <span>{conflictWarning}</span>
+              </div>
             )}
           </div>
 
-          {/* Initial Status Selector (if not rescheduling) */}
-          {!isReschedule && (
-            <div>
-              <label className="block text-xs font-semibold text-zinc-700 mb-1.5">
-                Consultation Status
-              </label>
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  onClick={() => setInitialStatus('confirmed')}
-                  className={`p-2.5 rounded-md border text-xs text-left transition-all ${
-                    initialStatus === 'confirmed'
-                      ? 'border-emerald-500 bg-emerald-50/50 text-emerald-900 font-medium'
-                      : 'border-zinc-200/80 text-zinc-700 bg-white hover:border-zinc-300'
-                  }`}
-                >
-                  <div className="font-semibold text-emerald-800">Confirmed</div>
-                  <div className="text-[11px] text-emerald-700/80">Sends confirmed booking notice to customer</div>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setInitialStatus('pending')}
-                  className={`p-2.5 rounded-md border text-xs text-left transition-all ${
-                    initialStatus === 'pending'
-                      ? 'border-amber-500 bg-amber-50/50 text-amber-900 font-medium'
-                      : 'border-zinc-200/80 text-zinc-700 bg-white hover:border-zinc-300'
-                  }`}
-                >
-                  <div className="font-semibold text-amber-800">Pending Review</div>
-                  <div className="text-[11px] text-amber-700/80">Awaiting coordinator confirmation</div>
-                </button>
-              </div>
+          {/* Section 5: Meeting Details / Location / Link */}
+          <div className="space-y-3">
+            <div className="text-xs font-bold uppercase tracking-wider text-zinc-500 pb-1 border-b border-zinc-100 flex items-center gap-2">
+              <MapPin className="w-3.5 h-3.5 text-[#49056B]" />
+              <span>5. Meeting Details & Coordinates</span>
             </div>
-          )}
 
-          {/* Date, Time, Duration */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-zinc-700 mb-1">
-                Date <span className="text-red-500">*</span>
+              <label className="block text-[13px] font-medium text-zinc-700 mb-1.5">
+                {appointmentType === 'telephone'
+                  ? 'Phone Number'
+                  : ['google_meet', 'ms_teams', 'zoom'].includes(appointmentType)
+                  ? 'Meeting URL'
+                  : 'Location / Address'}
               </label>
               <input
-                type="date"
-                required
-                value={dateStr}
-                onChange={(e) => setDateStr(e.target.value)}
-                className="w-full px-3 py-2 rounded-md bg-zinc-50 border border-zinc-200/80 text-xs text-zinc-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#49056B]"
+                type="text"
+                value={locationOrLink}
+                onChange={(e) => setLocationOrLink(e.target.value)}
+                className="w-full h-11 px-3.5 rounded-lg bg-white border border-zinc-300 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-[#49056B]/20 focus:border-[#49056B]"
+                placeholder={
+                  appointmentType === 'telephone'
+                    ? 'Customer phone number'
+                    : ['google_meet', 'ms_teams', 'zoom'].includes(appointmentType)
+                    ? 'https://meet.google.com/...'
+                    : '123 Main St, Ottawa, ON'
+                }
+              />
+            </div>
+          </div>
+
+          {/* Section 6: Internal Notes & Notification */}
+          <div className="space-y-3">
+            <div className="text-xs font-bold uppercase tracking-wider text-zinc-500 pb-1 border-b border-zinc-100 flex items-center gap-2">
+              <Bell className="w-3.5 h-3.5 text-[#49056B]" />
+              <span>6. Internal Notes & Notifications</span>
+            </div>
+
+            <div>
+              <label className="block text-[13px] font-medium text-zinc-700 mb-1.5">
+                Staff Notes (Internal)
+              </label>
+              <textarea
+                rows={2}
+                value={staffNotes}
+                onChange={(e) => setStaffNotes(e.target.value)}
+                className="w-full p-3 rounded-lg bg-white border border-zinc-300 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-[#49056B]/20 focus:border-[#49056B]"
+                placeholder="Optional notes for internal coordination..."
               />
             </div>
 
-            <div>
-              <label className="block text-xs font-semibold text-zinc-700 mb-1">
-                Start Time (Ottawa) <span className="text-red-500">*</span>
-              </label>
+            <label className="flex items-center gap-3 cursor-pointer pt-1">
               <input
-                type="time"
-                required
-                value={timeStr}
-                onChange={(e) => setTimeStr(e.target.value)}
-                className="w-full px-3 py-2 rounded-md bg-zinc-50 border border-zinc-200/80 text-xs text-zinc-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#49056B]"
+                type="checkbox"
+                checked={notifyCustomer}
+                onChange={(e) => setNotifyCustomer(e.target.checked)}
+                className="w-4 h-4 rounded text-[#49056B] focus:ring-[#49056B] border-zinc-300"
               />
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-zinc-700 mb-1">
-                Duration (Minutes)
-              </label>
-              <select
-                value={durationMinutes}
-                onChange={(e) => setDurationMinutes(parseInt(e.target.value, 10))}
-                className="w-full px-3 py-2 rounded-md bg-zinc-50 border border-zinc-200/80 text-xs text-zinc-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#49056B]"
-              >
-                <option value={15}>15 minutes</option>
-                <option value={30}>30 minutes</option>
-                <option value={45}>45 minutes</option>
-                <option value={60}>60 minutes</option>
-                <option value={90}>90 minutes</option>
-              </select>
-            </div>
-          </div>
-
-          <div className="text-[11px] text-zinc-500 flex items-center gap-1.5">
-            <Clock className="w-3.5 h-3.5 text-zinc-400" />
-            <span>Timezone strictly enforced as <strong>America/Toronto (Ottawa Local Time)</strong>.</span>
-          </div>
-
-          {/* Assigned Staff Coordinator */}
-          <div>
-            <label className="block text-xs font-semibold text-zinc-700 mb-1">
-              Assigned Coordinator <span className="text-red-500">*</span>
+              <span className="text-sm text-zinc-700">
+                Send appointment confirmation & calendar invitation to customer ({resolvedCustomer.email})
+              </span>
             </label>
-            <select
-              required
-              value={selectedStaffId}
-              onChange={(e) => setSelectedStaffId(e.target.value)}
-              className="w-full px-3 py-2 rounded-md bg-zinc-50 border border-zinc-200/80 text-xs text-zinc-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#49056B]"
-            >
-              {staffList.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name} ({s.role})
-                </option>
-              ))}
-            </select>
           </div>
 
-          {conflictWarning && (
-            <div className="p-3 rounded-md bg-amber-50 border border-amber-200 text-xs text-amber-900 flex items-start gap-2.5">
-              <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-              <span>{conflictWarning}</span>
-            </div>
-          )}
-
-          {/* Location or Meeting URL */}
-          <div>
-            <label className="block text-xs font-semibold text-zinc-700 mb-1">
-              Location or Meeting URL
-            </label>
-            <input
-              type="text"
-              value={locationOrLink}
-              onChange={(e) => setLocationOrLink(e.target.value)}
-              placeholder="e.g. https://meet.google.com/xxx-xxxx-xxx or Customer Address"
-              className="w-full px-3 py-2 rounded-md bg-zinc-50 border border-zinc-200/80 text-xs text-zinc-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#49056B]"
-            />
-          </div>
-
-          {/* Reschedule Reason (if rescheduling) */}
+          {/* Reschedule reason if applicable */}
           {isReschedule && (
-            <div>
-              <label className="block text-xs font-semibold text-zinc-700 mb-1">
-                Reason for Rescheduling
+            <div className="space-y-2 pt-2 border-t border-zinc-100">
+              <label className="block text-[13px] font-medium text-zinc-700">
+                Reschedule Reason
               </label>
               <input
                 type="text"
                 value={rescheduleReason}
                 onChange={(e) => setRescheduleReason(e.target.value)}
-                placeholder="e.g. Customer requested afternoon time instead"
-                className="w-full px-3 py-2 rounded-md bg-zinc-50 border border-zinc-200/80 text-xs text-zinc-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#49056B]"
+                className="w-full h-11 px-3.5 rounded-lg bg-white border border-zinc-300 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-[#49056B]/20 focus:border-[#49056B]"
+                placeholder="e.g. Customer requested alternate time slot"
               />
             </div>
           )}
 
-          {/* Internal Staff Notes */}
-          <div>
-            <label className="block text-xs font-semibold text-zinc-700 mb-1">
-              Internal Preparation Notes
-            </label>
-            <textarea
-              rows={2}
-              value={staffNotes}
-              onChange={(e) => setStaffNotes(e.target.value)}
-              placeholder="Private notes for coordinator and crew..."
-              className="w-full px-3 py-2 rounded-md bg-zinc-50 border border-zinc-200/80 text-xs text-zinc-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#49056B]"
-            />
-          </div>
-
-          {/* Notify Customer Checkbox */}
-          <div className="flex items-center gap-2 pt-1">
-            <input
-              type="checkbox"
-              id="notifyCustomer"
-              checked={notifyCustomer}
-              onChange={(e) => setNotifyCustomer(e.target.checked)}
-              className="w-4 h-4 rounded text-[#49056B] focus:ring-[#49056B] border-zinc-300"
-            />
-            <label htmlFor="notifyCustomer" className="text-xs text-zinc-700">
-              Send transactional notification email to customer ({resolvedCustomer.email})
-            </label>
-          </div>
-
-          {/* Actions */}
-          <div className="pt-4 border-t border-zinc-200/80 flex items-center justify-end gap-2.5">
-            <button
+          {/* Modal Footer Actions */}
+          <div className="pt-4 border-t border-zinc-200 flex items-center justify-end gap-3">
+            <AdminButton
               type="button"
+              variant="outline"
+              size="md"
               onClick={onClose}
               disabled={isSubmitting}
-              className="px-4 py-2 rounded-md border border-zinc-200 text-xs font-semibold text-zinc-700 hover:bg-zinc-50 transition-colors"
             >
               Cancel
-            </button>
-            <button
+            </AdminButton>
+
+            <AdminButton
               type="submit"
-              disabled={isSubmitting || Boolean(conflictWarning)}
-              className="px-4 py-2 rounded-md bg-[#49056B] text-white text-xs font-semibold hover:bg-[#390044] transition-colors disabled:opacity-50 inline-flex items-center gap-2"
+              variant="primary"
+              size="md"
+              isLoading={isSubmitting}
+              disabled={Boolean(conflictWarning)}
             >
-              {isSubmitting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-              <span>{isReschedule ? 'Confirm Reschedule' : 'Save Consultation'}</span>
-            </button>
+              {isReschedule ? 'Save Rescheduled Time' : 'Confirm Consultation'}
+            </AdminButton>
           </div>
         </form>
       </div>

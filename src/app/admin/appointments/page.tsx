@@ -23,6 +23,7 @@ import {
   FileText,
   CalendarPlus,
   FilterX,
+  Check,
 } from 'lucide-react';
 import {
   formatOttawaDate,
@@ -35,6 +36,9 @@ import {
   formatCanadianDateTime,
 } from '@/lib/utils/formatters';
 import ScheduleMeetingModal from '@/components/admin/ScheduleMeetingModal';
+import { AdminBadge } from '@/components/admin/ui/AdminBadge';
+import { AdminButton } from '@/components/admin/ui/AdminButton';
+import { ConfirmDialog } from '@/components/admin/ui/ConfirmDialog';
 
 interface AppointmentItem {
   id: string;
@@ -76,10 +80,7 @@ export default function AdminAppointmentsPage() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [staffFilter, setStaffFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
-  const [viewMode, setViewMode] = useState<'agenda' | 'week' | 'day'>('agenda');
-
-  // Selected date navigation for day/week views
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [viewMode, setViewMode] = useState<'agenda' | 'table'>('table');
 
   // Detail Drawer & Modals
   const [selectedAppointment, setSelectedAppointment] = useState<AppointmentItem | null>(null);
@@ -87,6 +88,17 @@ export default function AdminAppointmentsPage() {
   const [loadingActivity, setLoadingActivity] = useState<boolean>(false);
   const [isRescheduleOpen, setIsRescheduleOpen] = useState<boolean>(false);
   const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
+
+  // Confirm dialog for cancellation
+  const [cancelDialogState, setCancelDialogState] = useState<{
+    isOpen: boolean;
+    appointmentId: string | null;
+    isLoading: boolean;
+  }>({
+    isOpen: false,
+    appointmentId: null,
+    isLoading: false,
+  });
 
   const loadData = async () => {
     try {
@@ -178,22 +190,30 @@ export default function AdminAppointmentsPage() {
     }
   };
 
-  const handleCancelAppointment = async (aptId: string) => {
-    const reason = window.prompt('Please provide a reason for cancelling this appointment:');
-    if (!reason || !reason.trim()) return;
+  const openCancelDialog = (aptId: string) => {
+    setCancelDialogState({
+      isOpen: true,
+      appointmentId: aptId,
+      isLoading: false,
+    });
+  };
+
+  const handleConfirmCancelAppointment = async (reason?: string) => {
+    if (!cancelDialogState.appointmentId) return;
 
     try {
-      const res = await fetch(`/api/admin/appointments/${aptId}/cancel`, {
+      setCancelDialogState((prev) => ({ ...prev, isLoading: true }));
+      const res = await fetch(`/api/admin/appointments/${cancelDialogState.appointmentId}/cancel`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ reason: reason.trim(), notifyCustomer: true }),
+        body: JSON.stringify({ reason: reason || 'Cancelled by staff coordinator', notifyCustomer: true }),
       });
       if (res.ok) {
         const data = await res.json();
         setAppointments((prev) =>
-          prev.map((a) => (a.id === aptId ? data.appointment : a))
+          prev.map((a) => (a.id === cancelDialogState.appointmentId ? data.appointment : a))
         );
-        if (selectedAppointment?.id === aptId) {
+        if (selectedAppointment?.id === cancelDialogState.appointmentId) {
           setSelectedAppointment(data.appointment);
         }
         setFeedbackMessage('Consultation cancelled successfully.');
@@ -201,6 +221,8 @@ export default function AdminAppointmentsPage() {
       }
     } catch (err) {
       console.error('Cancellation failed:', err);
+    } finally {
+      setCancelDialogState({ isOpen: false, appointmentId: null, isLoading: false });
     }
   };
 
@@ -222,6 +244,14 @@ export default function AdminAppointmentsPage() {
     return true;
   });
 
+  const clearAllFilters = () => {
+    setSearchQuery('');
+    setStatusFilter('all');
+    setStaffFilter('all');
+  };
+
+  const hasActiveFilters = searchQuery.trim() !== '' || statusFilter !== 'all' || staffFilter !== 'all';
+
   // Group agenda by local date (Ottawa)
   const groupedAgenda: Record<string, AppointmentItem[]> = {};
   filteredAppointments.forEach((apt) => {
@@ -232,144 +262,75 @@ export default function AdminAppointmentsPage() {
     groupedAgenda[dateKey].push(apt);
   });
 
-  const renderStatus = (status: string) => {
-    switch (status) {
-      case 'confirmed':
-        return (
-          <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/60">
-            Confirmed
-          </span>
-        );
-      case 'pending':
-        return (
-          <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200/60">
-            Pending
-          </span>
-        );
-      case 'rescheduled':
-        return (
-          <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-purple-50 text-[#49056B] border border-purple-200/60">
-            Rescheduled
-          </span>
-        );
-      case 'completed':
-        return (
-          <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-zinc-100 text-zinc-700 border border-zinc-200">
-            Completed
-          </span>
-        );
-      case 'cancelled':
-        return (
-          <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-red-50 text-red-600 border border-red-200/60">
-            Cancelled
-          </span>
-        );
-      default:
-        return (
-          <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-zinc-100 text-zinc-600 capitalize">
-            {status}
-          </span>
-        );
-    }
-  };
-
-  const resetFilters = () => {
-    setStatusFilter('all');
-    setStaffFilter('all');
-    setSearchQuery('');
-  };
-
   return (
     <div className="space-y-6">
-      {/* Page Header */}
+      {/* Top Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-1">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-zinc-900">
+          <h1 className="text-2xl sm:text-[26px] font-bold tracking-tight text-zinc-900">
             Appointments & Consultations
           </h1>
-          <p className="text-xs text-zinc-500 mt-0.5">
-            Coordinate customer moving, cleaning, and storage consultations in Ottawa local time.
+          <p className="text-sm text-zinc-500 mt-0.5">
+            Manage scheduled customer consultations, video meetings, and coordinator assignments in Ottawa.
           </p>
         </div>
 
-        {/* View Switcher & Refresh */}
-        <div className="flex items-center gap-2.5">
-          <div className="inline-flex rounded-md bg-zinc-200/70 p-1 border border-zinc-200/80 text-xs font-semibold">
-            <button
-              type="button"
-              onClick={() => setViewMode('agenda')}
-              className={`px-3 py-1.5 rounded transition-all ${
-                viewMode === 'agenda'
-                  ? 'bg-white text-zinc-900 shadow-2xs font-semibold'
-                  : 'text-zinc-600 hover:text-zinc-900'
-              }`}
-            >
-              Agenda
-            </button>
-            <button
-              type="button"
-              onClick={() => setViewMode('week')}
-              className={`px-3 py-1.5 rounded transition-all ${
-                viewMode === 'week'
-                  ? 'bg-white text-zinc-900 shadow-2xs font-semibold'
-                  : 'text-zinc-600 hover:text-zinc-900'
-              }`}
-            >
-              Week
-            </button>
-            <button
-              type="button"
-              onClick={() => setViewMode('day')}
-              className={`px-3 py-1.5 rounded transition-all ${
-                viewMode === 'day'
-                  ? 'bg-white text-zinc-900 shadow-2xs font-semibold'
-                  : 'text-zinc-600 hover:text-zinc-900'
-              }`}
-            >
-              Day
-            </button>
-          </div>
-
-          <button
-            type="button"
+        <div className="flex items-center gap-3">
+          <AdminButton
+            variant="outline"
+            size="sm"
             onClick={loadData}
-            disabled={loading}
-            className="p-2 rounded-md border border-zinc-200/80 bg-white text-zinc-600 hover:bg-zinc-50 transition-colors shadow-2xs"
-            title="Refresh appointments"
+            isLoading={loading}
+            leftIcon={<RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />}
           >
-            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-[#49056B]' : ''}`} />
-          </button>
+            Refresh
+          </AdminButton>
         </div>
       </div>
 
       {feedbackMessage && (
-        <div className="p-3 rounded-md bg-purple-50 border border-purple-200 text-xs text-[#49056B] flex items-center justify-between">
-          <span>{feedbackMessage}</span>
-          <button type="button" onClick={() => setFeedbackMessage(null)}>
-            <X className="w-3.5 h-3.5" />
+        <div className="p-4 rounded-xl bg-purple-50 border border-purple-200 text-[#49056B] text-sm flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="w-5 h-5 text-[#49056B] shrink-0" />
+            <span>{feedbackMessage}</span>
+          </div>
+          <button onClick={() => setFeedbackMessage(null)} className="text-purple-600 hover:text-purple-800">
+            <X className="w-4 h-4" />
           </button>
         </div>
       )}
 
-      {/* Unified Filter Toolbar */}
-      <div className="bg-white rounded-md p-3 border border-zinc-200/80 shadow-2xs">
-        <div className="flex flex-col md:flex-row gap-2.5">
-          <div className="relative flex-1">
-            <Search className="w-4 h-4 text-zinc-400 absolute left-3 top-2.5" />
+      {/* ========================================================================= */}
+      {/* TOOLBAR: Search, Filters & View Toggles (44px height)                     */}
+      {/* ========================================================================= */}
+      <div className="bg-white p-4 sm:p-5 rounded-xl border border-zinc-200 shadow-sm space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
+          {/* Search Input (6 cols) */}
+          <div className="md:col-span-5 relative flex items-center">
+            <Search className="w-4 h-4 text-zinc-400 absolute left-3.5 pointer-events-none" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search by customer name, email, phone, or title..."
-              className="w-full pl-9 pr-4 py-2 bg-zinc-50 border border-zinc-200/80 rounded-md text-xs text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#49056B] focus:bg-white transition-all"
+              placeholder="Search appointments by customer, title, phone..."
+              className="w-full h-11 pl-10 pr-10 text-sm bg-white text-zinc-900 border border-zinc-300 rounded-lg placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#49056B]/20 focus:border-[#49056B] transition-all"
             />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute right-3 text-zinc-400 hover:text-zinc-600 p-1"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
           </div>
 
-          <div className="flex items-center gap-2 overflow-x-auto pb-1 md:pb-0">
+          {/* Status Filter (3 cols) */}
+          <div className="md:col-span-3">
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-3 py-2 bg-zinc-50 border border-zinc-200/80 rounded-md text-xs font-medium text-zinc-700 focus:outline-none focus:ring-2 focus:ring-[#49056B]"
+              className="w-full h-11 px-3.5 text-sm bg-white text-zinc-900 border border-zinc-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#49056B]/20 focus:border-[#49056B] transition-all"
             >
               <option value="all">All Statuses</option>
               <option value="confirmed">Confirmed</option>
@@ -378,398 +339,388 @@ export default function AdminAppointmentsPage() {
               <option value="completed">Completed</option>
               <option value="cancelled">Cancelled</option>
             </select>
+          </div>
 
+          {/* Coordinator Filter (2 cols) */}
+          <div className="md:col-span-2">
             <select
               value={staffFilter}
               onChange={(e) => setStaffFilter(e.target.value)}
-              className="px-3 py-2 bg-zinc-50 border border-zinc-200/80 rounded-md text-xs font-medium text-zinc-700 focus:outline-none focus:ring-2 focus:ring-[#49056B]"
+              className="w-full h-11 px-3.5 text-sm bg-white text-zinc-900 border border-zinc-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#49056B]/20 focus:border-[#49056B] transition-all"
             >
               <option value="all">All Coordinators</option>
-              {staffList.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name}
+              {staffList.map((st) => (
+                <option key={st.id} value={st.id}>
+                  {st.name}
                 </option>
               ))}
             </select>
-
-            {(statusFilter !== 'all' || staffFilter !== 'all' || searchQuery.trim()) && (
-              <button
-                onClick={resetFilters}
-                title="Reset filters"
-                className="px-2.5 py-2 rounded-md bg-zinc-100 hover:bg-zinc-200 text-zinc-600 text-xs font-medium inline-flex items-center gap-1 transition-colors"
-              >
-                <FilterX className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Reset</span>
-              </button>
-            )}
           </div>
+
+          {/* View Mode Toggle (2 cols) */}
+          <div className="md:col-span-2 flex items-center justify-end gap-1.5 bg-zinc-100 p-1 rounded-lg">
+            <button
+              onClick={() => setViewMode('table')}
+              className={`flex-1 py-1.5 px-3 text-xs font-semibold rounded-md transition-colors ${
+                viewMode === 'table' ? 'bg-white text-zinc-900 shadow-2xs' : 'text-zinc-600 hover:text-zinc-900'
+              }`}
+            >
+              Table
+            </button>
+            <button
+              onClick={() => setViewMode('agenda')}
+              className={`flex-1 py-1.5 px-3 text-xs font-semibold rounded-md transition-colors ${
+                viewMode === 'agenda' ? 'bg-white text-zinc-900 shadow-2xs' : 'text-zinc-600 hover:text-zinc-900'
+              }`}
+            >
+              Agenda
+            </button>
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between text-xs text-zinc-500 pt-2 border-t border-zinc-100">
+          <span>
+            Showing <strong className="text-zinc-900 font-semibold">{filteredAppointments.length}</strong> of{' '}
+            <strong className="text-zinc-900 font-semibold">{appointments.length}</strong> scheduled appointments
+            {hasActiveFilters && ' (filtered)'}
+          </span>
+          {hasActiveFilters && (
+            <AdminButton variant="ghost" size="sm" onClick={clearAllFilters} leftIcon={<FilterX className="w-3.5 h-3.5" />}>
+              Reset Filters
+            </AdminButton>
+          )}
         </div>
       </div>
 
-      {/* Main Content View */}
-      {loading ? (
-        <div className="py-20 text-center text-xs text-zinc-400 bg-white rounded-md border border-zinc-200/80">
-          <div className="flex flex-col items-center justify-center gap-2">
-            <RefreshCw className="w-5 h-5 text-[#49056B] animate-spin" />
-            <span>Loading appointments schedule...</span>
-          </div>
-        </div>
-      ) : filteredAppointments.length === 0 ? (
-        <div className="py-16 text-center bg-white rounded-md border border-zinc-200/80 p-6 space-y-2">
-          <CalendarDays className="w-8 h-8 text-zinc-300 mx-auto" />
-          <h3 className="text-sm font-bold text-zinc-800">No consultations found</h3>
-          <p className="text-xs text-zinc-500 max-w-sm mx-auto">
-            {searchQuery || statusFilter !== 'all' || staffFilter !== 'all'
-              ? 'No scheduled consultations match your current filter parameters.'
-              : 'Consultations booked from customer enquiries will appear on this calendar.'}
-          </p>
-          {(statusFilter !== 'all' || staffFilter !== 'all' || searchQuery.trim()) && (
-            <button
-              onClick={resetFilters}
-              className="mt-2 text-xs font-semibold text-[#49056B] hover:underline"
-            >
-              Clear filters
-            </button>
-          )}
-        </div>
-      ) : viewMode === 'agenda' ? (
-        /* Agenda View */
-        <div className="space-y-4">
-          {Object.entries(groupedAgenda).map(([dateLabel, dateAppointments]) => (
-            <div
-              key={dateLabel}
-              className="bg-white rounded-md border border-zinc-200/80 shadow-2xs overflow-hidden"
-            >
-              <div className="px-4 py-2.5 bg-zinc-50/80 border-b border-zinc-200/80 flex items-center justify-between">
-                <span className="text-xs font-bold text-zinc-900 tracking-tight">
-                  {dateLabel}
-                </span>
-                <span className="text-[11px] font-medium text-zinc-500">
-                  {dateAppointments.length} consultation{dateAppointments.length > 1 ? 's' : ''}
-                </span>
-              </div>
+      {/* ========================================================================= */}
+      {/* VIEW: Table Mode                                                          */}
+      {/* ========================================================================= */}
+      {viewMode === 'table' && (
+        <div className="bg-white rounded-xl border border-zinc-200 shadow-sm overflow-hidden">
+          <div className="overflow-x-auto">
+            {filteredAppointments.length > 0 ? (
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-zinc-50/80 border-b border-zinc-200 text-xs font-semibold uppercase tracking-wider text-zinc-500">
+                    <th className="py-3.5 px-5">Title & Customer</th>
+                    <th className="py-3.5 px-4">Format</th>
+                    <th className="py-3.5 px-4">Ottawa Date & Time</th>
+                    <th className="py-3.5 px-4 hidden md:table-cell">Coordinator</th>
+                    <th className="py-3.5 px-4">Status</th>
+                    <th className="py-3.5 px-5 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-zinc-100 text-sm">
+                  {filteredAppointments.map((apt) => {
+                    const isSelected = selectedAppointment?.id === apt.id;
+                    return (
+                      <tr
+                        key={apt.id}
+                        onClick={() => setSelectedAppointment(apt)}
+                        className={`cursor-pointer transition-colors ${
+                          isSelected ? 'bg-purple-50/50' : 'hover:bg-zinc-50/80'
+                        }`}
+                      >
+                        <td className="py-3.5 px-5">
+                          <div className="font-semibold text-zinc-900">{apt.title}</div>
+                          <div className="text-xs text-zinc-500 mt-0.5">
+                            Customer: {apt.customerName} ({apt.customerEmail})
+                          </div>
+                        </td>
 
-              <div className="divide-y divide-zinc-100">
-                {dateAppointments.map((apt) => {
-                  const isJoinableUrl =
-                    apt.locationOrLink &&
-                    (apt.locationOrLink.startsWith('http://') || apt.locationOrLink.startsWith('https://'));
-                  return (
-                    <div
-                      key={apt.id}
-                      onClick={() => setSelectedAppointment(apt)}
-                      className="p-4 hover:bg-zinc-50/60 transition-colors cursor-pointer flex flex-col md:flex-row md:items-center justify-between gap-3 group"
-                    >
-                      <div className="space-y-1.5 flex-1 min-w-0">
-                        <div className="flex items-center gap-2.5">
-                          <span className="font-bold text-sm text-zinc-900 truncate">
-                            {apt.title}
-                          </span>
-                          {renderStatus(apt.status)}
-                          <span className="text-[10px] font-semibold text-zinc-500 uppercase px-1.5 py-0.5 rounded bg-zinc-100 border border-zinc-200">
+                        <td className="py-3.5 px-4">
+                          <span className="inline-flex items-center gap-1.5 text-xs text-zinc-700">
                             {formatAppointmentType(apt.appointmentType)}
                           </span>
-                        </div>
+                        </td>
 
-                        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-zinc-600">
-                          <div className="inline-flex items-center gap-1.5 font-medium text-zinc-800">
-                            <Clock className="w-3.5 h-3.5 text-[#49056B]" />
-                            <span>
-                              {formatOttawaTime(apt.scheduledStart)} – {formatOttawaTime(apt.scheduledEnd)}
-                            </span>
-                            <span className="text-zinc-400 font-normal">({apt.durationMinutes}m)</span>
+                        <td className="py-3.5 px-4">
+                          <div className="font-medium text-zinc-900 text-xs">
+                            {formatOttawaDate(apt.scheduledStart)}
                           </div>
-
-                          <div className="inline-flex items-center gap-1.5">
-                            <User className="w-3.5 h-3.5 text-zinc-400" />
-                            <span>{apt.customerName}</span>
+                          <div className="text-xs text-zinc-500 mt-0.5 flex items-center gap-1">
+                            <Clock className="w-3 h-3 text-zinc-400" />
+                            <span>{formatOttawaTime(apt.scheduledStart)} ({apt.durationMinutes}m)</span>
                           </div>
+                        </td>
 
-                          {apt.assignedStaffName && (
-                            <div className="inline-flex items-center gap-1.5 text-zinc-500">
-                              <span>Staff: {apt.assignedStaffName}</span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
+                        <td className="py-3.5 px-4 hidden md:table-cell text-xs text-zinc-700">
+                          {apt.assignedStaffName || <span className="text-zinc-400 italic">Unassigned</span>}
+                        </td>
 
-                      <div className="flex items-center gap-3 shrink-0">
-                        {isJoinableUrl ? (
-                          <a
-                            href={apt.locationOrLink!}
-                            target="_blank"
-                            rel="noreferrer"
-                            onClick={(e) => e.stopPropagation()}
-                            className="inline-flex items-center gap-1 text-xs font-semibold text-[#49056B] hover:underline"
+                        <td className="py-3.5 px-4">
+                          <AdminBadge status={apt.status} />
+                        </td>
+
+                        <td className="py-3.5 px-5 text-right whitespace-nowrap">
+                          <AdminButton
+                            variant="ghost"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedAppointment(apt);
+                            }}
+                            className="text-[#49056B] hover:text-[#390044] hover:bg-purple-50"
+                            rightIcon={<ChevronRight className="w-4 h-4" />}
                           >
-                            <span>Meeting Link</span>
-                            <ExternalLink className="w-3 h-3" />
-                          </a>
-                        ) : apt.locationOrLink ? (
-                          <span className="text-xs text-zinc-500 max-w-xs truncate">
-                            {apt.locationOrLink}
-                          </span>
-                        ) : null}
-
-                        <span className="px-2.5 py-1 rounded bg-zinc-50 group-hover:bg-zinc-100 text-xs font-semibold text-zinc-700 border border-zinc-200 transition-colors">
-                          Manage
-                        </span>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : (
-        /* Day or Week View */
-        <div className="bg-white rounded-md border border-zinc-200/80 p-5 space-y-4 shadow-2xs">
-          <div className="flex items-center justify-between pb-3 border-b border-zinc-100">
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => {
-                  const d = new Date(selectedDate);
-                  d.setDate(d.getDate() - (viewMode === 'week' ? 7 : 1));
-                  setSelectedDate(d);
-                }}
-                className="p-1 rounded-md hover:bg-zinc-100 text-zinc-600 transition-colors"
-                title="Previous"
-              >
-                <ChevronLeft className="w-4 h-4" />
-              </button>
-              <span className="text-xs font-bold text-zinc-900">
-                {formatOttawaDate(selectedDate)}
-              </span>
-              <button
-                type="button"
-                onClick={() => {
-                  const d = new Date(selectedDate);
-                  d.setDate(d.getDate() + (viewMode === 'week' ? 7 : 1));
-                  setSelectedDate(d);
-                }}
-                className="p-1 rounded-md hover:bg-zinc-100 text-zinc-600 transition-colors"
-                title="Next"
-              >
-                <ChevronRight className="w-4 h-4" />
-              </button>
-            </div>
-            <button
-              type="button"
-              onClick={() => setSelectedDate(new Date())}
-              className="text-xs font-semibold text-[#49056B] hover:underline"
-            >
-              Today
-            </button>
-          </div>
-
-          <div className="grid grid-cols-1 gap-2.5">
-            {filteredAppointments
-              .filter((apt) => {
-                const aptDate = new Date(apt.scheduledStart);
-                return (
-                  aptDate.getFullYear() === selectedDate.getFullYear() &&
-                  aptDate.getMonth() === selectedDate.getMonth() &&
-                  aptDate.getDate() === selectedDate.getDate()
-                );
-              })
-              .map((apt) => (
-                <div
-                  key={apt.id}
-                  onClick={() => setSelectedAppointment(apt)}
-                  className="p-3.5 rounded-md border border-zinc-200/80 bg-zinc-50/70 hover:bg-zinc-100/70 cursor-pointer flex items-center justify-between transition-colors"
-                >
-                  <div className="space-y-1">
-                    <div className="text-xs font-bold text-zinc-900">{apt.title}</div>
-                    <div className="text-[11px] text-zinc-500">
-                      {formatOttawaTime(apt.scheduledStart)} – {formatOttawaTime(apt.scheduledEnd)} • {apt.customerName}
-                    </div>
-                  </div>
-                  {renderStatus(apt.status)}
+                            Details
+                          </AdminButton>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            ) : (
+              <div className="py-16 text-center space-y-3">
+                <div className="w-12 h-12 rounded-full bg-zinc-100 flex items-center justify-center mx-auto text-zinc-400">
+                  <CalendarDays className="w-6 h-6" />
                 </div>
-              ))}
+                <div>
+                  <h3 className="text-base font-semibold text-zinc-900">No appointments found</h3>
+                  <p className="text-sm text-zinc-500 mt-1">
+                    {hasActiveFilters ? 'Try adjusting your search or filters.' : 'No customer appointments scheduled yet.'}
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
 
-      {/* Appointment Detail Slide-Over Drawer */}
-      {selectedAppointment && (
-        <div className="fixed inset-0 z-50 flex items-center justify-end bg-black/30 backdrop-blur-2xs">
-          <div className="w-full max-w-xl h-full bg-white shadow-2xl flex flex-col border-l border-zinc-200 overflow-hidden animate-in slide-in-from-right duration-200">
-            {/* Drawer Header */}
-            <div className="px-6 py-4 border-b border-zinc-200/80 flex items-center justify-between bg-zinc-50/60">
-              <div>
-                <div className="flex items-center gap-2">
-                  <h3 className="text-sm font-bold text-zinc-900">
-                    {selectedAppointment.title}
-                  </h3>
-                  {renderStatus(selectedAppointment.status)}
+      {/* ========================================================================= */}
+      {/* VIEW: Agenda Mode                                                         */}
+      {/* ========================================================================= */}
+      {viewMode === 'agenda' && (
+        <div className="space-y-6">
+          {Object.keys(groupedAgenda).length > 0 ? (
+            Object.entries(groupedAgenda).map(([dateLabel, aptList]) => (
+              <div key={dateLabel} className="bg-white rounded-xl border border-zinc-200 shadow-sm overflow-hidden">
+                <div className="px-5 py-3.5 bg-zinc-50/80 border-b border-zinc-200 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <CalendarIcon className="w-4 h-4 text-[#49056B]" />
+                    <span className="font-bold text-sm text-zinc-900">{dateLabel}</span>
+                  </div>
+                  <span className="text-xs font-semibold text-zinc-500">
+                    {aptList.length} appointment{aptList.length === 1 ? '' : 's'}
+                  </span>
                 </div>
-                <p className="text-xs text-zinc-500 mt-0.5">
-                  Ref: <span className="font-mono">{selectedAppointment.id}</span>
+
+                <div className="divide-y divide-zinc-100">
+                  {aptList.map((apt) => (
+                    <div
+                      key={apt.id}
+                      onClick={() => setSelectedAppointment(apt)}
+                      className="p-5 hover:bg-zinc-50/70 cursor-pointer transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                    >
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2.5">
+                          <span className="font-bold text-zinc-900 text-sm">{apt.title}</span>
+                          <AdminBadge status={apt.status} />
+                        </div>
+                        <div className="text-xs text-zinc-600 flex flex-wrap gap-4 pt-0.5">
+                          <span>Customer: <strong className="font-medium text-zinc-800">{apt.customerName}</strong></span>
+                          <span>Time: {formatOttawaTimeRange(apt.scheduledStart, apt.scheduledEnd)}</span>
+                          <span>Format: {formatAppointmentType(apt.appointmentType)}</span>
+                          {apt.assignedStaffName && <span>Staff: {apt.assignedStaffName}</span>}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 sm:self-center">
+                        <AdminButton
+                          variant="ghost"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedAppointment(apt);
+                          }}
+                          className="text-[#49056B]"
+                          rightIcon={<ChevronRight className="w-4 h-4" />}
+                        >
+                          View
+                        </AdminButton>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="bg-white rounded-xl border border-zinc-200 p-16 text-center text-sm text-zinc-400">
+              No appointments found for the selected filters.
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* DRAWER: Appointment Details Slide-Over                                    */}
+      {/* ========================================================================= */}
+      {selectedAppointment && (
+        <div className="fixed inset-0 z-50 flex items-center justify-end bg-black/40 backdrop-blur-2xs">
+          <div className="w-full max-w-xl h-full bg-white shadow-2xl flex flex-col border-l border-zinc-200 overflow-hidden animate-in slide-in-from-right duration-200">
+            {/* Header */}
+            <div className="px-6 py-5 border-b border-zinc-200 flex items-center justify-between bg-zinc-50/80">
+              <div>
+                <div className="flex items-center gap-2.5">
+                  <h2 className="text-lg font-bold text-zinc-900 tracking-tight">
+                    {selectedAppointment.title}
+                  </h2>
+                  <AdminBadge status={selectedAppointment.status} />
+                </div>
+                <p className="text-xs text-zinc-500 mt-1">
+                  Enquiry Ref: <span className="font-semibold text-zinc-700">#{selectedAppointment.enquiryId.slice(0, 8)}</span>
                 </p>
               </div>
               <button
-                type="button"
                 onClick={() => setSelectedAppointment(null)}
-                className="p-1.5 rounded-md text-zinc-400 hover:text-zinc-700 hover:bg-zinc-100 transition-colors"
+                className="p-2 rounded-lg text-zinc-400 hover:text-zinc-700 hover:bg-zinc-200/60 transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            {/* Drawer Body */}
-            <div className="flex-1 overflow-y-auto px-6 py-5 space-y-6 text-xs">
-              {/* Timing & Format */}
-              <div className="p-3.5 rounded-md bg-zinc-50 border border-zinc-200/70 space-y-2">
-                <div className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">
-                  Scheduled Consultation Window (Ottawa Time)
+            {/* Body */}
+            <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6">
+              {/* Standardized Consultation Summary */}
+              <div className="p-4 rounded-xl bg-zinc-50 border border-zinc-200 space-y-2 text-sm text-zinc-700">
+                <div>
+                  <strong className="text-zinc-900 font-semibold">Date:</strong>{' '}
+                  <span>{formatOttawaDate(selectedAppointment.scheduledStart)}</span>
                 </div>
-                <div className="text-sm font-semibold text-zinc-900">
-                  {formatOttawaDate(selectedAppointment.scheduledStart)}
+                <div>
+                  <strong className="text-zinc-900 font-semibold">Time:</strong>{' '}
+                  <span>{formatOttawaTimeRange(selectedAppointment.scheduledStart, selectedAppointment.scheduledEnd)} · Ottawa time</span>
                 </div>
-                <div className="text-xs text-zinc-600">
-                  {formatOttawaTimeRange(selectedAppointment.scheduledStart, selectedAppointment.scheduledEnd)} ({selectedAppointment.durationMinutes} min)
+                <div>
+                  <strong className="text-zinc-900 font-semibold">Format:</strong>{' '}
+                  <span>{formatAppointmentType(selectedAppointment.appointmentType)}</span>
                 </div>
-                <div className="text-[11px] text-zinc-500">
-                  Format: <span className="font-medium text-zinc-700 capitalize">{formatAppointmentType(selectedAppointment.appointmentType)}</span>
+                <div>
+                  <strong className="text-zinc-900 font-semibold">Coordinator:</strong>{' '}
+                  <span>{selectedAppointment.assignedStaffName || 'Unassigned'}</span>
                 </div>
               </div>
 
               {/* Customer Contact */}
-              <div className="space-y-2 pb-4 border-b border-zinc-100">
-                <div className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">
-                  Customer Contact
+              <div className="space-y-3 pb-4 border-b border-zinc-100">
+                <div className="text-xs font-bold uppercase tracking-wider text-zinc-500">
+                  Customer Information
                 </div>
-                <div className="text-sm font-semibold text-zinc-900">
-                  {selectedAppointment.customerName}
-                </div>
-                <div className="text-xs text-zinc-600 flex items-center gap-2">
-                  <span className="font-medium">{selectedAppointment.customerEmail}</span>
+                <div className="p-4 rounded-xl bg-white border border-zinc-200 space-y-2 text-sm">
+                  <div className="font-bold text-zinc-900">{selectedAppointment.customerName}</div>
+                  <div className="text-zinc-600">{selectedAppointment.customerEmail}</div>
                   {selectedAppointment.customerPhone && (
-                    <span>• {selectedAppointment.customerPhone}</span>
+                    <div className="text-zinc-600">Phone: {selectedAppointment.customerPhone}</div>
                   )}
                 </div>
               </div>
 
-              {/* Assigned Coordinator */}
-              <div className="space-y-1 pb-4 border-b border-zinc-100">
-                <div className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">
-                  Assigned Staff Coordinator
+              {/* Meeting Coordinates / Link */}
+              <div className="space-y-3 pb-4 border-b border-zinc-100">
+                <div className="text-xs font-bold uppercase tracking-wider text-zinc-500">
+                  Location & Meeting Coordinates
                 </div>
-                <div className="text-xs font-semibold text-zinc-800">
-                  {selectedAppointment.assignedStaffName || 'Unassigned / Team Pool'}
-                </div>
-              </div>
-
-              {/* Location or Meeting URL */}
-              {selectedAppointment.locationOrLink && (
-                <div className="space-y-1 pb-4 border-b border-zinc-100">
-                  <div className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">
-                    Location / Meeting URL
-                  </div>
-                  {selectedAppointment.locationOrLink.startsWith('http') ? (
-                    <a
-                      href={selectedAppointment.locationOrLink}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-xs font-semibold text-[#49056B] hover:underline inline-flex items-center gap-1"
-                    >
-                      <span>{selectedAppointment.locationOrLink}</span>
-                      <ExternalLink className="w-3.5 h-3.5" />
-                    </a>
+                <div className="p-4 rounded-xl bg-white border border-zinc-200 text-sm">
+                  {selectedAppointment.locationOrLink ? (
+                    selectedAppointment.locationOrLink.startsWith('http') ? (
+                      <a
+                        href={selectedAppointment.locationOrLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[#49056B] text-white hover:bg-[#390044] text-xs font-semibold transition-colors"
+                      >
+                        <Video className="w-4 h-4" />
+                        <span>Join Video Meeting</span>
+                        <ExternalLink className="w-3.5 h-3.5" />
+                      </a>
+                    ) : (
+                      <div className="flex items-start gap-2 text-zinc-800">
+                        <MapPin className="w-4 h-4 text-zinc-400 mt-0.5" />
+                        <span>{selectedAppointment.locationOrLink}</span>
+                      </div>
+                    )
                   ) : (
-                    <div className="text-xs text-zinc-700">
-                      {selectedAppointment.locationOrLink}
-                    </div>
+                    <span className="text-zinc-400 italic">No location or meeting link recorded</span>
                   )}
+                </div>
+              </div>
+
+              {/* Staff Notes */}
+              {selectedAppointment.staffNotes && (
+                <div className="space-y-2 pb-4 border-b border-zinc-100">
+                  <div className="text-xs font-bold uppercase tracking-wider text-zinc-500">
+                    Internal Staff Notes
+                  </div>
+                  <div className="p-3.5 rounded-xl bg-zinc-50 border border-zinc-200 text-sm text-zinc-700 leading-relaxed whitespace-pre-wrap">
+                    {selectedAppointment.staffNotes}
+                  </div>
                 </div>
               )}
 
-              {/* Action Buttons */}
-              <div className="space-y-2 pt-2">
-                <div className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">
-                  Appointment Actions
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {selectedAppointment.status === 'pending' && (
-                    <button
-                      type="button"
-                      onClick={() => handleStatusUpdate(selectedAppointment.id, 'confirmed')}
-                      className="px-3 py-1.5 rounded-md bg-emerald-600 text-white font-semibold text-xs hover:bg-emerald-700 transition-colors"
-                    >
-                      Confirm Appointment
-                    </button>
-                  )}
-                  {selectedAppointment.status === 'confirmed' && (
-                    <button
-                      type="button"
-                      onClick={() => handleStatusUpdate(selectedAppointment.id, 'completed')}
-                      className="px-3 py-1.5 rounded-md bg-zinc-800 text-white font-semibold text-xs hover:bg-zinc-900 transition-colors"
-                    >
-                      Mark Completed
-                    </button>
-                  )}
-                  {selectedAppointment.status !== 'cancelled' && selectedAppointment.status !== 'completed' && (
-                    <>
-                      <button
-                        type="button"
-                        onClick={() => setIsRescheduleOpen(true)}
-                        className="px-3 py-1.5 rounded-md bg-purple-50 text-[#49056B] font-semibold text-xs hover:bg-purple-100 transition-colors"
-                      >
-                        Reschedule
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleCancelAppointment(selectedAppointment.id)}
-                        className="px-3 py-1.5 rounded-md bg-red-50 text-red-700 font-semibold text-xs hover:bg-red-100 transition-colors"
-                      >
-                        Cancel
-                      </button>
-                    </>
-                  )}
-                  <button
-                    type="button"
-                    onClick={() => handleResendInvite(selectedAppointment.id)}
-                    className="px-3 py-1.5 rounded-md border border-zinc-200 text-zinc-700 font-medium text-xs hover:bg-zinc-50 transition-colors ml-auto"
-                  >
-                    Resend Invite Email
-                  </button>
-                </div>
-              </div>
-
-              {/* Activity History Audit Log */}
-              <div className="space-y-3 pt-4 border-t border-zinc-100">
-                <div className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">
-                  Appointment Activity & Audit History
+              {/* Activity Timeline */}
+              <div className="space-y-3">
+                <div className="text-xs font-bold uppercase tracking-wider text-zinc-500">
+                  Appointment Audit Activity
                 </div>
                 {loadingActivity ? (
-                  <div className="py-2 text-zinc-400 text-center">Loading audit history...</div>
-                ) : appointmentActivity.length === 0 ? (
-                  <div className="text-zinc-400 text-center py-2">No activity recorded.</div>
-                ) : (
-                  <div className="space-y-2">
+                  <div className="py-4 text-center text-xs text-zinc-400">Loading activity...</div>
+                ) : appointmentActivity.length > 0 ? (
+                  <div className="space-y-2.5">
                     {appointmentActivity.map((act) => (
-                      <div
-                        key={act.id}
-                        className="p-2.5 rounded-md bg-zinc-50 border border-zinc-200/60 space-y-0.5"
-                      >
-                        <div className="flex items-center justify-between text-[11px]">
-                          <span className="font-semibold text-zinc-800 capitalize">
-                            {act.action.replace(/_/g, ' ')}
-                          </span>
-                          <span className="text-zinc-400">
-                            {formatCanadianDateTime(act.createdAt)}
-                          </span>
+                      <div key={act.id} className="p-3 rounded-lg bg-zinc-50 border border-zinc-200 text-xs space-y-1">
+                        <div className="flex items-center justify-between text-zinc-500">
+                          <span className="font-semibold text-zinc-800">{act.actorName || 'System'}</span>
+                          <span>{formatCanadianDateTime(act.createdAt)}</span>
                         </div>
-                        {act.details && (
-                          <p className="text-zinc-600 text-[11px]">{act.details}</p>
-                        )}
-                        <p className="text-[10px] text-zinc-400">By: {act.performedBy}</p>
+                        <p className="text-zinc-700">{act.action}: {act.details || 'No details'}</p>
                       </div>
                     ))}
                   </div>
+                ) : (
+                  <div className="p-3 rounded-lg bg-zinc-50 border border-zinc-200 text-xs text-zinc-400">
+                    No activity records logged.
+                  </div>
+                )}
+              </div>
+
+              {/* Actions Toolbar */}
+              <div className="pt-4 border-t border-zinc-200 flex flex-wrap items-center gap-2.5">
+                {selectedAppointment.status === 'pending' && (
+                  <AdminButton
+                    variant="primary"
+                    size="sm"
+                    onClick={() => handleStatusUpdate(selectedAppointment.id, 'confirmed')}
+                  >
+                    Confirm Meeting
+                  </AdminButton>
+                )}
+
+                <AdminButton
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsRescheduleOpen(true)}
+                >
+                  Reschedule
+                </AdminButton>
+
+                <AdminButton
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleResendInvite(selectedAppointment.id)}
+                >
+                  Resend Invite
+                </AdminButton>
+
+                {selectedAppointment.status !== 'cancelled' && (
+                  <AdminButton
+                    variant="danger"
+                    size="sm"
+                    onClick={() => openCancelDialog(selectedAppointment.id)}
+                    className="ml-auto"
+                  >
+                    Cancel Meeting
+                  </AdminButton>
                 )}
               </div>
             </div>
@@ -778,32 +729,41 @@ export default function AdminAppointmentsPage() {
       )}
 
       {/* Reschedule Modal */}
-      {selectedAppointment && (
+      {isRescheduleOpen && selectedAppointment && (
         <ScheduleMeetingModal
           isOpen={isRescheduleOpen}
           onClose={() => setIsRescheduleOpen(false)}
-          onScheduled={(updated) => {
-            setAppointments((prev) =>
-              prev.map((a) => (a.id === updated.id ? updated : a))
-            );
-            setSelectedAppointment(updated);
-            setFeedbackMessage('Consultation rescheduled successfully.');
-            setTimeout(() => setFeedbackMessage(null), 3500);
+          onSuccess={async () => {
+            await loadData();
+            setIsRescheduleOpen(false);
           }}
-          enquiry={{
-            id: selectedAppointment.enquiryId,
-            customer: {
-              name: selectedAppointment.customerName,
-              email: selectedAppointment.customerEmail,
-              phone: selectedAppointment.customerPhone || undefined,
-            },
-            services: [],
-            serviceLocation: selectedAppointment.locationOrLink || undefined,
+          enquiryId={selectedAppointment.enquiryId}
+          customer={{
+            name: selectedAppointment.customerName,
+            email: selectedAppointment.customerEmail,
+            phone: selectedAppointment.customerPhone || undefined,
           }}
           rescheduleAppointmentId={selectedAppointment.id}
           initialAppointment={selectedAppointment}
         />
       )}
+
+      {/* Confirmation Dialog (replaces window.prompt!) */}
+      <ConfirmDialog
+        isOpen={cancelDialogState.isOpen}
+        title="Cancel Appointment"
+        description="Please provide a reason for cancelling this appointment. This note will be recorded in the audit trail and sent to the customer."
+        confirmLabel="Cancel Appointment"
+        cancelLabel="Keep Appointment"
+        variant="danger"
+        requiresInput={true}
+        inputRequired={true}
+        inputLabel="Cancellation Reason"
+        inputPlaceholder="e.g. Coordinator conflict, customer requested cancellation..."
+        isLoading={cancelDialogState.isLoading}
+        onConfirm={handleConfirmCancelAppointment}
+        onCancel={() => setCancelDialogState({ isOpen: false, appointmentId: null, isLoading: false })}
+      />
     </div>
   );
 }

@@ -15,10 +15,14 @@ import {
   Archive,
   RefreshCw,
   X,
+  FileText,
+  ChevronRight,
 } from 'lucide-react';
 import { MediaAsset } from '@/components/admin/media/types';
 import { MediaDetailDrawer } from '@/components/admin/media/MediaDetailDrawer';
 import { MediaUploadModal } from '@/components/admin/media/MediaUploadModal';
+import { AdminButton } from '@/components/admin/ui/AdminButton';
+import { formatCanadianDate } from '@/lib/utils/formatters';
 
 export default function MediaLibraryPage() {
   const [assets, setAssets] = useState<MediaAsset[]>([]);
@@ -126,71 +130,40 @@ export default function MediaLibraryPage() {
       {/* Top Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-1">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-zinc-900">Media Library</h1>
-          <p className="text-xs text-zinc-500 mt-0.5">
+          <h1 className="text-2xl sm:text-[26px] font-bold tracking-tight text-zinc-900">
+            Media Library
+          </h1>
+          <p className="text-sm text-zinc-500 mt-0.5">
             Cloudflare R2 storage assets for Ottawa photography, service videos, and marketing media.
           </p>
         </div>
 
-        <button
+        <AdminButton
           id="upload-media-btn"
+          variant="primary"
+          size="sm"
           onClick={() => setIsUploadOpen(true)}
-          className="inline-flex items-center justify-center gap-2 px-3.5 py-1.5 bg-[#49056B] text-white text-xs font-semibold rounded-md hover:bg-[#390044] transition-colors shadow-2xs cursor-pointer self-start sm:self-auto"
+          leftIcon={<UploadCloud className="w-4 h-4" />}
+          className="self-start sm:self-auto"
         >
-          <UploadCloud className="w-4 h-4" />
-          <span>Upload Media</span>
-        </button>
+          Upload Media
+        </AdminButton>
       </div>
 
-      {/* Control Bar: Filters, Search, Views (Unified Layout) */}
-      <div className="bg-white p-3 rounded-md border border-zinc-200/80 shadow-2xs space-y-3">
-        <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-2.5">
-          {/* Type Tabs */}
-          <div className="flex items-center p-1 bg-zinc-100 rounded-md border border-zinc-200/80">
-            <button
-              onClick={() => setAssetType('all')}
-              className={`px-3 py-1 text-xs font-semibold rounded transition-all cursor-pointer ${
-                assetType === 'all'
-                  ? 'bg-white text-zinc-900 shadow-2xs'
-                  : 'text-zinc-600 hover:text-zinc-900'
-              }`}
-            >
-              All Media
-            </button>
-            <button
-              onClick={() => setAssetType('image')}
-              className={`px-3 py-1 text-xs font-semibold rounded transition-all cursor-pointer flex items-center gap-1.5 ${
-                assetType === 'image'
-                  ? 'bg-white text-zinc-900 shadow-2xs'
-                  : 'text-zinc-600 hover:text-zinc-900'
-              }`}
-            >
-              <ImageIcon className="w-3.5 h-3.5" />
-              <span>Images</span>
-            </button>
-            <button
-              onClick={() => setAssetType('video')}
-              className={`px-3 py-1 text-xs font-semibold rounded transition-all cursor-pointer flex items-center gap-1.5 ${
-                assetType === 'video'
-                  ? 'bg-white text-zinc-900 shadow-2xs'
-                  : 'text-zinc-600 hover:text-zinc-900'
-              }`}
-            >
-              <Film className="w-3.5 h-3.5" />
-              <span>Videos</span>
-            </button>
-          </div>
-
-          {/* Search Bar */}
-          <form onSubmit={handleSearchSubmit} className="relative flex-1 max-w-md">
-            <Search className="w-4 h-4 absolute left-3 top-2.5 text-zinc-400" />
+      {/* ========================================================================= */}
+      {/* TOOLBAR: Standardized Controls (44px height)                              */}
+      {/* ========================================================================= */}
+      <div className="bg-white p-4 sm:p-5 rounded-xl border border-zinc-200 shadow-sm space-y-4">
+        <form onSubmit={handleSearchSubmit} className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-12 gap-3 items-center">
+          {/* Search Input (5 cols) */}
+          <div className="sm:col-span-2 md:col-span-5 relative flex items-center">
+            <Search className="w-4 h-4 text-zinc-400 absolute left-3.5 pointer-events-none" />
             <input
               type="text"
-              id="media-search-input"
-              placeholder="Search filename, alt text, or caption..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-9 pr-8 py-1.5 bg-zinc-50 border border-zinc-200/80 rounded-md text-xs text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#49056B] focus:bg-white transition-all"
+              placeholder="Search filename, alt text, tag..."
+              className="w-full h-11 pl-10 pr-10 text-sm bg-white text-zinc-900 border border-zinc-300 rounded-lg placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#49056B]/20 focus:border-[#49056B] transition-all"
             />
             {search && (
               <button
@@ -199,122 +172,142 @@ export default function MediaLibraryPage() {
                   setSearch('');
                   setTimeout(loadMedia, 50);
                 }}
-                className="absolute right-2.5 top-2 text-zinc-400 hover:text-zinc-600 text-xs cursor-pointer"
+                className="absolute right-3 text-zinc-400 hover:text-zinc-600 p-1"
               >
-                <X className="w-3.5 h-3.5" />
+                <X className="w-4 h-4" />
               </button>
             )}
-          </form>
+          </div>
 
-          {/* Secondary Filters: Folder, Sort & View Mode */}
-          <div className="flex items-center gap-2 overflow-x-auto pb-1 lg:pb-0">
+          {/* Folder Filter (2 cols) */}
+          <div className="md:col-span-2">
             <select
               value={folder}
               onChange={(e) => setFolder(e.target.value)}
-              className="px-3 py-1.5 bg-zinc-50 border border-zinc-200/80 rounded-md text-xs font-medium text-zinc-700 focus:outline-none focus:ring-2 focus:ring-[#49056B] cursor-pointer"
+              className="w-full h-11 px-3.5 text-sm bg-white text-zinc-900 border border-zinc-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#49056B]/20 focus:border-[#49056B] transition-all"
             >
               <option value="all">All Folders</option>
-              <option value="hero">Hero</option>
-              <option value="about">About</option>
-              <option value="services">Services</option>
-              <option value="videos">Videos</option>
-              <option value="brand">Brand</option>
               <option value="general">General</option>
+              <option value="cleaning">Cleaning</option>
+              <option value="moving">Moving</option>
+              <option value="storage">Storage</option>
+              <option value="hero">Hero Banners</option>
             </select>
+          </div>
 
+          {/* Type Filter (2 cols) */}
+          <div className="md:col-span-2">
+            <select
+              value={assetType}
+              onChange={(e) => setAssetType(e.target.value as any)}
+              className="w-full h-11 px-3.5 text-sm bg-white text-zinc-900 border border-zinc-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#49056B]/20 focus:border-[#49056B] transition-all"
+            >
+              <option value="all">All File Types</option>
+              <option value="image">Images</option>
+              <option value="video">Videos</option>
+            </select>
+          </div>
+
+          {/* Sort Filter (2 cols) */}
+          <div className="md:col-span-2">
             <select
               value={sort}
               onChange={(e) => setSort(e.target.value as any)}
-              className="px-3 py-1.5 bg-zinc-50 border border-zinc-200/80 rounded-md text-xs font-medium text-zinc-700 focus:outline-none focus:ring-2 focus:ring-[#49056B] cursor-pointer"
+              className="w-full h-11 px-3.5 text-sm bg-white text-zinc-900 border border-zinc-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#49056B]/20 focus:border-[#49056B] transition-all"
             >
               <option value="date_desc">Newest First</option>
               <option value="date_asc">Oldest First</option>
               <option value="name_asc">Name (A-Z)</option>
-              <option value="name_desc">Name (Z-A)</option>
-              <option value="size_desc">File Size</option>
+              <option value="size_desc">Largest File</option>
             </select>
-
-            {/* Archive Toggle */}
-            <button
-              onClick={() => setIsArchived(!isArchived)}
-              className={`px-2.5 py-1.5 rounded-md border text-xs font-medium transition-colors cursor-pointer flex items-center gap-1 ${
-                isArchived
-                  ? 'bg-amber-50 border-amber-300 text-amber-800 font-semibold'
-                  : 'bg-zinc-50 border-zinc-200/80 text-zinc-600 hover:text-zinc-900'
-              }`}
-              title={isArchived ? 'Showing archived assets' : 'Show archived assets'}
-            >
-              <Archive className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Archived</span>
-            </button>
-
-            {/* View Mode Toggle */}
-            <div className="flex items-center p-0.5 bg-zinc-100 rounded-md border border-zinc-200/80">
-              <button
-                onClick={() => setViewMode('grid')}
-                className={`p-1 rounded transition-colors cursor-pointer ${
-                  viewMode === 'grid' ? 'bg-white shadow-2xs text-zinc-900' : 'text-zinc-400 hover:text-zinc-700'
-                }`}
-                title="Grid View"
-              >
-                <Grid className="w-3.5 h-3.5" />
-              </button>
-              <button
-                onClick={() => setViewMode('list')}
-                className={`p-1 rounded transition-colors cursor-pointer ${
-                  viewMode === 'list' ? 'bg-white shadow-2xs text-zinc-900' : 'text-zinc-400 hover:text-zinc-700'
-                }`}
-                title="List View"
-              >
-                <List className="w-3.5 h-3.5" />
-              </button>
-            </div>
           </div>
+
+          {/* View Mode Toggle (1 col) */}
+          <div className="md:col-span-1 flex items-center justify-end bg-zinc-100 p-1 rounded-lg h-11">
+            <button
+              type="button"
+              onClick={() => setViewMode('grid')}
+              className={`p-2 rounded-md transition-colors ${
+                viewMode === 'grid' ? 'bg-white shadow-2xs text-zinc-900' : 'text-zinc-500 hover:text-zinc-900'
+              }`}
+              title="Grid View"
+            >
+              <Grid className="w-4 h-4" />
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode('list')}
+              className={`p-2 rounded-md transition-colors ${
+                viewMode === 'list' ? 'bg-white shadow-2xs text-zinc-900' : 'text-zinc-500 hover:text-zinc-900'
+              }`}
+              title="List View"
+            >
+              <List className="w-4 h-4" />
+            </button>
+          </div>
+        </form>
+
+        <div className="flex items-center justify-between text-xs text-zinc-500 pt-2 border-t border-zinc-100">
+          <span>
+            Showing <strong className="text-zinc-900 font-semibold">{assets.length}</strong> media assets in Cloudflare R2
+          </span>
+          <label className="inline-flex items-center gap-2 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={isArchived}
+              onChange={(e) => setIsArchived(e.target.checked)}
+              className="w-4 h-4 rounded text-[#49056B] focus:ring-[#49056B] border-zinc-300"
+            />
+            <span className="text-xs text-zinc-600">Show archived items</span>
+          </label>
         </div>
       </div>
 
       {/* Main Asset Container */}
       {error && (
-        <div className="p-3.5 rounded-md bg-red-50 border border-red-200 text-xs text-red-700 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <AlertCircle className="w-4 h-4 text-red-500 shrink-0" />
+        <div className="p-4 rounded-xl bg-red-50 border border-red-200 text-sm text-red-800 flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <AlertCircle className="w-5 h-5 text-red-600 shrink-0" />
             <span>{error}</span>
           </div>
-          <button onClick={loadMedia} className="text-xs font-semibold underline cursor-pointer">
+          <button onClick={loadMedia} className="font-semibold underline hover:no-underline">
             Retry
           </button>
         </div>
       )}
 
       {loading ? (
-        <div className="py-24 flex flex-col items-center justify-center gap-2 text-zinc-400 text-xs">
-          <RefreshCw className="w-5 h-5 text-[#49056B] animate-spin" />
+        <div className="py-24 flex flex-col items-center justify-center gap-2 text-zinc-400 text-sm">
+          <RefreshCw className="w-6 h-6 text-[#49056B] animate-spin" />
           <span>Loading media assets...</span>
         </div>
       ) : assets.length === 0 ? (
-        <div className="py-20 text-center bg-white rounded-md border border-zinc-200/80 p-8 shadow-2xs space-y-2">
-          <div className="w-10 h-10 rounded-md bg-zinc-100 flex items-center justify-center mx-auto mb-2 text-zinc-400">
-            <ImageIcon className="w-5 h-5" />
+        <div className="py-20 text-center bg-white rounded-xl border border-zinc-200 p-8 shadow-sm space-y-3">
+          <div className="w-12 h-12 rounded-full bg-zinc-100 flex items-center justify-center mx-auto text-zinc-400">
+            <ImageIcon className="w-6 h-6" />
           </div>
-          <h3 className="text-sm font-bold text-zinc-900 tracking-tight">No Media Assets Found</h3>
-          <p className="text-xs text-zinc-500 max-w-sm mx-auto">
-            {isArchived
-              ? 'There are no archived media assets currently.'
-              : search
-              ? `No media items matching "${search}".`
-              : 'The media library has no assets in this folder.'}
-          </p>
-          <button
+          <div>
+            <h3 className="text-base font-bold text-zinc-900 tracking-tight">No Media Assets Found</h3>
+            <p className="text-sm text-zinc-500 max-w-sm mx-auto mt-1">
+              {isArchived
+                ? 'There are no archived media assets currently.'
+                : search
+                ? `No media items matching "${search}".`
+                : 'The media library has no assets in this folder.'}
+            </p>
+          </div>
+          <AdminButton
+            variant="primary"
+            size="sm"
             onClick={() => setIsUploadOpen(true)}
-            className="mt-3 px-3.5 py-1.5 bg-[#49056B] text-white text-xs font-semibold rounded-md hover:bg-[#390044] transition-colors cursor-pointer inline-flex items-center gap-1.5"
+            leftIcon={<UploadCloud className="w-4 h-4" />}
           >
-            <UploadCloud className="w-3.5 h-3.5" />
-            <span>Upload First Asset</span>
-          </button>
+            Upload First Asset
+          </AdminButton>
         </div>
       ) : viewMode === 'grid' ? (
         /* GRID VIEW */
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3.5">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
           {assets.map((asset) => {
             const hasDimensions = asset.width && asset.height;
             const metaLabel = hasDimensions
@@ -325,7 +318,7 @@ export default function MediaLibraryPage() {
               <div
                 key={asset.id}
                 onClick={() => handleAssetClick(asset)}
-                className="media-card-item group rounded-md border border-zinc-200/80 bg-white overflow-hidden hover:border-zinc-300 transition-all cursor-pointer flex flex-col shadow-2xs"
+                className="group rounded-xl border border-zinc-200 bg-white overflow-hidden hover:border-zinc-300 hover:shadow-md transition-all cursor-pointer flex flex-col shadow-2xs"
               >
                 {/* Media Thumbnail Container */}
                 <div className="aspect-[4/3] bg-zinc-100 relative overflow-hidden flex items-center justify-center border-b border-zinc-100">
@@ -340,7 +333,7 @@ export default function MediaLibraryPage() {
                         />
                       ) : null}
                       <div className="absolute inset-0 bg-black/30 flex items-center justify-center group-hover:bg-black/15 transition-colors">
-                        <div className="w-8 h-8 rounded-full bg-black/60 flex items-center justify-center text-white/95">
+                        <div className="w-9 h-9 rounded-full bg-black/60 flex items-center justify-center text-white">
                           <Film className="w-4 h-4 ml-0.5" />
                         </div>
                       </div>
@@ -349,7 +342,7 @@ export default function MediaLibraryPage() {
                     <img
                       src={asset.thumbnailUrl || asset.publicUrl}
                       alt={asset.altText || asset.originalFilename}
-                      className="w-full h-full object-cover transition-opacity duration-200"
+                      className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-102"
                       loading="lazy"
                       onError={(e) => {
                         (e.target as HTMLImageElement).src = '/assets/brand/laurrel-symbol.png';
@@ -359,15 +352,15 @@ export default function MediaLibraryPage() {
                   )}
                 </div>
 
-                {/* Concise Metadata Below Thumbnail */}
-                <div className="p-2.5 flex-1 flex flex-col justify-between">
+                {/* Metadata */}
+                <div className="p-3.5 flex-1 flex flex-col justify-between">
                   <h4
                     className="text-xs font-semibold text-zinc-900 truncate"
                     title={asset.originalFilename}
                   >
                     {asset.originalFilename}
                   </h4>
-                  <div className="flex items-center gap-1.5 mt-1 text-[10px] text-zinc-400">
+                  <div className="flex items-center gap-2 mt-1.5 text-[11px] text-zinc-500">
                     <span>{metaLabel}</span>
                     <span>•</span>
                     <span>{formatFileSize(asset.fileSize)}</span>
@@ -379,59 +372,74 @@ export default function MediaLibraryPage() {
         </div>
       ) : (
         /* LIST VIEW */
-        <div className="bg-white rounded-md border border-zinc-200/80 shadow-2xs overflow-hidden">
+        <div className="bg-white rounded-xl border border-zinc-200 shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="border-b border-zinc-200/80 bg-zinc-50/80 text-[11px] font-bold text-zinc-500 uppercase tracking-wider">
-                  <th className="py-2.5 px-4">Preview</th>
-                  <th className="py-2.5 px-4">Filename</th>
-                  <th className="py-2.5 px-4">Type</th>
-                  <th className="py-2.5 px-4">Folder</th>
-                  <th className="py-2.5 px-4">Dimensions</th>
-                  <th className="py-2.5 px-4">Size</th>
-                  <th className="py-2.5 px-4">Upload Date</th>
+                <tr className="bg-zinc-50/80 border-b border-zinc-200 text-xs font-semibold uppercase tracking-wider text-zinc-500">
+                  <th className="py-3.5 px-5">Preview</th>
+                  <th className="py-3.5 px-4">Filename</th>
+                  <th className="py-3.5 px-4">Folder</th>
+                  <th className="py-3.5 px-4">Type</th>
+                  <th className="py-3.5 px-4">Size</th>
+                  <th className="py-3.5 px-4 hidden md:table-cell">Uploaded</th>
+                  <th className="py-3.5 px-5 text-right">Action</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-zinc-100 text-xs">
+              <tbody className="divide-y divide-zinc-100 text-sm">
                 {assets.map((asset) => (
                   <tr
                     key={asset.id}
                     onClick={() => handleAssetClick(asset)}
-                    className="hover:bg-zinc-50/70 transition-colors cursor-pointer group"
+                    className="hover:bg-zinc-50/70 cursor-pointer transition-colors"
                   >
-                    <td className="py-2 px-4">
-                      <div className="w-12 h-9 rounded bg-zinc-900 overflow-hidden relative border border-zinc-200 shrink-0">
+                    <td className="py-3 px-5 w-16">
+                      <div className="w-11 h-11 rounded-lg bg-zinc-100 overflow-hidden relative flex items-center justify-center border border-zinc-200">
                         {asset.assetType === 'video' ? (
-                          <div className="w-full h-full flex items-center justify-center">
-                            {asset.thumbnailUrl ? (
-                              <img src={asset.thumbnailUrl} alt="" className="w-full h-full object-cover" />
-                            ) : (
-                              <Film className="w-4 h-4 text-zinc-400" />
-                            )}
-                          </div>
+                          <Film className="w-4 h-4 text-zinc-600" />
                         ) : (
                           <img
                             src={asset.thumbnailUrl || asset.publicUrl}
                             alt=""
                             className="w-full h-full object-cover"
+                            loading="lazy"
                           />
                         )}
                       </div>
                     </td>
-                    <td className="py-2 px-4 font-semibold text-zinc-900 group-hover:text-[#49056B] transition-colors truncate max-w-xs">
-                      {asset.originalFilename}
+                    <td className="py-3 px-4">
+                      <div className="font-semibold text-zinc-900 text-sm truncate max-w-xs">
+                        {asset.originalFilename}
+                      </div>
+                      <div className="text-xs text-zinc-500 truncate max-w-xs">
+                        {asset.altText || 'No alt text set'}
+                      </div>
                     </td>
-                    <td className="py-2 px-4 uppercase text-[10px] font-bold text-zinc-500">
-                      {asset.assetType}
+                    <td className="py-3 px-4 text-xs text-zinc-600 capitalize">
+                      {asset.folder}
                     </td>
-                    <td className="py-2 px-4 capitalize text-zinc-600">{asset.folder}</td>
-                    <td className="py-2 px-4 text-zinc-600">
-                      {asset.width && asset.height ? `${asset.width} × ${asset.height}` : '—'}
+                    <td className="py-3 px-4 text-xs text-zinc-600 uppercase">
+                      {asset.mimeType?.split('/')[1] || asset.assetType}
                     </td>
-                    <td className="py-2 px-4 text-zinc-600">{formatFileSize(asset.fileSize)}</td>
-                    <td className="py-2 px-4 text-zinc-500">
-                      {new Date(asset.createdAt).toLocaleDateString('en-CA')}
+                    <td className="py-3 px-4 text-xs text-zinc-600">
+                      {formatFileSize(asset.fileSize)}
+                    </td>
+                    <td className="py-3 px-4 hidden md:table-cell text-xs text-zinc-500">
+                      {formatCanadianDate(asset.createdAt)}
+                    </td>
+                    <td className="py-3 px-5 text-right">
+                      <AdminButton
+                        variant="ghost"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleAssetClick(asset);
+                        }}
+                        className="text-[#49056B]"
+                        rightIcon={<ChevronRight className="w-4 h-4" />}
+                      >
+                        Inspect
+                      </AdminButton>
                     </td>
                   </tr>
                 ))}
@@ -441,7 +449,7 @@ export default function MediaLibraryPage() {
         </div>
       )}
 
-      {/* Asset Detail Drawer */}
+      {/* Details Drawer */}
       <MediaDetailDrawer
         asset={selectedAsset}
         isOpen={isDrawerOpen}
@@ -455,7 +463,7 @@ export default function MediaLibraryPage() {
         isOpen={isUploadOpen}
         onClose={() => setIsUploadOpen(false)}
         onSuccess={handleUploadSuccess}
-        defaultFolder={folder !== 'all' ? folder : 'general'}
+        defaultFolder={folder === 'all' ? 'general' : folder}
       />
     </div>
   );
