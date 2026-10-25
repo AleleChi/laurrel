@@ -393,9 +393,9 @@ export type AppointmentType =
   | 'zoom';
 
 export const APPOINTMENT_TYPE_LABELS: Record<string, string> = {
-  telephone: 'Telephone Consultation',
-  in_person: 'In-Person Consultation',
-  on_site: 'On-Site Property Assessment',
+  telephone: 'Phone Call',
+  in_person: 'Office Visit',
+  on_site: 'Property Visit',
   google_meet: 'Google Meet',
   ms_teams: 'Microsoft Teams',
   zoom: 'Zoom',

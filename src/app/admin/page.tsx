@@ -246,9 +246,6 @@ export default function AdminOverviewPage() {
           <h1 className="text-2xl font-bold tracking-tight text-zinc-900">
             Overview
           </h1>
-          <p className="text-xs text-zinc-500 mt-0.5">
-            Operations summary and active customer dispatch for Ottawa, Ontario.
-          </p>
         </div>
 
         <div className="flex items-center gap-2.5">
@@ -291,7 +288,7 @@ export default function AdminOverviewPage() {
             <div>
               <div className="flex items-start justify-between gap-3">
                 <span className="text-[11px] font-bold uppercase tracking-wider text-purple-200/90 leading-tight">
-                  Total Inbound Enquiries
+                  Total Enquiries
                 </span>
                 <div className="w-10 h-10 rounded-md bg-white/15 flex items-center justify-center text-white shrink-0 shadow-inner">
                   <Inbox className="w-5 h-5 text-white" />
@@ -336,7 +333,7 @@ export default function AdminOverviewPage() {
 
             <div className="mt-4 pt-3 border-t border-white/15 flex items-center justify-between text-xs">
               <span className="text-orange-100/90 truncate pr-2">
-                Requires triage & quote
+                Awaiting review
               </span>
               <span className="text-xs text-white/90 font-medium shrink-0">
                 Action Required
@@ -365,7 +362,7 @@ export default function AdminOverviewPage() {
 
             <div className="mt-4 pt-3 border-t border-white/15 flex items-center justify-between text-xs">
               <span className="text-teal-100/90 truncate pr-2">
-                Scheduled meetings in Ottawa
+                Scheduled consultations
               </span>
               <span className="text-xs text-white/90 font-medium shrink-0">
                 Confirmed
@@ -394,10 +391,10 @@ export default function AdminOverviewPage() {
 
             <div className="mt-4 pt-3 border-t border-white/15 flex items-center justify-between text-xs">
               <span className="text-amber-100/90 truncate pr-2">
-                Direct customer callbacks
+                Customers awaiting a call
               </span>
               <span className="text-xs text-white/90 font-medium shrink-0">
-                Direct Line
+                Action Required
               </span>
             </div>
           </div>
@@ -415,7 +412,7 @@ export default function AdminOverviewPage() {
                   </h2>
                 </div>
                 <p className="text-xs text-purple-200/70 mt-0.5">
-                  Verified daily inbound volume across Ottawa
+                  Enquiries received in the last 60 days
                 </p>
               </div>
 
@@ -604,7 +601,6 @@ export default function AdminOverviewPage() {
                   <h2 className="text-sm font-bold text-zinc-900">Service Demand</h2>
                   <p className="text-[11px] text-zinc-500 mt-0.5">Distribution by service category</p>
                 </div>
-                <span className="text-[11px] font-semibold text-zinc-400">Ottawa Market</span>
               </div>
 
               {serviceChartData.length > 0 ? (
@@ -726,7 +722,7 @@ export default function AdminOverviewPage() {
                   <PhoneCall className="w-4 h-4 text-[#D97706] shrink-0 mt-0.5" />
                   <div className="min-w-0">
                     <p className="font-semibold text-zinc-900">
-                      {stats.pendingHandoffs} customer callbacks requested
+                      {stats.pendingHandoffs} customers awaiting a call
                     </p>
                     <p className="text-[11px] text-zinc-500 mt-0.5">
                       Respond to customer telephone callback inquiries.

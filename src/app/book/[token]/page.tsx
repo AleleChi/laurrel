@@ -6,7 +6,7 @@ import { useParams } from 'next/navigation';
 import {
   Calendar as CalendarIcon,
   Clock,
-  Phone,
+  PhoneCall,
   MapPin,
   Video,
   CheckCircle2,
@@ -25,7 +25,7 @@ import {
   CalendarCheck,
   AlertTriangle,
   X,
-  Building,
+  Building2,
 } from 'lucide-react';
 import { Logo } from '@/components/ui/Logo';
 
@@ -337,9 +337,9 @@ export default function AppointmentManagementPage() {
 
   const typeLabelMap: Record<string, string> = {
     telephone: 'Telephone Consultation',
-    google_meet: 'Google Meet (Video Consultation)',
-    on_site: 'On-Site Property Assessment',
-    in_person: 'In-Person Consultation (Office)',
+    google_meet: 'Google Meet',
+    on_site: 'Property Visit',
+    in_person: 'Office Visit',
   };
 
   return (
@@ -492,11 +492,11 @@ export default function AppointmentManagementPage() {
                   {appointment.appointmentType === 'google_meet' ? (
                     <Video className="w-5 h-5" />
                   ) : appointment.appointmentType === 'telephone' ? (
-                    <Phone className="w-5 h-5" />
+                    <PhoneCall className="w-5 h-5" />
                   ) : appointment.appointmentType === 'on_site' ? (
                     <MapPin className="w-5 h-5" />
                   ) : (
-                    <Building className="w-5 h-5" />
+                    <Building2 className="w-5 h-5" />
                   )}
                 </div>
                 <div className="flex-1">
@@ -602,7 +602,7 @@ export default function AppointmentManagementPage() {
                   </div>
                   {appointment.customerPhone && (
                     <div className="text-slate-600 text-xs flex items-center gap-2">
-                      <Phone className="w-3.5 h-3.5 text-slate-400" /> {appointment.customerPhone}
+                      <PhoneCall className="w-3.5 h-3.5 text-slate-400" /> {appointment.customerPhone}
                     </div>
                   )}
                   {appointment.serviceAddress && (
@@ -658,7 +658,7 @@ export default function AppointmentManagementPage() {
           </p>
           <div className="flex items-center justify-center gap-6 text-xs font-semibold text-[#390044]">
             <a href="tel:+16135550199" className="flex items-center gap-1.5 hover:underline">
-              <Phone className="w-3.5 h-3.5" /> +1 (613) 555-0199
+              <PhoneCall className="w-3.5 h-3.5" /> +1 (613) 555-0199
             </a>
             <a href="mailto:info@laurrelservices.ca" className="flex items-center gap-1.5 hover:underline">
               <Mail className="w-3.5 h-3.5" /> info@laurrelservices.ca

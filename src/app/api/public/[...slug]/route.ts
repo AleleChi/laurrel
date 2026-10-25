@@ -66,14 +66,26 @@ export async function GET(req: NextRequest, { params }: { params: { slug: string
     try {
       data = text ? JSON.parse(text) : {};
     } catch {
-      data = { success: false, error: 'Administrative service returned an unformatted response.' };
+      console.error(
+        `[Public Gateway Diagnostic] Backend returned non-JSON response (status: ${res.status}, content-type: ${contentType}):`,
+        text.slice(0, 300)
+      );
+      return NextResponse.json(
+        {
+          success: false,
+          error: "We couldn't load the available times. Please try again.",
+          serviceUnavailable: true,
+          status: res.status,
+        },
+        { status: res.status >= 400 ? res.status : 503 }
+      );
     }
 
     return NextResponse.json(data, { status: res.status });
   } catch (err: any) {
     console.error(`[Public Gateway Error] GET to backend at ${target}:`, err.message);
     return NextResponse.json(
-      { success: false, error: 'Appointment scheduling service is temporarily unreachable. Please try again shortly.' },
+      { success: false, error: "We couldn't load the available times. Please try again.", serviceUnavailable: true },
       { status: 503 }
     );
   }
@@ -94,19 +106,32 @@ export async function POST(req: NextRequest, { params }: { params: { slug: strin
       body: JSON.stringify(body),
     });
 
+    const contentType = res.headers.get('content-type') || '';
     const text = await res.text();
     let data;
     try {
       data = text ? JSON.parse(text) : {};
     } catch {
-      data = { success: false, error: 'Administrative service returned an unformatted response.' };
+      console.error(
+        `[Public Gateway Diagnostic] POST backend returned non-JSON response (status: ${res.status}, content-type: ${contentType}):`,
+        text.slice(0, 300)
+      );
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Appointment scheduling service is temporarily unreachable. Please try again.',
+          serviceUnavailable: true,
+          status: res.status,
+        },
+        { status: res.status >= 400 ? res.status : 503 }
+      );
     }
 
     return NextResponse.json(data, { status: res.status });
   } catch (err: any) {
     console.error(`[Public Gateway Error] POST to backend at ${target}:`, err.message);
     return NextResponse.json(
-      { success: false, error: 'Appointment scheduling service is temporarily unreachable. Please try again.' },
+      { success: false, error: 'Appointment scheduling service is temporarily unreachable. Please try again.', serviceUnavailable: true },
       { status: 503 }
     );
   }

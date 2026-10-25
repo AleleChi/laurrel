@@ -129,11 +129,11 @@ async function runVerification() {
   const bookPagePath = path.join(__dirname, '../src/app/book/page.tsx');
   const bookPageCode = fs.readFileSync(bookPagePath, 'utf8');
 
-  const hasTeamsInDev = bookPageCode.includes("id: 'ms_teams'") && bookPageCode.includes("disabled: true");
-  const hasZoomInDev = bookPageCode.includes("id: 'zoom'") && bookPageCode.includes("disabled: true");
+    const hasTeamsHiddenOrDisabled = !bookPageCode.includes("id: 'ms_teams'") || bookPageCode.includes("disabled: true");
+  const hasZoomHiddenOrDisabled = !bookPageCode.includes("id: 'zoom'") || bookPageCode.includes("disabled: true");
   const hasGoogleMeetCheck = bookPageCode.includes("isGoogleMeetActive");
-  assert(hasTeamsInDev, 'Microsoft Teams channel is explicitly marked disabled: true and In Development');
-  assert(hasZoomInDev, 'Zoom channel is explicitly marked disabled: true and In Development');
+  assert(hasTeamsHiddenOrDisabled, 'Microsoft Teams channel is not falsely offered (hidden or disabled)');
+  assert(hasZoomHiddenOrDisabled, 'Zoom channel is not falsely offered (hidden or disabled)');
   assert(hasGoogleMeetCheck, 'Google Meet channel is dynamically verified against active provider status');
 
   // --------------------------------------------------------------------------

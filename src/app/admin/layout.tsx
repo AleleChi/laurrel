@@ -8,8 +8,8 @@ import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard,
   Inbox,
-  FileEdit,
-  Image as ImageIcon,
+  FilePenLine,
+  Images,
   CalendarDays,
   LogOut,
   Menu,
@@ -187,13 +187,13 @@ export default function AdminLayout({
     {
       label: 'Website Content',
       href: '/admin/website',
-      icon: FileEdit,
+      icon: FilePenLine,
       active: pathname.startsWith('/admin/website'),
     },
     {
       label: 'Media Library',
       href: '/admin/media',
-      icon: ImageIcon,
+      icon: Images,
       active: pathname.startsWith('/admin/media'),
     },
   ];

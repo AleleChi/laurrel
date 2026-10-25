@@ -5,28 +5,27 @@ import Link from 'next/link';
 import {
   Calendar as CalendarIcon,
   Clock,
+  PhoneCall,
   Phone,
   MapPin,
-  Building,
   Video,
+  Building2,
   Check,
-  CheckCircle2,
-  ArrowRight,
-  ArrowLeft,
   ChevronLeft,
   ChevronRight,
-  Sparkles,
-  Truck,
-  Box,
-  HelpCircle,
-  ExternalLink,
-  Download,
+  ArrowRight,
+  ArrowLeft,
   AlertCircle,
   RefreshCw,
   Globe,
+  SprayCan,
+  Truck,
+  Warehouse,
+  ClipboardList,
   User,
   Mail,
-  FileText,
+  Download,
+  ExternalLink,
 } from 'lucide-react';
 import { Logo } from '@/components/ui/Logo';
 
@@ -52,78 +51,54 @@ interface PublicConfig {
 const SERVICES = [
   {
     id: 'cleaning',
-    title: 'Residential & Commercial Cleaning',
-    desc: 'Deep cleaning, turnover service, and regular maintenance for homes and offices.',
-    icon: Sparkles,
+    title: 'Cleaning',
+    desc: 'Home, office and commercial cleaning.',
+    icon: SprayCan,
   },
   {
     id: 'moving',
-    title: 'Local & Long-Distance Moving',
-    desc: 'Professional residential moving, packing, loading, and secure transit across Ottawa.',
+    title: 'Moving',
+    desc: 'Home and business moving services.',
     icon: Truck,
   },
   {
     id: 'storage',
-    title: 'Secure Storage Solutions',
-    desc: 'Climate-controlled storage space with flexible short-term and long-term terms.',
-    icon: Box,
+    title: 'Storage',
+    desc: 'Storage options for your belongings.',
+    icon: Warehouse,
   },
   {
     id: 'combined',
-    title: 'Combined / General Consultation',
-    desc: 'Integrated cleaning, moving, and storage planning for home transitions.',
-    icon: HelpCircle,
+    title: 'Multiple Services',
+    desc: 'Discuss more than one service.',
+    icon: ClipboardList,
   },
 ];
 
 const CHANNELS = [
   {
     id: 'telephone',
-    title: 'Telephone Consultation',
-    desc: 'A Laurrel coordinator will initiate a phone call at the scheduled consultation time.',
-    icon: Phone,
-    badge: 'Direct Phone',
-    disabled: false,
+    title: 'Phone Call',
+    desc: "We'll call you at your scheduled time.",
+    icon: PhoneCall,
   },
   {
     id: 'google_meet',
-    title: 'Google Meet (Video Consultation)',
-    desc: 'A dedicated video conference with automated link generation for visual walkthroughs.',
+    title: 'Google Meet',
+    desc: 'Speak with our team over a video call.',
     icon: Video,
-    badge: 'Video Call',
-    disabled: false,
   },
   {
     id: 'on_site',
-    title: 'On-Site Property Assessment',
-    desc: 'A field coordinator visits your Ottawa home or facility for accurate measurement.',
+    title: 'Property Visit',
+    desc: 'Arrange an assessment at your property.',
     icon: MapPin,
-    badge: 'Ottawa In-Person',
-    disabled: false,
   },
   {
     id: 'in_person',
-    title: 'Office Consultation',
-    desc: 'Meet in-person with our operations team at our Ottawa headquarters.',
-    icon: Building,
-    badge: 'Office Visit',
-    disabled: false,
-  },
-  {
-    id: 'ms_teams',
-    title: 'Microsoft Teams',
-    desc: 'Direct integration in development. Please select Google Meet or Telephone consultation.',
-    icon: Video,
-    badge: 'In Development',
-    disabled: true,
-  },
-  {
-    id: 'zoom',
-    title: 'Zoom Meetings',
-    desc: 'Direct integration in development. Please select Google Meet or Telephone consultation.',
-    icon: Video,
-    badge: 'In Development',
-    disabled: true,
+    title: 'Office Visit',
+    desc: 'Meet at our office.',
+    icon: Building2,
   },
 ];
 
@@ -226,42 +201,46 @@ export default function PublicBookingPage() {
     }
   }, [selectedDateStr]);
 
+  const [isServiceError, setIsServiceError] = useState<boolean>(false);
+
+  const fetchSlots = async () => {
+    if (!selectedDateStr) return;
+    setLoadingSlots(true);
+    setSlotError(null);
+    setIsServiceError(false);
+    setSelectedSlot(null);
+
+    try {
+      const query = new URLSearchParams({
+        date: selectedDateStr,
+        type: selectedChannel,
+        timezone: customerTimezone,
+      });
+
+      const res = await fetch(`/api/public/appointments/availability?${query.toString()}`);
+      const data = await res.json().catch(() => ({}));
+
+      if (res.ok && data.success) {
+        setAvailableSlots(data.slots || []);
+        if (!data.dayEnabled) {
+          setSlotError(data.message || 'Laurrel booking hours are closed on this day. Please select Monday to Saturday.');
+        } else if (!data.slots || data.slots.length === 0) {
+          setSlotError(data.message || 'All appointment times are fully booked for this date. Please select another day.');
+        }
+      } else {
+        setIsServiceError(true);
+        setSlotError("We couldn't load the available times. Please try again.");
+      }
+    } catch (err: any) {
+      setIsServiceError(true);
+      setSlotError("We couldn't load the available times. Please try again.");
+    } finally {
+      setLoadingSlots(false);
+    }
+  };
+
   // Load available slots when date, channel, or timezone changes
   useEffect(() => {
-    if (!selectedDateStr) return;
-
-    const fetchSlots = async () => {
-      setLoadingSlots(true);
-      setSlotError(null);
-      setSelectedSlot(null);
-
-      try {
-        const query = new URLSearchParams({
-          date: selectedDateStr,
-          type: selectedChannel,
-          timezone: customerTimezone,
-        });
-
-        const res = await fetch(`/api/public/appointments/availability?${query.toString()}`);
-        const data = await res.json();
-
-        if (res.ok && data.success) {
-          setAvailableSlots(data.slots || []);
-          if (!data.dayEnabled) {
-            setSlotError(data.message || 'Consultations are not available on this day.');
-          } else if (data.slots.length === 0) {
-            setSlotError(data.message || 'All consultation slots are currently booked for this date. Please select another day.');
-          }
-        } else {
-          setSlotError(data.error || 'Failed to retrieve available times.');
-        }
-      } catch (err: any) {
-        setSlotError('Scheduling network error. Please refresh or try again.');
-      } finally {
-        setLoadingSlots(false);
-      }
-    };
-
     fetchSlots();
   }, [selectedDateStr, selectedChannel, customerTimezone]);
 
@@ -472,10 +451,10 @@ export default function PublicBookingPage() {
             <div>
               <span className="text-xs font-bold uppercase tracking-wider text-[#390044]">Step 1 of 5</span>
               <h2 className="text-xl font-bold tracking-tight text-zinc-900 mt-1">
-                What service would you like to discuss?
+                What service do you need?
               </h2>
               <p className="text-xs text-zinc-500 mt-0.5">
-                Our specialists will prepare relevant service scope and pricing guidance prior to our call.
+                Choose the service you'd like to discuss with our team.
               </p>
             </div>
 
@@ -489,27 +468,27 @@ export default function PublicBookingPage() {
                     key={srv.id}
                     type="button"
                     onClick={() => setSelectedService(srv.id)}
-                    className={`text-left p-5 rounded-xl border transition-all flex flex-col justify-between cursor-pointer ${
+                    className={`text-left p-5 rounded-lg border transition-all flex flex-col justify-between cursor-pointer ${
                       isSelected
-                        ? 'bg-purple-50/40 border-[#390044] shadow-sm ring-1 ring-[#390044]'
-                        : 'bg-white border-zinc-200/90 hover:border-zinc-300 hover:bg-zinc-50/50'
+                        ? 'bg-purple-50/30 border-[#390044] shadow-xs ring-1 ring-[#390044]'
+                        : 'bg-white border-zinc-200 hover:border-zinc-300 hover:bg-zinc-50/50'
                     }`}
                   >
                     <div>
                       <div className="flex items-center justify-between mb-3">
                         <div
-                          className={`w-9 h-9 rounded-lg flex items-center justify-center ${
-                            isSelected ? 'bg-[#390044] text-white' : 'bg-zinc-100 text-zinc-600'
+                          className={`w-9 h-9 rounded-md flex items-center justify-center ${
+                            isSelected ? 'bg-[#390044] text-white' : 'bg-zinc-100 text-zinc-700'
                           }`}
                         >
-                          <Icon className="w-5 h-5" />
+                          <Icon className="w-5 h-5 stroke-[1.8]" />
                         </div>
                         <div
-                          className={`w-5 h-5 rounded-full border flex items-center justify-center ${
+                          className={`w-4 h-4 rounded-full border flex items-center justify-center ${
                             isSelected ? 'border-[#390044] bg-[#390044] text-white' : 'border-zinc-300 bg-white'
                           }`}
                         >
-                          {isSelected && <Check className="w-3.5 h-3.5 stroke-[3]" />}
+                          {isSelected && <Check className="w-3 h-3 stroke-[3]" />}
                         </div>
                       </div>
                       <h3 className="text-sm font-bold text-zinc-900 leading-snug">{srv.title}</h3>
@@ -541,24 +520,28 @@ export default function PublicBookingPage() {
             <div>
               <span className="text-xs font-bold uppercase tracking-wider text-[#390044]">Step 2 of 5</span>
               <h2 className="text-xl font-bold tracking-tight text-zinc-900 mt-1">
-                How would you prefer to connect?
+                How would you like to meet?
               </h2>
               <p className="text-xs text-zinc-500 mt-0.5">
-                Choose between telephone, automated Google Meet video, on-site assessment, or office consultation.
+                Choose the type of appointment that works for you.
               </p>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {CHANNELS.map((ch) => {
+              {CHANNELS.filter((ch) => {
+                // Show Office Visit only if an approved office address has been configured
+                if (ch.id === 'in_person') {
+                  return Boolean(config?.isOfficeConsultationActive && config?.officeAddress);
+                }
+                return true;
+              }).map((ch) => {
                 const Icon = ch.icon;
                 const isSelected = selectedChannel === ch.id;
 
-                // Channel availability check
+                // Show Google Meet as bookable only if actual authorized integration is active
                 const isGoogleMeetOffline =
                   ch.id === 'google_meet' && Boolean(config && !config.isGoogleMeetActive);
-                const isOfficeUnavailable =
-                  ch.id === 'in_person' && Boolean(config && !config.isOfficeConsultationActive);
-                const isDisabled = ch.disabled || isGoogleMeetOffline || isOfficeUnavailable;
+                const isDisabled = isGoogleMeetOffline;
 
                 return (
                   <button
@@ -568,59 +551,49 @@ export default function PublicBookingPage() {
                     onClick={() => {
                       if (!isDisabled) setSelectedChannel(ch.id);
                     }}
-                    className={`text-left p-5 rounded-xl border transition-all flex flex-col justify-between ${
+                    className={`text-left p-5 rounded-lg border transition-all flex flex-col justify-between ${
                       isDisabled
                         ? 'bg-zinc-50/80 border-zinc-200/60 opacity-60 cursor-not-allowed'
                         : isSelected
-                        ? 'bg-purple-50/40 border-[#390044] shadow-sm ring-1 ring-[#390044] cursor-pointer'
-                        : 'bg-white border-zinc-200/90 hover:border-zinc-300 hover:bg-zinc-50/50 cursor-pointer'
+                        ? 'bg-purple-50/30 border-[#390044] shadow-xs ring-1 ring-[#390044] cursor-pointer'
+                        : 'bg-white border-zinc-200 hover:border-zinc-300 hover:bg-zinc-50/50 cursor-pointer'
                     }`}
                   >
                     <div>
                       <div className="flex items-center justify-between mb-3">
                         <div
-                          className={`w-9 h-9 rounded-lg flex items-center justify-center ${
+                          className={`w-9 h-9 rounded-md flex items-center justify-center ${
                             isSelected && !isDisabled
                               ? 'bg-[#390044] text-white'
-                              : 'bg-zinc-100 text-zinc-600'
+                              : 'bg-zinc-100 text-zinc-700'
                           }`}
                         >
-                          <Icon className="w-5 h-5" />
+                          <Icon className="w-5 h-5 stroke-[1.8]" />
                         </div>
-                        <span className={`text-[10px] font-semibold px-2 py-0.5 rounded ${
-                          ch.disabled || isOfficeUnavailable
-                            ? 'bg-amber-100 text-amber-800 border border-amber-200'
-                            : 'bg-zinc-100 text-zinc-500'
-                        }`}>
-                          {isOfficeUnavailable ? 'Unavailable' : ch.badge}
-                        </span>
+                        <div
+                          className={`w-4 h-4 rounded-full border flex items-center justify-center ${
+                            isSelected && !isDisabled
+                              ? 'border-[#390044] bg-[#390044] text-white'
+                              : 'border-zinc-300 bg-white'
+                          }`}
+                        >
+                          {isSelected && !isDisabled && <Check className="w-3 h-3 stroke-[3]" />}
+                        </div>
                       </div>
                       <h3 className="text-sm font-bold text-zinc-900 leading-snug">{ch.title}</h3>
                       <p className="text-xs text-zinc-500 mt-1 leading-relaxed">{ch.desc}</p>
                     </div>
 
                     {isGoogleMeetOffline && (
-                      <div className="mt-3 text-[11px] font-medium text-amber-700 bg-amber-50 p-2 rounded border border-amber-200 flex items-center gap-1.5">
-                        <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                        <span>Google Meet offline — please select Telephone or On-Site assessment.</span>
-                      </div>
-                    )}
-                    {isOfficeUnavailable && (
-                      <div className="mt-3 text-[11px] font-medium text-amber-800 bg-amber-50/80 p-2 rounded border border-amber-200 flex items-center gap-1.5">
+                      <div className="mt-3 text-[11px] font-medium text-amber-800 bg-amber-50/80 p-2.5 rounded-md border border-amber-200 flex items-center gap-1.5">
                         <AlertCircle className="w-3.5 h-3.5 shrink-0 text-amber-600" />
-                        <span>Office consultations are temporarily unavailable (no verified meeting location configured). Please select Telephone, Google Meet, or On-Site assessment.</span>
+                        <span>Google Meet is temporarily unavailable. Please select Phone Call or Property Visit.</span>
                       </div>
                     )}
-                    {ch.id === 'in_person' && config?.isOfficeConsultationActive && config.officeAddress && (
+                    {ch.id === 'in_person' && config?.officeAddress && (
                       <div className="mt-3 text-[11px] text-zinc-600 bg-zinc-50 p-2 rounded border border-zinc-200 flex items-start gap-1.5">
                         <MapPin className="w-3.5 h-3.5 shrink-0 text-[#390044] mt-0.5" />
-                        <span>Location: {config.officeAddress}</span>
-                      </div>
-                    )}
-                    {ch.disabled && !isOfficeUnavailable && (
-                      <div className="mt-3 text-[11px] font-medium text-amber-800 bg-amber-50/80 p-2 rounded border border-amber-200 flex items-center gap-1.5">
-                        <AlertCircle className="w-3.5 h-3.5 shrink-0 text-amber-600" />
-                        <span>Channel in active development — coming soon.</span>
+                        <span>{config.officeAddress}</span>
                       </div>
                     )}
                   </button>
@@ -658,10 +631,13 @@ export default function PublicBookingPage() {
               <div>
                 <span className="text-xs font-bold uppercase tracking-wider text-[#390044]">Step 3 of 5</span>
                 <h2 className="text-xl font-bold tracking-tight text-zinc-900 mt-1">
-                  Select Consultation Date & Time
+                  Choose a date and time
                 </h2>
                 <p className="text-xs text-zinc-500 mt-0.5">
-                  Available slots reflect Ottawa business hours and coordinator calendar free/busy availability.
+                  Select an available appointment time.
+                </p>
+                <p className="text-[11px] text-zinc-400 mt-0.5">
+                  Times are displayed in your selected timezone. Laurrel operates on Ottawa time (Eastern Time).
                 </p>
               </div>
 
@@ -765,7 +741,7 @@ export default function PublicBookingPage() {
                 </div>
 
                 <div className="p-3 rounded-lg bg-zinc-50 border border-zinc-200/60 text-[11px] text-zinc-500 leading-relaxed">
-                  Ottawa headquarters operating hours: <span className="font-semibold text-zinc-700">Mon–Fri 8:00 AM – 6:00 PM · Sat 9:00 AM – 4:00 PM</span>.
+                  Laurrel booking hours: <span className="font-semibold text-zinc-700">Mon–Fri 8:00 AM – 6:00 PM · Sat 9:00 AM – 4:00 PM (Ottawa time)</span>
                 </div>
               </div>
 
@@ -779,13 +755,31 @@ export default function PublicBookingPage() {
                 {loadingSlots ? (
                   <div className="py-16 flex flex-col items-center justify-center gap-2 text-zinc-400 text-xs">
                     <RefreshCw className="w-5 h-5 text-[#390044] animate-spin" />
-                    <span>Checking coordinator availability...</span>
+                    <span>Checking available times...</span>
+                  </div>
+                ) : isServiceError ? (
+                  <div className="p-5 rounded-lg bg-amber-50/70 border border-amber-200 text-xs text-amber-900 space-y-3">
+                    <div className="font-semibold flex items-center gap-2 text-amber-900">
+                      <AlertCircle className="w-4 h-4 text-amber-700 shrink-0" />
+                      <span>We couldn't load the available times. Please try again.</span>
+                    </div>
+                    <p className="text-[11px] text-amber-800 leading-relaxed">
+                      Our appointment scheduling service could not be reached right now.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={fetchSlots}
+                      className="px-3.5 py-1.5 rounded-md bg-[#390044] text-white hover:bg-[#49056B] text-xs font-semibold transition-colors inline-flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                    >
+                      <RefreshCw className="w-3.5 h-3.5" />
+                      <span>Retry</span>
+                    </button>
                   </div>
                 ) : slotError ? (
-                  <div className="p-4 rounded-xl bg-zinc-50 border border-zinc-200/70 text-xs text-zinc-600 space-y-1">
+                  <div className="p-4 rounded-lg bg-zinc-50 border border-zinc-200/70 text-xs text-zinc-600 space-y-1">
                     <div className="font-semibold text-zinc-900 flex items-center gap-1.5">
-                      <AlertCircle className="w-4 h-4 text-amber-600" />
-                      <span>Notice</span>
+                      <AlertCircle className="w-4 h-4 text-zinc-500" />
+                      <span>No Available Times</span>
                     </div>
                     <p>{slotError}</p>
                   </div>

@@ -5,16 +5,17 @@ import {
   X,
   Calendar,
   Clock,
-  Phone,
+  PhoneCall,
   MapPin,
   Video,
-  User,
+  Building2,
   AlertCircle,
   Loader2,
   CalendarDays,
   CheckCircle2,
   Bell,
   FileText,
+  User,
 } from 'lucide-react';
 import {
   AppointmentType,
@@ -306,9 +307,9 @@ export default function ScheduleMeetingModal({
   };
 
   const formatOptions = [
-    { type: 'telephone', label: 'Telephone', icon: Phone },
-    { type: 'in_person', label: 'In-Person', icon: User },
-    { type: 'on_site', label: 'On-Site Assessment', icon: MapPin },
+    { type: 'telephone', label: 'Phone Call', icon: PhoneCall },
+    { type: 'in_person', label: 'Office Visit', icon: Building2 },
+    { type: 'on_site', label: 'Property Visit', icon: MapPin },
     { type: 'google_meet', label: 'Google Meet', icon: Video },
     { type: 'ms_teams', label: 'Teams', icon: Video },
     { type: 'zoom', label: 'Zoom', icon: Video },

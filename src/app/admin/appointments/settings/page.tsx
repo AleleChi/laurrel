@@ -603,7 +603,7 @@ export default function AppointmentSettingsPage() {
                   </span>
                 </div>
                 <p className="text-[11px] text-zinc-500 leading-relaxed">
-                  Generates genuine Google Meet links (<span className="font-mono text-[10px]">meet.google.com</span>) via Google Calendar API with FreeBusy synchronization.
+                  Generates genuine Google Meet links (<span className="font-mono text-[10px]">meet.google.com</span>) via Google Calendar with automated calendar availability synchronization.
                 </p>
                 {googleIntegration?.accountEmail && (
                   <div className="text-[11px] text-zinc-700 font-medium bg-white p-2 rounded border border-zinc-200/70 truncate">
@@ -667,7 +667,7 @@ export default function AppointmentSettingsPage() {
                   disabled
                   className="w-full px-3 py-1.5 rounded-md bg-zinc-100 text-zinc-400 text-xs font-semibold cursor-not-allowed text-center"
                 >
-                  Graph API Adapter Pending
+                  In Development
                 </button>
               </div>
             </div>
@@ -694,7 +694,7 @@ export default function AppointmentSettingsPage() {
                   disabled
                   className="w-full px-3 py-1.5 rounded-md bg-zinc-100 text-zinc-400 text-xs font-semibold cursor-not-allowed text-center"
                 >
-                  Server OAuth Adapter Pending
+                  In Development
                 </button>
               </div>
             </div>

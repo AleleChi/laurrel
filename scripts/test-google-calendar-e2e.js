@@ -181,9 +181,12 @@ async function runGoogleCalendarE2ESuite() {
   const bookPagePath = path.join(__dirname, '../src/app/book/page.tsx');
   const bookPageCode = fs.readFileSync(bookPagePath, 'utf8');
 
-  assertOffline(bookPageCode.includes("id: 'ms_teams'") && bookPageCode.includes('disabled: true'), 'Microsoft Teams is explicitly marked disabled: true');
-  assertOffline(bookPageCode.includes("id: 'zoom'") && bookPageCode.includes('disabled: true'), 'Zoom Meetings is explicitly marked disabled: true');
-  assertOffline(bookPageCode.includes('In Development'), 'Teams and Zoom displayed with "In Development" badge');
+    const hasTeamsHiddenOrDisabled = !bookPageCode.includes("id: 'ms_teams'") || bookPageCode.includes('disabled: true');
+  const hasZoomHiddenOrDisabled = !bookPageCode.includes("id: 'zoom'") || bookPageCode.includes('disabled: true');
+  const hasNoJargon = !bookPageCode.includes('Adapter Pending');
+  assertOffline(hasTeamsHiddenOrDisabled, 'Microsoft Teams is not falsely offered (hidden or disabled)');
+  assertOffline(hasZoomHiddenOrDisabled, 'Zoom Meetings is not falsely offered (hidden or disabled)');
+  assertOffline(hasNoJargon, 'Engineering jargon eliminated from customer booking experience');
 
   // 10. Verified In-Person Locations
   console.log('\n10. Verifying In-Person Location Integrity...');
