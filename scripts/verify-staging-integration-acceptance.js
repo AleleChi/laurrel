@@ -2,6 +2,8 @@ const path = require('path');
 const fs = require('fs');
 const http = require('http');
 const { spawn } = require('child_process');
+const { assertStagingDatabaseIsolation } = require('./lib/dbSafetyGuard');
+
 const dotenv = require(path.join(__dirname, '..', 'backend', 'node_modules', 'dotenv'));
 dotenv.config({ path: path.join(__dirname, '..', 'backend', '.env') });
 
@@ -10,7 +12,8 @@ const crypto = require('crypto');
 
 const STAGING_PORT = 5058;
 let serverProcess = null;
-let pool = null;
+let stagingPool = null;
+let prodReadOnlyPool = null;
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -60,33 +63,67 @@ async function runAcceptance() {
   console.log('LAURREL SERVICES — PR #5 ISOLATED STAGING INTEGRATION ACCEPTANCE');
   console.log('========================================================================\n');
 
-  pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
-    ssl: { rejectUnauthorized: false },
+  // STEP 0: Enforce strict database isolation guard
+  console.log('0. Evaluating Database Isolation Safety Guard...');
+  try {
+    const guardResult = assertStagingDatabaseIsolation(
+      process.env.TEST_DATABASE_URL,
+      process.env.DATABASE_URL
+    );
+    console.log(`  ✓ Safety Guard Verified: Staging endpoint [${guardResult.testEndpoint}] is distinct from production.`);
+  } catch (err) {
+    console.error(`\n${err.message}\n`);
+    process.exit(1);
+  }
+
+  // Connect to isolated staging database with strict TLS certificate verification
+  stagingPool = new Pool({
+    connectionString: process.env.TEST_DATABASE_URL,
+    ssl: { rejectUnauthorized: true },
     max: 5,
   });
 
-  // Verify DB TLS
-  try {
-    const sslCheck = await pool.query('SHOW ssl;');
-    assert(sslCheck.rows.length > 0, 'Database connection established with TLS');
-  } catch (err) {
-    assert(false, 'Database connection established with TLS', err.message);
+  // Optional: Connect to production in strict read-only mode to verify zero modification
+  if (process.env.DATABASE_URL) {
+    prodReadOnlyPool = new Pool({
+      connectionString: process.env.DATABASE_URL,
+      ssl: { rejectUnauthorized: true },
+      max: 2,
+    });
   }
 
-  // 1. Snapshot existing production tables to verify zero modification
-  console.log('\n1. Verifying Database Safety Shield & Baseline Snapshots...');
-  const initialEnquiriesCount = Number((await pool.query('SELECT count(*) FROM enquiries;')).rows[0].count);
-  const initialAppointmentsCount = Number((await pool.query('SELECT count(*) FROM appointments;')).rows[0].count);
-  const initialCmsPagesCount = Number((await pool.query('SELECT count(*) FROM cms_pages;')).rows[0].count);
-  console.log(`  ℹ️ Baseline count: Enquiries=${initialEnquiriesCount}, Appointments=${initialAppointmentsCount}, CMS Pages=${initialCmsPagesCount}`);
+  // Verify Staging DB TLS
+  try {
+    const sslCheck = await stagingPool.query('SHOW ssl;');
+    assert(sslCheck.rows.length > 0, 'Staging database connection established with verified TLS');
+  } catch (err) {
+    assert(false, 'Staging database connection established with verified TLS', err.message);
+  }
 
-  // 2. Launch isolated backend on STAGING_PORT
+  // 1. Snapshot baseline counts to verify zero modification on production
+  console.log('\n1. Verifying Database Safety Shield & Baseline Snapshots...');
+  let prodInitialEnquiries = null;
+  let prodInitialAppointments = null;
+  let prodInitialCms = null;
+
+  if (prodReadOnlyPool) {
+    prodInitialEnquiries = Number((await prodReadOnlyPool.query('SELECT count(*) FROM enquiries;')).rows[0].count);
+    prodInitialAppointments = Number((await prodReadOnlyPool.query('SELECT count(*) FROM appointments;')).rows[0].count);
+    prodInitialCms = Number((await prodReadOnlyPool.query('SELECT count(*) FROM cms_pages;')).rows[0].count);
+    console.log(`  ℹ️ Production Baseline count (Read-Only): Enquiries=${prodInitialEnquiries}, Appointments=${prodInitialAppointments}, CMS Pages=${prodInitialCms}`);
+  }
+
+  const initialStagingEnquiries = Number((await stagingPool.query('SELECT count(*) FROM enquiries;')).rows[0].count);
+  const initialStagingAppointments = Number((await stagingPool.query('SELECT count(*) FROM appointments;')).rows[0].count);
+  console.log(`  ℹ️ Staging Baseline count: Enquiries=${initialStagingEnquiries}, Appointments=${initialStagingAppointments}`);
+
+  // 2. Launch isolated backend on STAGING_PORT connecting exclusively to TEST_DATABASE_URL
   console.log('\n2. Starting Isolated Backend Instance on Port ' + STAGING_PORT + '...');
   const env = {
     ...process.env,
     PORT: String(STAGING_PORT),
     NODE_ENV: 'test',
+    DATABASE_URL: process.env.TEST_DATABASE_URL, // Strictly use TEST_DATABASE_URL
     PUBLIC_SITE_URL: 'https://deploy-preview-5--laurrel.netlify.app',
     INTERNAL_GATEWAY_SECRET: 'laurrel-staging-gateway-secret-2026',
   };
@@ -167,6 +204,7 @@ async function runAcceptance() {
   
   const testSlot = availRes.body.slots[0];
   const createdAptIds = [];
+  const createdEnquiryIds = [];
   const testEmail = 'marcus.acceptance@example.ca';
 
   const bookingPayload = {
@@ -202,7 +240,13 @@ async function runAcceptance() {
 
   const mainAppointmentId = bookRes.body.appointment?.id;
   const managementToken = bookRes.body.managementToken;
-  if (mainAppointmentId) createdAptIds.push(mainAppointmentId);
+  if (mainAppointmentId) {
+    createdAptIds.push(mainAppointmentId);
+    const enqRow = (await stagingPool.query('SELECT enquiry_id FROM appointments WHERE id = $1', [mainAppointmentId])).rows[0];
+    if (enqRow?.enquiry_id && !createdEnquiryIds.includes(enqRow.enquiry_id)) {
+      createdEnquiryIds.push(enqRow.enquiry_id);
+    }
+  }
 
   // 5. Verify Multi-Coordinator Capacity & Conflict Prevention
   console.log('\n5. Verifying Multi-Coordinator Capacity & Conflict Prevention...');
@@ -227,6 +271,10 @@ async function runAcceptance() {
     );
     if (extraRes.body.appointment?.id) {
       createdAptIds.push(extraRes.body.appointment.id);
+      const enqRow = (await stagingPool.query('SELECT enquiry_id FROM appointments WHERE id = $1', [extraRes.body.appointment.id])).rows[0];
+      if (enqRow?.enquiry_id && !createdEnquiryIds.includes(enqRow.enquiry_id)) {
+        createdEnquiryIds.push(enqRow.enquiry_id);
+      }
     }
   }
 
@@ -277,7 +325,7 @@ async function runAcceptance() {
 
   // 7. Verify Rescheduling and Slot Freeing
   console.log('\n7. Testing Self-Service Rescheduling & Cancellation...');
-  // Reschedule coordinator 1 to slot 5 (2.5 hours away, well outside 15-min buffer)
+  // Reschedule coordinator 1 to slot 5 (2.5 hours away, well outside buffer)
   const distantSlot = availRes.body.slots[5] || availRes.body.slots[availRes.body.slots.length - 1];
   const rescheduleRes = await httpRequest(
     {
@@ -296,8 +344,7 @@ async function runAcceptance() {
   assert(rescheduleRes.status === 200, 'Rescheduling appointment returns HTTP 200');
   assert(rescheduleRes.body.success === true, 'Reschedule reports success: true');
 
-  // Now, since coordinator 1 moved to distantSlot, coordinator 1 is completely free on testSlot!
-  // Therefore, testSlot must immediately reappear in available slots!
+  // Slot 1 must immediately reappear in available slots
   const reavailRes = await httpRequest({
     hostname: 'localhost',
     port: STAGING_PORT,
@@ -322,24 +369,34 @@ async function runAcceptance() {
   assert(cancelRes.status === 200, 'Cancelling appointment returns HTTP 200');
   assert(cancelRes.body.success === true, 'Cancellation reports success: true');
 
-  // 8. Clean up all test records and verify database isolation
-  console.log('\n8. Cleaning up Isolated Test Data...');
+  // 8. Clean up only records created by the current test run using tracked IDs (NO broad wildcard LIKE queries)
+  console.log('\n8. Cleaning up Tracked Test Data...');
   for (const aptId of createdAptIds) {
-    await pool.query('DELETE FROM appointment_activity WHERE appointment_id = $1;', [aptId]);
-    await pool.query('DELETE FROM appointment_notifications WHERE appointment_id = $1;', [aptId]);
-    await pool.query('DELETE FROM appointments WHERE id = $1;', [aptId]);
+    await stagingPool.query('DELETE FROM appointment_activity WHERE appointment_id = $1;', [aptId]);
+    await stagingPool.query('DELETE FROM appointment_notifications WHERE appointment_id = $1;', [aptId]);
+    await stagingPool.query('DELETE FROM appointments WHERE id = $1;', [aptId]);
   }
-  await pool.query("DELETE FROM enquiries WHERE customer_email LIKE '%acceptance@example.ca';");
-  console.log(`  ✓ Cleaned up ${createdAptIds.length} test appointments and related enquiries.`);
+  for (const enqId of createdEnquiryIds) {
+    await stagingPool.query('DELETE FROM enquiries WHERE id = $1;', [enqId]);
+  }
+  console.log(`  ✓ Cleaned up ${createdAptIds.length} tracked test appointments and ${createdEnquiryIds.length} tracked test enquiries.`);
 
-  // Confirm production tables remain 100% identical to baseline
-  const finalEnquiriesCount = Number((await pool.query('SELECT count(*) FROM enquiries;')).rows[0].count);
-  const finalAppointmentsCount = Number((await pool.query('SELECT count(*) FROM appointments;')).rows[0].count);
-  const finalCmsPagesCount = Number((await pool.query('SELECT count(*) FROM cms_pages;')).rows[0].count);
+  // Confirm staging tables return to baseline
+  const finalStagingEnquiries = Number((await stagingPool.query('SELECT count(*) FROM enquiries;')).rows[0].count);
+  const finalStagingAppointments = Number((await stagingPool.query('SELECT count(*) FROM appointments;')).rows[0].count);
+  assert(finalStagingEnquiries === initialStagingEnquiries, 'Staging customer enquiries count matches initial baseline');
+  assert(finalStagingAppointments === initialStagingAppointments, 'Staging appointments count matches initial baseline');
 
-  assert(finalEnquiriesCount === initialEnquiriesCount, 'Production customer enquiries count unchanged', `Init=${initialEnquiriesCount}, Final=${finalEnquiriesCount}`);
-  assert(finalAppointmentsCount === initialAppointmentsCount, 'Production appointments count unchanged', `Init=${initialAppointmentsCount}, Final=${finalAppointmentsCount}`);
-  assert(finalCmsPagesCount === initialCmsPagesCount, 'Production CMS pages count unchanged', `Init=${initialCmsPagesCount}, Final=${finalCmsPagesCount}`);
+  // Confirm production tables remain 100% identical to initial baseline
+  if (prodReadOnlyPool) {
+    const finalProdEnquiries = Number((await prodReadOnlyPool.query('SELECT count(*) FROM enquiries;')).rows[0].count);
+    const finalProdAppointments = Number((await prodReadOnlyPool.query('SELECT count(*) FROM appointments;')).rows[0].count);
+    const finalProdCms = Number((await prodReadOnlyPool.query('SELECT count(*) FROM cms_pages;')).rows[0].count);
+
+    assert(finalProdEnquiries === prodInitialEnquiries, 'Production customer enquiries count unchanged (100% Preserved)', `Init=${prodInitialEnquiries}, Final=${finalProdEnquiries}`);
+    assert(finalProdAppointments === prodInitialAppointments, 'Production appointments count unchanged (100% Preserved)', `Init=${prodInitialAppointments}, Final=${finalProdAppointments}`);
+    assert(finalProdCms === prodInitialCms, 'Production CMS pages count unchanged (100% Preserved)', `Init=${prodInitialCms}, Final=${finalProdCms}`);
+  }
 
   // 9. Status of Live Integrations
   console.log('\n9. Evaluating Live Cloud Integrations & Blockers...');
@@ -356,7 +413,8 @@ async function runAcceptance() {
   if (serverProcess) {
     serverProcess.kill();
   }
-  await pool.end();
+  await stagingPool.end();
+  if (prodReadOnlyPool) await prodReadOnlyPool.end();
 
   if (failCount > 0) {
     process.exit(1);
@@ -368,6 +426,7 @@ async function runAcceptance() {
 runAcceptance().catch((err) => {
   console.error('Acceptance execution failed:', err);
   if (serverProcess) serverProcess.kill();
-  if (pool) pool.end();
+  if (stagingPool) stagingPool.end();
+  if (prodReadOnlyPool) prodReadOnlyPool.end();
   process.exit(1);
 });
