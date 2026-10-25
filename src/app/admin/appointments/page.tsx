@@ -3,13 +3,14 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
-  Calendar as CalendarIcon,
+  Calendar,
   Clock,
   Phone,
+  User,
   MapPin,
   Video,
-  User,
   Search,
+  Plus,
   RefreshCw,
   X,
   ExternalLink,
@@ -24,6 +25,7 @@ import {
   CalendarPlus,
   FilterX,
   Check,
+  Settings,
 } from 'lucide-react';
 import {
   formatOttawaDate,
@@ -61,6 +63,10 @@ interface AppointmentItem {
   notificationSent: boolean;
   notificationSentAt?: string | null;
   cancellationReason?: string | null;
+  conferenceStatus?: string | null;
+  googleSyncStatus?: string | null;
+  googleSyncError?: string | null;
+  calendarEventId?: string | null;
   createdAt: string;
 }
 
@@ -88,6 +94,56 @@ export default function AdminAppointmentsPage() {
   const [loadingActivity, setLoadingActivity] = useState<boolean>(false);
   const [isRescheduleOpen, setIsRescheduleOpen] = useState<boolean>(false);
   const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
+  const [retryingSync, setRetryingSync] = useState<boolean>(false);
+  const [reconcilingConf, setReconcilingConf] = useState<boolean>(false);
+
+  const handleRetryGoogleSync = async (aptId: string) => {
+    try {
+      setRetryingSync(true);
+      const res = await fetch(`/api/admin/appointments/${aptId}/retry-google-sync`, {
+        method: 'POST',
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setFeedbackMessage('Google Calendar event resynced successfully.');
+        if (data.appointment) {
+          setSelectedAppointment(data.appointment);
+          setAppointments((prev) => prev.map((a) => (a.id === aptId ? data.appointment : a)));
+        }
+      } else {
+        setFeedbackMessage(data.error || 'Retry sync failed.');
+      }
+    } catch {
+      setFeedbackMessage('Network failure during retry sync.');
+    } finally {
+      setRetryingSync(false);
+      setTimeout(() => setFeedbackMessage(null), 4000);
+    }
+  };
+
+  const handleReconcileConference = async (aptId: string) => {
+    try {
+      setReconcilingConf(true);
+      const res = await fetch(`/api/admin/appointments/${aptId}/reconcile-conference`, {
+        method: 'POST',
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setFeedbackMessage(data.reconciled ? 'Video link verified and updated.' : 'Conference is still pending creation.');
+        if (data.appointment) {
+          setSelectedAppointment(data.appointment);
+          setAppointments((prev) => prev.map((a) => (a.id === aptId ? data.appointment : a)));
+        }
+      } else {
+        setFeedbackMessage(data.error || 'Conference reconciliation check failed.');
+      }
+    } catch {
+      setFeedbackMessage('Network failure during conference reconciliation.');
+    } finally {
+      setReconcilingConf(false);
+      setTimeout(() => setFeedbackMessage(null), 4000);
+    }
+  };
 
   // Confirm dialog for cancellation
   const [cancelDialogState, setCancelDialogState] = useState<{
@@ -271,11 +327,11 @@ export default function AdminAppointmentsPage() {
             Appointments & Consultations
           </h1>
           <p className="text-sm text-zinc-500 mt-0.5">
-            Manage scheduled customer consultations, video meetings, and coordinator assignments in Ottawa.
+            Operational calendar and verified dispatch for Laurrel Services in Ottawa, ON.
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2.5">
           <AdminButton
             variant="outline"
             size="sm"
@@ -285,6 +341,25 @@ export default function AdminAppointmentsPage() {
           >
             Refresh
           </AdminButton>
+
+          <Link
+            href="/admin/appointments/settings"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-zinc-200 bg-white text-zinc-700 hover:text-zinc-900 hover:bg-zinc-50 text-xs font-semibold shadow-2xs transition-colors"
+            title="Configure Ottawa schedule and availability rules"
+          >
+            <Settings className="w-3.5 h-3.5 text-zinc-500" />
+            <span>Settings</span>
+          </Link>
+
+          <Link
+            href="/book"
+            target="_blank"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-[#49056B] text-white hover:bg-[#390044] text-xs font-semibold shadow-2xs transition-colors"
+            title="Open customer-facing self-service booking page"
+          >
+            <ExternalLink className="w-3.5 h-3.5" />
+            <span>Public Booking</span>
+          </Link>
         </div>
       </div>
 
@@ -301,11 +376,11 @@ export default function AdminAppointmentsPage() {
       )}
 
       {/* ========================================================================= */}
-      {/* TOOLBAR: Search, Filters & View Toggles (44px height)                     */}
+      {/* TOOLBAR: 44px Controls, Table/Agenda Toggle, Search & Filters              */}
       {/* ========================================================================= */}
       <div className="bg-white p-4 sm:p-5 rounded-md border border-zinc-200 shadow-sm space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
-          {/* Search Input (6 cols) */}
+          {/* Search Input (5 cols) */}
           <div className="md:col-span-5 relative flex items-center">
             <Search className="w-4 h-4 text-zinc-400 absolute left-3.5 pointer-events-none" />
             <input
@@ -313,7 +388,7 @@ export default function AdminAppointmentsPage() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search appointments by customer, title, phone..."
-              className="w-full h-11 pl-10 pr-10 text-sm bg-white text-zinc-900 border border-zinc-300 rounded-lg placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#49056B]/20 focus:border-[#49056B] transition-all"
+              className="w-full h-11 pl-10 pr-10 text-sm bg-white text-zinc-900 border border-zinc-300 rounded-md placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#49056B]/20 focus:border-[#49056B] transition-all"
             />
             {searchQuery && (
               <button
@@ -330,7 +405,7 @@ export default function AdminAppointmentsPage() {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="w-full h-11 px-3.5 text-sm bg-white text-zinc-900 border border-zinc-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#49056B]/20 focus:border-[#49056B] transition-all"
+              className="w-full h-11 px-3.5 text-sm bg-white text-zinc-900 border border-zinc-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#49056B]/20 focus:border-[#49056B] transition-all"
             >
               <option value="all">All Statuses</option>
               <option value="confirmed">Confirmed</option>
@@ -346,7 +421,7 @@ export default function AdminAppointmentsPage() {
             <select
               value={staffFilter}
               onChange={(e) => setStaffFilter(e.target.value)}
-              className="w-full h-11 px-3.5 text-sm bg-white text-zinc-900 border border-zinc-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#49056B]/20 focus:border-[#49056B] transition-all"
+              className="w-full h-11 px-3.5 text-sm bg-white text-zinc-900 border border-zinc-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#49056B]/20 focus:border-[#49056B] transition-all"
             >
               <option value="all">All Coordinators</option>
               {staffList.map((st) => (
@@ -358,7 +433,7 @@ export default function AdminAppointmentsPage() {
           </div>
 
           {/* View Mode Toggle (2 cols) */}
-          <div className="md:col-span-2 flex items-center justify-end gap-1.5 bg-zinc-100 p-1 rounded-lg">
+          <div className="md:col-span-2 flex items-center justify-end gap-1.5 bg-zinc-100 p-1 rounded-md">
             <button
               onClick={() => setViewMode('table')}
               className={`flex-1 py-1.5 px-3 text-xs font-semibold rounded-md transition-colors ${
@@ -429,9 +504,17 @@ export default function AdminAppointmentsPage() {
                         </td>
 
                         <td className="py-3.5 px-4">
-                          <span className="inline-flex items-center gap-1.5 text-xs text-zinc-700">
-                            {formatAppointmentType(apt.appointmentType)}
-                          </span>
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="inline-flex items-center gap-1.5 text-xs text-zinc-700">
+                              {formatAppointmentType(apt.appointmentType)}
+                            </span>
+                            {apt.googleSyncStatus === 'failed' && (
+                              <span className="text-[10px] font-semibold text-rose-700 bg-rose-50 border border-rose-200 px-1.5 py-0.5 rounded flex items-center gap-1">
+                                <AlertCircle className="w-3 h-3 text-rose-600" />
+                                Sync Error
+                              </span>
+                            )}
+                          </div>
                         </td>
 
                         <td className="py-3.5 px-4">
@@ -476,12 +559,17 @@ export default function AdminAppointmentsPage() {
                 <div className="w-12 h-12 rounded-md bg-zinc-100 flex items-center justify-center mx-auto text-zinc-400">
                   <CalendarDays className="w-6 h-6" />
                 </div>
-                <div>
-                  <h3 className="text-base font-semibold text-zinc-900">No appointments found</h3>
-                  <p className="text-sm text-zinc-500 mt-1">
-                    {hasActiveFilters ? 'Try adjusting your search or filters.' : 'No customer appointments scheduled yet.'}
-                  </p>
-                </div>
+                <h3 className="text-sm font-bold text-zinc-800">No appointments found</h3>
+                <p className="text-xs text-zinc-500 max-w-sm mx-auto">
+                  {hasActiveFilters
+                    ? 'No scheduled consultations match your current search and filter settings.'
+                    : 'Customer consultations booked from enquiry triage will appear on this schedule.'}
+                </p>
+                {hasActiveFilters && (
+                  <AdminButton variant="outline" size="sm" onClick={clearAllFilters}>
+                    Clear Filters
+                  </AdminButton>
+                )}
               </div>
             )}
           </div>
@@ -492,17 +580,14 @@ export default function AdminAppointmentsPage() {
       {/* VIEW: Agenda Mode                                                         */}
       {/* ========================================================================= */}
       {viewMode === 'agenda' && (
-        <div className="space-y-6">
+        <div className="space-y-4">
           {Object.keys(groupedAgenda).length > 0 ? (
             Object.entries(groupedAgenda).map(([dateLabel, aptList]) => (
               <div key={dateLabel} className="bg-white rounded-md border border-zinc-200 shadow-sm overflow-hidden">
                 <div className="px-5 py-3.5 bg-zinc-50/80 border-b border-zinc-200 flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <CalendarIcon className="w-4 h-4 text-[#49056B]" />
-                    <span className="font-bold text-sm text-zinc-900">{dateLabel}</span>
-                  </div>
-                  <span className="text-xs font-semibold text-zinc-500">
-                    {aptList.length} appointment{aptList.length === 1 ? '' : 's'}
+                  <span className="font-bold text-sm text-zinc-900">{dateLabel}</span>
+                  <span className="text-xs text-zinc-500 font-medium">
+                    {aptList.length} appointment{aptList.length > 1 ? 's' : ''}
                   </span>
                 </div>
 
@@ -511,22 +596,31 @@ export default function AdminAppointmentsPage() {
                     <div
                       key={apt.id}
                       onClick={() => setSelectedAppointment(apt)}
-                      className="p-5 hover:bg-zinc-50/70 cursor-pointer transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                      className="p-5 hover:bg-zinc-50/70 transition-colors cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-4"
                     >
-                      <div className="space-y-1">
+                      <div className="space-y-1.5 min-w-0">
                         <div className="flex items-center gap-2.5">
-                          <span className="font-bold text-zinc-900 text-sm">{apt.title}</span>
+                          <span className="font-bold text-sm text-zinc-900 truncate">
+                            {apt.title}
+                          </span>
                           <AdminBadge status={apt.status} />
+                          {apt.googleSyncStatus === 'failed' && (
+                            <span className="text-[10px] font-semibold text-rose-700 bg-rose-50 border border-rose-200 px-1.5 py-0.5 rounded flex items-center gap-1">
+                              <AlertCircle className="w-3 h-3 text-rose-600" />
+                              Sync Error
+                            </span>
+                          )}
                         </div>
-                        <div className="text-xs text-zinc-600 flex flex-wrap gap-4 pt-0.5">
-                          <span>Customer: <strong className="font-medium text-zinc-800">{apt.customerName}</strong></span>
-                          <span>Time: {formatOttawaTimeRange(apt.scheduledStart, apt.scheduledEnd)}</span>
+
+                        <div className="text-xs text-zinc-600 flex flex-wrap gap-x-4 gap-y-1">
+                          <span>Customer: {apt.customerName}</span>
                           <span>Format: {formatAppointmentType(apt.appointmentType)}</span>
-                          {apt.assignedStaffName && <span>Staff: {apt.assignedStaffName}</span>}
+                          <span>Time: {formatOttawaTime(apt.scheduledStart)} ({apt.durationMinutes}m)</span>
+                          {apt.assignedStaffName && <span>Coordinator: {apt.assignedStaffName}</span>}
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-2 sm:self-center">
+                      <div className="flex items-center gap-2 shrink-0">
                         <AdminButton
                           variant="ghost"
                           size="sm"
@@ -554,51 +648,48 @@ export default function AdminAppointmentsPage() {
       )}
 
       {/* ========================================================================= */}
-      {/* DRAWER: Appointment Details Slide-Over                                    */}
+      {/* DRAWER: Appointment Details                                               */}
       {/* ========================================================================= */}
       {selectedAppointment && (
-        <div className="fixed inset-0 z-50 flex items-center justify-end bg-black/40 backdrop-blur-2xs">
-          <div className="w-full max-w-xl h-full bg-white shadow-2xl flex flex-col border-l border-zinc-200 overflow-hidden animate-in slide-in-from-right duration-200">
-            {/* Header */}
-            <div className="px-6 py-5 border-b border-zinc-200 flex items-center justify-between bg-zinc-50/80">
+        <div className="fixed inset-0 z-50 overflow-hidden bg-black/40 backdrop-blur-2xs flex justify-end">
+          <div className="w-full max-w-xl bg-white h-full shadow-2xl flex flex-col animate-in slide-in-from-right duration-200 border-l border-zinc-200">
+            {/* Drawer Header */}
+            <div className="px-6 py-4 border-b border-zinc-200 flex items-center justify-between bg-zinc-50/80">
               <div>
-                <div className="flex items-center gap-2.5">
-                  <h2 className="text-lg font-bold text-zinc-900 tracking-tight">
+                <div className="flex items-center gap-2">
+                  <h2 className="text-base font-bold text-zinc-900 tracking-tight">
                     {selectedAppointment.title}
                   </h2>
                   <AdminBadge status={selectedAppointment.status} />
                 </div>
-                <p className="text-xs text-zinc-500 mt-1">
-                  Enquiry Ref: <span className="font-semibold text-zinc-700">#{selectedAppointment.enquiryId.slice(0, 8)}</span>
+                <p className="text-xs text-zinc-500 mt-0.5">
+                  Reference: #{selectedAppointment.id.slice(0, 8)} • Ottawa, ON
                 </p>
               </div>
               <button
+                type="button"
                 onClick={() => setSelectedAppointment(null)}
-                className="p-2 rounded-lg text-zinc-400 hover:text-zinc-700 hover:bg-zinc-200/60 transition-colors"
+                className="text-zinc-400 hover:text-zinc-600 p-1 rounded-md transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            {/* Body */}
-            <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6">
+            {/* Drawer Content */}
+            <div className="flex-1 overflow-y-auto p-6 space-y-6">
               {/* Standardized Consultation Summary */}
               <div className="p-4 rounded-md bg-zinc-50 border border-zinc-200 space-y-2 text-sm text-zinc-700">
                 <div>
-                  <strong className="text-zinc-900 font-semibold">Date:</strong>{' '}
-                  <span>{formatOttawaDate(selectedAppointment.scheduledStart)}</span>
+                  <strong className="text-zinc-900">Date:</strong> {formatOttawaDate(selectedAppointment.scheduledStart)}
                 </div>
                 <div>
-                  <strong className="text-zinc-900 font-semibold">Time:</strong>{' '}
-                  <span>{formatOttawaTimeRange(selectedAppointment.scheduledStart, selectedAppointment.scheduledEnd)} · Ottawa time</span>
+                  <strong className="text-zinc-900">Time:</strong> {formatOttawaTime(selectedAppointment.scheduledStart)} – {formatOttawaTime(selectedAppointment.scheduledEnd)} ({selectedAppointment.durationMinutes} mins · Ottawa time)
                 </div>
                 <div>
-                  <strong className="text-zinc-900 font-semibold">Format:</strong>{' '}
-                  <span>{formatAppointmentType(selectedAppointment.appointmentType)}</span>
+                  <strong className="text-zinc-900">Format:</strong> {formatAppointmentType(selectedAppointment.appointmentType)}
                 </div>
                 <div>
-                  <strong className="text-zinc-900 font-semibold">Coordinator:</strong>{' '}
-                  <span>{selectedAppointment.assignedStaffName || 'Unassigned'}</span>
+                  <strong className="text-zinc-900">Coordinator:</strong> {selectedAppointment.assignedStaffName || 'Unassigned / Team Pool'}
                 </div>
               </div>
 
@@ -628,7 +719,7 @@ export default function AdminAppointmentsPage() {
                         href={selectedAppointment.locationOrLink}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[#49056B] text-white hover:bg-[#390044] text-xs font-semibold transition-colors"
+                        className="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-[#49056B] text-white hover:bg-[#390044] text-xs font-semibold transition-colors"
                       >
                         <Video className="w-4 h-4" />
                         <span>Join Video Meeting</span>
@@ -646,6 +737,72 @@ export default function AdminAppointmentsPage() {
                 </div>
               </div>
 
+              {/* Google Calendar Synchronization & Video Reconciliation */}
+              {(selectedAppointment.googleSyncStatus || selectedAppointment.calendarEventId || selectedAppointment.appointmentType === 'google_meet') && (
+                <div className="space-y-2.5 pb-4 border-b border-zinc-100">
+                  <div className="text-xs font-bold uppercase tracking-wider text-zinc-500">
+                    Google Calendar & Video Sync
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    {selectedAppointment.googleSyncStatus === 'synced' ? (
+                      <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-[4px] text-xs font-medium bg-emerald-50 text-emerald-800 border border-emerald-200">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                        Google Calendar Synced
+                      </span>
+                    ) : selectedAppointment.googleSyncStatus === 'failed' ? (
+                      <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-[4px] text-xs font-medium bg-rose-50 text-rose-800 border border-rose-200">
+                        <AlertCircle className="w-3.5 h-3.5 text-rose-600" />
+                        Google Sync Error
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-[4px] text-xs font-medium bg-zinc-100 text-zinc-600 border border-zinc-200">
+                        Sync: {selectedAppointment.googleSyncStatus || 'not_applicable'}
+                      </span>
+                    )}
+
+                    {selectedAppointment.conferenceStatus === 'pending_details' && (
+                      <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-[4px] text-xs font-medium bg-amber-50 text-amber-800 border border-amber-200">
+                        <Video className="w-3.5 h-3.5 text-amber-600" />
+                        Video Link Pending
+                      </span>
+                    )}
+                  </div>
+
+                  {selectedAppointment.googleSyncError && (
+                    <div className="p-2.5 rounded-md bg-rose-50 border border-rose-200 text-xs text-rose-800">
+                      <span className="font-semibold">Sync Error: </span>
+                      <span>{selectedAppointment.googleSyncError}</span>
+                    </div>
+                  )}
+
+                  <div className="flex flex-wrap items-center gap-2 pt-1">
+                    {selectedAppointment.googleSyncStatus === 'failed' && (
+                      <button
+                        type="button"
+                        onClick={() => handleRetryGoogleSync(selectedAppointment.id)}
+                        disabled={retryingSync}
+                        className="px-3 py-1.5 rounded-md bg-[#49056B] text-white text-xs font-semibold hover:bg-[#390044] transition-colors inline-flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                      >
+                        <RefreshCw className={`w-3.5 h-3.5 ${retryingSync ? 'animate-spin' : ''}`} />
+                        <span>Retry Google Calendar Sync</span>
+                      </button>
+                    )}
+
+                    {selectedAppointment.appointmentType === 'google_meet' && selectedAppointment.conferenceStatus === 'pending_details' && (
+                      <button
+                        type="button"
+                        onClick={() => handleReconcileConference(selectedAppointment.id)}
+                        disabled={reconcilingConf}
+                        className="px-3 py-1.5 rounded-md bg-amber-600 text-white text-xs font-semibold hover:bg-amber-700 transition-colors inline-flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                      >
+                        <RefreshCw className={`w-3.5 h-3.5 ${reconcilingConf ? 'animate-spin' : ''}`} />
+                        <span>Reconcile Video Link</span>
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+
               {/* Staff Notes */}
               {selectedAppointment.staffNotes && (
                 <div className="space-y-2 pb-4 border-b border-zinc-100">
@@ -658,17 +815,17 @@ export default function AdminAppointmentsPage() {
                 </div>
               )}
 
-              {/* Activity Timeline */}
-              <div className="space-y-3">
+              {/* Activity History Audit Log */}
+              <div className="space-y-3 pt-2">
                 <div className="text-xs font-bold uppercase tracking-wider text-zinc-500">
-                  Appointment Audit Activity
+                  Appointment Activity & Audit History
                 </div>
                 {loadingActivity ? (
                   <div className="py-4 text-center text-xs text-zinc-400">Loading activity...</div>
                 ) : appointmentActivity.length > 0 ? (
                   <div className="space-y-2.5">
                     {appointmentActivity.map((act) => (
-                      <div key={act.id} className="p-3 rounded-lg bg-zinc-50 border border-zinc-200 text-xs space-y-1">
+                      <div key={act.id} className="p-3 rounded-md bg-zinc-50 border border-zinc-200 text-xs space-y-1">
                         <div className="flex items-center justify-between text-zinc-500">
                           <span className="font-semibold text-zinc-800">{act.actorName || 'System'}</span>
                           <span>{formatCanadianDateTime(act.createdAt)}</span>
@@ -678,7 +835,7 @@ export default function AdminAppointmentsPage() {
                     ))}
                   </div>
                 ) : (
-                  <div className="p-3 rounded-lg bg-zinc-50 border border-zinc-200 text-xs text-zinc-400">
+                  <div className="p-3 rounded-md bg-zinc-50 border border-zinc-200 text-xs text-zinc-400">
                     No activity records logged.
                   </div>
                 )}

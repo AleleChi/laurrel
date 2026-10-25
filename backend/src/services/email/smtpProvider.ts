@@ -290,7 +290,7 @@ export class SmtpEmailProvider implements IEmailProvider {
 
   async sendAppointmentUpdate(
     data: import('./types').AppointmentEmailData,
-    changeType: 'rescheduled' | 'cancelled'
+    changeType: 'rescheduled' | 'cancelled' | 'video_link_ready'
   ): Promise<EmailDispatchResult> {
     if (!this.transporter) {
       return { success: false, provider: 'smtp', error: 'SMTP configuration incomplete' };
@@ -349,5 +349,8 @@ export class SmtpEmailProvider implements IEmailProvider {
     } catch (err: any) {
       return { success: false, provider: 'smtp', error: err.message };
     }
+  }
+  async sendConferenceLinkReady(data: import('./types').AppointmentEmailData): Promise<EmailDispatchResult> {
+    return this.sendAppointmentUpdate(data, 'video_link_ready');
   }
 }

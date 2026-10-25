@@ -9,15 +9,21 @@ import { adminRouter } from './routes/admin';
 import { cmsRouter } from './routes/cms';
 import { mediaRouter } from './routes/media';
 import { appointmentsRouter } from './routes/appointments';
+import { publicBookingRouter } from './routes/publicBooking';
+import { appointmentSettingsRouter } from './routes/appointmentSettings';
 import { runMigrations } from './database/migrate';
 import { bootstrapOwnerAccount } from './database/adminRepo';
 import { syncHistoricalEnquiries } from './database/syncData';
 import { seedCmsContent } from './database/seedCms';
 import { seedMediaAssets } from './database/seedMedia';
+import { startReconciliationWorker } from './services/video/reconciliationService';
 
 dotenv.config();
 
 const app = express();
+
+// Trust proxy headers from Netlify Next.js Gateway and Render edge load balancer
+app.set('trust proxy', true);
 const port = parseInt(process.env.PORT || '5000', 10);
 const host = '0.0.0.0';
 
@@ -93,6 +99,8 @@ app.use(adminRouter);
 app.use(cmsRouter);
 app.use(mediaRouter);
 app.use(appointmentsRouter);
+app.use(publicBookingRouter);
+app.use(appointmentSettingsRouter);
 
 // Root informational endpoint
 app.get('/', (_req, res) => {
@@ -135,6 +143,9 @@ async function initializeDependencies() {
         storageProvider: process.env.STORAGE_PROVIDER || 'local',
       });
       console.log('[Startup] Backend dependencies initialized and verified ready.');
+
+      // Start durable background Google Meet reconciliation worker
+      startReconciliationWorker();
     } catch (startupErr: any) {
       console.error('[Startup Failure]:', startupErr.message);
       setBackendReady(false, { error: startupErr.message });
