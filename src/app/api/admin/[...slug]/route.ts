@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminSessionFromRequest } from '@/lib/auth/session';
+import { getBackendApiUrl } from '@/lib/api/backendUrl';
 
 async function safeParseBackendResponse(res: Response): Promise<{ data: any; status: number }> {
   const text = await res.text();
@@ -23,7 +24,6 @@ async function safeParseBackendResponse(res: Response): Promise<{ data: any; sta
   }
 }
 
-
 export async function GET(req: NextRequest, { params }: { params: { slug: string[] } }) {
   const session = getAdminSessionFromRequest(req);
 
@@ -34,11 +34,20 @@ export async function GET(req: NextRequest, { params }: { params: { slug: string
     );
   }
 
-  const backendUrl = process.env.BACKEND_API_URL || process.env.API_BASE_URL || 'http://localhost:5000';
+  let backendUrl: string;
+  try {
+    backendUrl = getBackendApiUrl();
+  } catch (urlErr: any) {
+    return NextResponse.json(
+      { error: urlErr.message, code: 'PRODUCTION_FALLBACK_BLOCKED' },
+      { status: 503 }
+    );
+  }
+
   const secret = process.env.ADMIN_API_SECRET;
   const path = params.slug.join('/');
   const search = req.nextUrl.search;
-  const target = `${backendUrl.replace(/\/$/, '')}/api/admin/${path}${search}`;
+  const target = `${backendUrl}/api/admin/${path}${search}`;
 
   try {
     const res = await fetch(target, {
@@ -70,10 +79,19 @@ export async function PATCH(req: NextRequest, { params }: { params: { slug: stri
     );
   }
 
-  const backendUrl = process.env.BACKEND_API_URL || process.env.API_BASE_URL || 'http://localhost:5000';
+  let backendUrl: string;
+  try {
+    backendUrl = getBackendApiUrl();
+  } catch (urlErr: any) {
+    return NextResponse.json(
+      { error: urlErr.message, code: 'PRODUCTION_FALLBACK_BLOCKED' },
+      { status: 503 }
+    );
+  }
+
   const secret = process.env.ADMIN_API_SECRET;
   const path = params.slug.join('/');
-  const target = `${backendUrl.replace(/\/$/, '')}/api/admin/${path}`;
+  const target = `${backendUrl}/api/admin/${path}`;
 
   try {
     const body = await req.json();
@@ -109,10 +127,19 @@ export async function POST(req: NextRequest, { params }: { params: { slug: strin
     );
   }
 
-  const backendUrl = process.env.BACKEND_API_URL || process.env.API_BASE_URL || 'http://localhost:5000';
+  let backendUrl: string;
+  try {
+    backendUrl = getBackendApiUrl();
+  } catch (urlErr: any) {
+    return NextResponse.json(
+      { error: urlErr.message, code: 'PRODUCTION_FALLBACK_BLOCKED' },
+      { status: 503 }
+    );
+  }
+
   const secret = process.env.ADMIN_API_SECRET;
   const path = params.slug.join('/');
-  const target = `${backendUrl.replace(/\/$/, '')}/api/admin/${path}`;
+  const target = `${backendUrl}/api/admin/${path}`;
 
   try {
     const contentType = req.headers.get('content-type') || '';
@@ -166,10 +193,19 @@ export async function DELETE(req: NextRequest, { params }: { params: { slug: str
     );
   }
 
-  const backendUrl = process.env.BACKEND_API_URL || process.env.API_BASE_URL || 'http://localhost:5000';
+  let backendUrl: string;
+  try {
+    backendUrl = getBackendApiUrl();
+  } catch (urlErr: any) {
+    return NextResponse.json(
+      { error: urlErr.message, code: 'PRODUCTION_FALLBACK_BLOCKED' },
+      { status: 503 }
+    );
+  }
+
   const secret = process.env.ADMIN_API_SECRET;
   const path = params.slug.join('/');
-  const target = `${backendUrl.replace(/\/$/, '')}/api/admin/${path}`;
+  const target = `${backendUrl}/api/admin/${path}`;
 
   try {
     const res = await fetch(target, {

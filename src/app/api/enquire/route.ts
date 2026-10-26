@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { EnquiryPayload, ServiceCategory } from '@/lib/types/enquiry';
 import { validateEnquiry } from '@/lib/validation/enquiry';
+import { getBackendApiUrl } from '@/lib/api/backendUrl';
 
 // In-memory sliding window rate limiting: Max 5 submissions per 60 seconds per IP
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
@@ -28,54 +29,68 @@ export async function POST(request: Request) {
     const ip =
       request.headers.get('x-forwarded-for')?.split(',')[0].trim() ||
       request.headers.get('x-real-ip') ||
-      'unknown-ip';
+      'unknown';
 
-    if (isRateLimited(ip)) {
+    if (ip !== 'unknown' && isRateLimited(ip)) {
       return NextResponse.json(
-        { error: 'Too many submissions from this connection. Please wait a minute before trying again.' },
+        {
+          error: 'Too many requests. Please wait a moment before submitting another enquiry.',
+          code: 'RATE_LIMITED',
+        },
         { status: 429 }
       );
     }
 
-    const rawBody = (await request.json()) as Partial<EnquiryPayload>;
+    // 2. Parse & Validate Payload
+    const rawBody = await request.json();
 
-    // Handle legacy contact field fallback if email was not directly provided
-    if (!rawBody.email && rawBody.name && (rawBody as any).contact) {
-      const contactVal = ((rawBody as any).contact as string).trim();
-      if (contactVal.includes('@')) {
-        rawBody.email = contactVal;
-      }
+    // Map intent to serviceCategory if needed for backwards compatibility
+    if (rawBody.intent && !rawBody.serviceCategory) {
+      rawBody.serviceCategory = rawBody.intent;
     }
 
-    // Handle legacy enquiryAbout field mapping to services array if services was empty
-    if ((!rawBody.services || rawBody.services.length === 0) && rawBody.enquiryAbout) {
-      const about = rawBody.enquiryAbout.toLowerCase();
-      const mapped: ServiceCategory[] = [];
-      if (about.includes('clean')) mapped.push('cleaning');
-      if (about.includes('mov')) mapped.push('moving');
-      if (about.includes('stor')) mapped.push('storage');
-      if (about.includes('multiple')) mapped.push('cleaning', 'moving', 'storage');
-      if (mapped.length > 0) {
-        rawBody.services = mapped;
-      }
+    // Normalize location object if simple location string provided
+    if (typeof rawBody.location === 'string') {
+      rawBody.location = {
+        city: rawBody.location,
+        serviceArea: rawBody.location,
+      };
     }
 
-    // 2. Validate payload using shared validation module
+    // Handle legacy date strings
+    if (rawBody.timeline && typeof rawBody.timeline === 'string') {
+      rawBody.timeline = {
+        urgency: 'flexible',
+        targetDate: rawBody.timeline,
+      };
+    }
+
     const validation = validateEnquiry(rawBody);
     if (!validation.isValid) {
-      const firstErrorMessage = Object.values(validation.errors)[0] || 'Invalid submission.';
       return NextResponse.json(
-        { error: firstErrorMessage, errors: validation.errors },
+        {
+          error: 'Validation failed',
+          details: validation.errors,
+          code: 'VALIDATION_ERROR',
+        },
         { status: 400 }
       );
     }
 
     // 3. Forward to Render Backend API
-    const backendUrl = process.env.BACKEND_API_URL || process.env.API_BASE_URL;
+    let backendUrl: string | null = null;
+    try {
+      backendUrl = getBackendApiUrl();
+    } catch (urlErr: any) {
+      return NextResponse.json(
+        { error: urlErr.message, code: 'PRODUCTION_FALLBACK_BLOCKED' },
+        { status: 503 }
+      );
+    }
 
     if (backendUrl) {
       try {
-        const target = `${backendUrl.replace(/\/$/, '')}/api/enquire`;
+        const target = `${backendUrl}/api/enquire`;
         const res = await fetch(target, {
           method: 'POST',
           headers: {

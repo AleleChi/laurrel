@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getBackendApiUrl } from '@/lib/api/backendUrl';
 
 function buildForwardHeaders(req: NextRequest): Record<string, string> {
   // Only extract verified platform-provided client identity:
@@ -35,10 +36,19 @@ function buildForwardHeaders(req: NextRequest): Record<string, string> {
 }
 
 export async function GET(req: NextRequest, { params }: { params: { slug: string[] } }) {
-  const backendUrl = process.env.BACKEND_API_URL || process.env.API_BASE_URL || 'http://localhost:5000';
+  let backendUrl: string;
+  try {
+    backendUrl = getBackendApiUrl();
+  } catch (urlErr: any) {
+    return NextResponse.json(
+      { success: false, error: urlErr.message, code: 'PRODUCTION_FALLBACK_BLOCKED' },
+      { status: 503 }
+    );
+  }
+
   const path = params.slug.join('/');
   const search = req.nextUrl.search;
-  const target = `${backendUrl.replace(/\/$/, '')}/api/public/${path}${search}`;
+  const target = `${backendUrl}/api/public/${path}${search}`;
 
   try {
     const forwardHeaders = buildForwardHeaders(req);
@@ -92,9 +102,18 @@ export async function GET(req: NextRequest, { params }: { params: { slug: string
 }
 
 export async function POST(req: NextRequest, { params }: { params: { slug: string[] } }) {
-  const backendUrl = process.env.BACKEND_API_URL || process.env.API_BASE_URL || 'http://localhost:5000';
+  let backendUrl: string;
+  try {
+    backendUrl = getBackendApiUrl();
+  } catch (urlErr: any) {
+    return NextResponse.json(
+      { success: false, error: urlErr.message, code: 'PRODUCTION_FALLBACK_BLOCKED' },
+      { status: 503 }
+    );
+  }
+
   const path = params.slug.join('/');
-  const target = `${backendUrl.replace(/\/$/, '')}/api/public/${path}`;
+  const target = `${backendUrl}/api/public/${path}`;
 
   try {
     const body = await req.json().catch(() => ({}));
