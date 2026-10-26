@@ -3,6 +3,12 @@ import path from 'path';
 import { getDbPool } from './pool';
 
 export async function syncHistoricalEnquiries(): Promise<{ synced: number; notes: number }> {
+  // Prevent unintended import of historical customer records into schema-only staging environments
+  if (process.env.SYNC_HISTORICAL_ENQUIRIES === 'false' || process.env.STAGING_SCHEMA_ONLY === 'true') {
+    console.log('[Sync] Skipping historical enquiry synchronization (SCHEMA_ONLY / SYNC_HISTORICAL_ENQUIRIES=false active).');
+    return { synced: 0, notes: 0 };
+  }
+
   const pool = getDbPool();
   if (!pool) {
     console.warn('[Sync] No database connection available.');

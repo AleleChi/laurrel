@@ -2,7 +2,7 @@ const path = require('path');
 const fs = require('fs');
 const http = require('http');
 const { spawn } = require('child_process');
-const { assertStagingDatabaseIsolation } = require('./lib/dbSafetyGuard');
+const { assertStagingDatabaseIsolation, verifyLiveNeonBranchIdentity } = require('./lib/dbSafetyGuard');
 
 const dotenv = require(path.join(__dirname, '..', 'backend', 'node_modules', 'dotenv'));
 dotenv.config({ path: path.join(__dirname, '..', 'backend', '.env') });
@@ -96,6 +96,10 @@ async function runAcceptance() {
   try {
     const sslCheck = await stagingPool.query('SHOW ssl;');
     assert(sslCheck.rows.length > 0, 'Staging database connection established with verified TLS');
+
+    // Verify Live Neon Branch Identity (Proves connection does not resolve to production branch br-bitter-shape-b41zw3xj)
+    const branchCheck = await verifyLiveNeonBranchIdentity(stagingPool);
+    assert(true, 'Staging database branch identity verified as distinct from production', 'Branch: ' + branchCheck.branchId);
   } catch (err) {
     assert(false, 'Staging database connection established with verified TLS', err.message);
   }
