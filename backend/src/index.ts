@@ -12,7 +12,12 @@ import { appointmentsRouter } from './routes/appointments';
 import { publicBookingRouter } from './routes/publicBooking';
 import { appointmentSettingsRouter } from './routes/appointmentSettings';
 import { getDbPool } from './database/pool';
-import { isStagingEnvironment, assertStagingConnectionUrl, verifyLiveDatabaseIdentity } from './database/stagingGuard';
+import {
+  isStagingEnvironment,
+  assertStagingEnvironmentConfig,
+  assertStagingConnectionUrl,
+  verifyLiveDatabaseIdentity,
+} from './database/stagingGuard';
 import { runMigrations } from './database/migrate';
 import { bootstrapOwnerAccount } from './database/adminRepo';
 import { syncHistoricalEnquiries } from './database/syncData';
@@ -115,32 +120,10 @@ app.get('/', (_req, res) => {
   });
 });
 
-// Bind port immediately so Render health check probes can connect while initialization runs
-const server = app.listen(port, host, () => {
-  console.log(`[LAURREL API] Backend server listening on http://${host}:${port}`);
-});
-
-async function initializeDependencies() {
+async function initializeProductionDependencies() {
   if (process.env.DATABASE_URL) {
     try {
-      console.log('[Startup] Executing controlled database initialization...');
-      // Fail-closed staging isolation guard: Enforce dedicated staging branch and reject production
-      if (isStagingEnvironment()) {
-        console.log('[Startup Safety] Staging environment detected. Verifying database isolation...');
-        assertStagingConnectionUrl(process.env.DATABASE_URL);
-
-        const pool = getDbPool();
-        if (pool) {
-          const client = await pool.connect();
-          try {
-            const identity = await verifyLiveDatabaseIdentity(client);
-            console.log(`[Startup Safety] Staging database branch verified as isolated: ${identity.branchId}`);
-          } finally {
-            client.release();
-          }
-        }
-      }
-
+      console.log('[Startup] Executing controlled production/local database initialization...');
       const migrationRes = await runMigrations();
       if (!migrationRes.success) {
         throw new Error(`Database migration failed: ${migrationRes.message}`);
@@ -183,6 +166,84 @@ async function initializeDependencies() {
   }
 }
 
-initializeDependencies();
+/**
+ * Controlled startup sequence:
+ * - Dedicated staging environment: Strictly pre-verifies database isolation and initialization
+ *   BEFORE binding the HTTP port. On any mismatch or fatal error, exits process (code 1) immediately.
+ * - Production / Local environment: Preserves existing startup behavior, binding the port immediately
+ *   to allow orchestrator probes to connect and observe readiness via /ready.
+ */
+async function startServer() {
+  const isStaging = isStagingEnvironment();
+
+  if (isStaging) {
+    console.log('[Startup Safety] Dedicated staging environment detected. Executing fail-closed pre-flight checks before binding port...');
+    try {
+      // 1. Mandatory Staging Configuration Validation
+      assertStagingEnvironmentConfig();
+
+      // 2. Exact Database Endpoint & URL Validation
+      assertStagingConnectionUrl(process.env.DATABASE_URL);
+
+      // 3. Live Neon Database Identity Verification
+      const pool = getDbPool();
+      if (!pool) {
+        throw new Error('Database pool could not be initialized.');
+      }
+      const client = await pool.connect();
+      try {
+        const identity = await verifyLiveDatabaseIdentity(client);
+        console.log(`[Startup Safety] Staging database branch verified as isolated: ${identity.branchId}`);
+      } finally {
+        client.release();
+      }
+
+      // 4. Controlled Migrations and Schema Initializations
+      const migrationRes = await runMigrations();
+      if (!migrationRes.success) {
+        throw new Error(`Database migration failed: ${migrationRes.message}`);
+      }
+      console.log('[Startup Migration]:', migrationRes.message);
+
+      await bootstrapOwnerAccount();
+      console.log('[Startup] Owner account checked.');
+      await syncHistoricalEnquiries();
+      console.log('[Startup] Enquiries synced.');
+      await seedCmsContent();
+      console.log('[Startup] CMS content checked.');
+      await seedMediaAssets();
+      console.log('[Startup] Media assets checked.');
+
+      setBackendReady(true, {
+        database: 'ready',
+        migrations: 'applied',
+        storageProvider: process.env.STORAGE_PROVIDER || 'local',
+      });
+
+      // 5. Only bind the HTTP port AFTER all pre-flight verification & initialization succeed
+      const server = app.listen(port, host, () => {
+        console.log(`[LAURREL API] Staging backend verified and listening on http://${host}:${port}`);
+      });
+
+      startReconciliationWorker();
+      return server;
+    } catch (startupErr: any) {
+      console.error('[FATAL STAGING REFUSAL]: Staging startup aborted:', startupErr.message);
+      setBackendReady(false, { error: startupErr.message });
+      // Terminate startup rather than leaving an HTTP server running with unverified database access
+      process.exit(1);
+    }
+  } else {
+    // Production / Local Dev: Preserve existing startup behavior
+    const server = app.listen(port, host, () => {
+      console.log(`[LAURREL API] Backend server listening on http://${host}:${port}`);
+    });
+
+    await initializeProductionDependencies();
+    return server;
+  }
+}
+
+startServer();
 
 export default app;

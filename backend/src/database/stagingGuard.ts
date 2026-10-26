@@ -12,29 +12,107 @@ export interface StagingGuardOptions {
   expectedEndpoint?: string;
   expectedBranchId?: string;
   isStaging?: boolean;
+  appEnv?: string;
+  stagingSchemaOnly?: string;
+  syncHistoricalEnquiries?: string;
 }
 
+/**
+ * Determines whether the current process is running as the dedicated staging service.
+ */
 export function isStagingEnvironment(): boolean {
   return (
     process.env.APP_ENV === 'staging' ||
     process.env.STAGING_MODE === 'true' ||
     process.env.STAGING_SCHEMA_ONLY === 'true' ||
-    Boolean(process.env.PUBLIC_SITE_URL && process.env.PUBLIC_SITE_URL.includes('deploy-preview')) ||
-    Boolean(process.env.RENDER_SERVICE_NAME && process.env.RENDER_SERVICE_NAME.includes('staging'))
+    Boolean(process.env.RENDER_SERVICE_NAME && process.env.RENDER_SERVICE_NAME.includes('staging')) ||
+    Boolean(process.env.PUBLIC_SITE_URL && process.env.PUBLIC_SITE_URL.includes('deploy-preview'))
   );
+}
+
+/**
+ * Validates mandatory environment variables for the dedicated staging service.
+ * Refuses startup (fails closed) if any required setting is missing or incorrect:
+ * - APP_ENV=staging
+ * - EXPECTED_STAGING_ENDPOINT (non-empty)
+ * - EXPECTED_NEON_BRANCH_ID (non-empty)
+ * - STAGING_SCHEMA_ONLY=true
+ * - SYNC_HISTORICAL_ENQUIRIES=false
+ */
+export function assertStagingEnvironmentConfig(options: StagingGuardOptions = {}): {
+  appEnv: string;
+  expectedEndpoint: string;
+  expectedBranchId: string;
+  stagingSchemaOnly: boolean;
+  syncHistoricalEnquiries: boolean;
+} {
+  const isStaging = options.isStaging ?? isStagingEnvironment();
+  if (!isStaging) {
+    return {
+      appEnv: process.env.APP_ENV || '',
+      expectedEndpoint: '',
+      expectedBranchId: '',
+      stagingSchemaOnly: false,
+      syncHistoricalEnquiries: true,
+    };
+  }
+
+  const errors: string[] = [];
+
+  const appEnv = (options.appEnv ?? process.env.APP_ENV ?? '').trim();
+  if (appEnv !== 'staging') {
+    errors.push(`APP_ENV must be explicitly set to 'staging' (received: '${appEnv || 'undefined'}')`);
+  }
+
+  const expectedEndpoint = (options.expectedEndpoint ?? process.env.EXPECTED_STAGING_ENDPOINT ?? '').trim().toLowerCase();
+  if (!expectedEndpoint) {
+    errors.push('EXPECTED_STAGING_ENDPOINT is mandatory in staging and must not be empty');
+  }
+
+  const expectedBranchId = (options.expectedBranchId ?? process.env.EXPECTED_NEON_BRANCH_ID ?? '').trim();
+  if (!expectedBranchId) {
+    errors.push('EXPECTED_NEON_BRANCH_ID is mandatory in staging and must not be empty');
+  }
+
+  const stagingSchemaOnly = (options.stagingSchemaOnly ?? process.env.STAGING_SCHEMA_ONLY ?? '').trim().toLowerCase();
+  if (stagingSchemaOnly !== 'true') {
+    errors.push(`STAGING_SCHEMA_ONLY must be strictly 'true' (received: '${stagingSchemaOnly || 'undefined'}')`);
+  }
+
+  const syncHistorical = (options.syncHistoricalEnquiries ?? process.env.SYNC_HISTORICAL_ENQUIRIES ?? '').trim().toLowerCase();
+  if (syncHistorical !== 'false') {
+    errors.push(`SYNC_HISTORICAL_ENQUIRIES must be strictly 'false' (received: '${syncHistorical || 'undefined'}')`);
+  }
+
+  if (errors.length > 0) {
+    throw new Error(
+      `FATAL SAFETY GUARD: Staging configuration incomplete or invalid. ` +
+      `Staging mandates [APP_ENV=staging, EXPECTED_STAGING_ENDPOINT, EXPECTED_NEON_BRANCH_ID, STAGING_SCHEMA_ONLY=true, SYNC_HISTORICAL_ENQUIRIES=false]. Refusal reasons:\n - ${errors.join('\n - ')}`
+    );
+  }
+
+  return {
+    appEnv,
+    expectedEndpoint,
+    expectedBranchId,
+    stagingSchemaOnly: true,
+    syncHistoricalEnquiries: false,
+  };
 }
 
 /**
  * Validates connection string parameters before establishing any database connection.
  * Throws a fatal Error if:
  * 1. Connection string is missing.
- * 2. It points to the production Neon endpoint.
- * 3. It does not match the expected staging endpoint (when configured).
+ * 2. It points to a non-Neon destination (*.neon.tech is required).
+ * 3. It points to the production Neon endpoint (ep-raspy-dew-b4agbivi).
+ * 4. It fails exact expected endpoint validation (rejects substring-spoofed hostnames).
+ * 5. Connection uses insecure TLS settings.
  */
 export function assertStagingConnectionUrl(
   connectionString: string | undefined,
   options: StagingGuardOptions = {}
-): { host: string; endpointId: string } {
+): { host: string; hostname: string; endpointId: string; baseEndpointId: string } {
   if (!connectionString || !connectionString.trim()) {
     throw new Error(
       'FATAL SAFETY GUARD: DATABASE_URL is not set. Staging backend refuses to run without an explicit connection string.'
@@ -48,12 +126,29 @@ export function assertStagingConnectionUrl(
     throw new Error(`FATAL SAFETY GUARD: DATABASE_URL is not a valid URL: ${err.message}`);
   }
 
-  const hostname = parsed.hostname.toLowerCase();
-  const endpointId = hostname.split('.')[0] || '';
+  const protocol = parsed.protocol.toLowerCase();
+  if (protocol !== 'postgres:' && protocol !== 'postgresql:') {
+    throw new Error(`FATAL SAFETY GUARD: Invalid database protocol '${protocol}'. Expected postgres: or postgresql:.`);
+  }
 
-  // Check 1: Production Endpoint Blacklist — Strictly reject any connection matching production Neon endpoint
+  const hostname = parsed.hostname.toLowerCase();
+
+  // Check 1: Non-Neon Destination Check
+  // Neon staging database must be hosted on *.neon.tech
+  const isNeonHost = hostname.endsWith('.neon.tech') || hostname === 'neon.tech';
+  if (!isNeonHost) {
+    throw new Error(
+      `FATAL SAFETY GUARD: Staging database destination must be hosted on Neon (*.neon.tech). Non-Neon host rejected: ${hostname}`
+    );
+  }
+
+  const endpointSegment = hostname.split('.')[0] || '';
+  const baseEndpointId = endpointSegment.replace(/-pooler$/, '');
+
+  // Check 2: Production Endpoint Blacklist — Strictly reject any connection targeting production Neon endpoint
   for (const prodEndpoint of PRODUCTION_NEON_ENDPOINTS) {
-    if (hostname.includes(prodEndpoint) || endpointId === prodEndpoint) {
+    const prodBase = prodEndpoint.replace(/-pooler$/, '');
+    if (endpointSegment === prodEndpoint || baseEndpointId === prodBase) {
       throw new Error(
         `FATAL SAFETY GUARD: DATABASE_URL targets production Neon endpoint (${prodEndpoint}). ` +
         'Staging execution halted immediately to protect production data.'
@@ -61,26 +156,58 @@ export function assertStagingConnectionUrl(
     }
   }
 
-  // Check 2: Expected Endpoint Match (Fail-Closed)
+  // Check 3: TLS Requirement
+  if (connectionString.includes('sslmode=disable') || connectionString.includes('sslmode=allow')) {
+    throw new Error('FATAL SAFETY GUARD: Staging database connection must use TLS (sslmode=require).');
+  }
+
+  // Check 4: Exact Expected Endpoint Validation (Mandatory in Staging)
+  const isStaging = options.isStaging ?? isStagingEnvironment();
   const expectedEndpoint = (options.expectedEndpoint || process.env.EXPECTED_STAGING_ENDPOINT || '').trim().toLowerCase();
+
+  if (isStaging && !expectedEndpoint) {
+    throw new Error(
+      'FATAL SAFETY GUARD: EXPECTED_STAGING_ENDPOINT is mandatory for staging database isolation verification.'
+    );
+  }
+
   if (expectedEndpoint) {
-    if (!hostname.includes(expectedEndpoint) && endpointId !== expectedEndpoint) {
+    const expectedBase = expectedEndpoint.split('.')[0].replace(/-pooler$/, '');
+    // Exact endpoint ID check (No permissive substring match!)
+    if (baseEndpointId !== expectedBase) {
       throw new Error(
         `FATAL SAFETY GUARD: Staging database endpoint mismatch. ` +
-        `Expected endpoint [${expectedEndpoint}], but connection string resolved to [${endpointId || hostname}].`
+        `Expected endpoint [${expectedEndpoint}], but connection resolved to [${endpointSegment || hostname}].`
       );
+    }
+
+    // If expected endpoint specifies a full hostname, verify full domain match
+    if (expectedEndpoint.includes('.')) {
+      const expectedDomain = expectedEndpoint.split('.').slice(1).join('.');
+      const actualDomain = hostname.split('.').slice(1).join('.');
+      if (actualDomain !== expectedDomain) {
+        throw new Error(
+          `FATAL SAFETY GUARD: Staging database domain mismatch. ` +
+          `Expected domain [${expectedDomain}], but connection resolved to [${actualDomain}].`
+        );
+      }
     }
   }
 
-  return { host: parsed.host, endpointId };
+  return {
+    host: parsed.host,
+    hostname,
+    endpointId: endpointSegment,
+    baseEndpointId,
+  };
 }
 
 /**
  * Validates internal Neon branch identity via system settings.
  * Fails closed if:
  * 1. The database reports the production branch_id or timeline_id.
- * 2. The database identity is missing (null/empty) in a Neon environment.
- * 3. The branch_id does not match the expected staging branch (when configured).
+ * 2. The database identity is missing (null/empty).
+ * 3. In staging, EXPECTED_NEON_BRANCH_ID is missing or does not exactly match the database branch_id.
  */
 export async function verifyLiveDatabaseIdentity(
   clientOrPool: { query: (sql: string, params?: any[]) => Promise<any> },
@@ -121,27 +248,33 @@ export async function verifyLiveDatabaseIdentity(
     );
   }
 
-  // Check 3: FAIL-CLOSED on missing Neon branch identity in Neon environments
-  const dbUrl = process.env.DATABASE_URL || '';
-  const isNeonHost = dbUrl.includes('neon.tech');
-  if (isNeonHost && !branchId) {
+  // Check 3: FAIL-CLOSED on missing Neon branch identity
+  if (!branchId) {
     throw new Error(
       'FATAL SAFETY GUARD: Staging database branch identity is MISSING (neon.branch_id returned null/empty). ' +
       'Staging fails closed when Neon database identity cannot be proven.'
     );
   }
 
-  // Check 4: Expected Branch ID verification (if configured)
+  // Check 4: Exact Expected Branch ID verification (MANDATORY IN STAGING)
+  const isStaging = options.isStaging ?? isStagingEnvironment();
   const expectedBranchId = (options.expectedBranchId || process.env.EXPECTED_NEON_BRANCH_ID || '').trim();
+
+  if (isStaging && !expectedBranchId) {
+    throw new Error(
+      'FATAL SAFETY GUARD: EXPECTED_NEON_BRANCH_ID is mandatory for staging database isolation verification.'
+    );
+  }
+
   if (expectedBranchId && branchId !== expectedBranchId) {
     throw new Error(
       `FATAL SAFETY GUARD: Staging database branch mismatch. ` +
-      `Expected branch [${expectedBranchId}], but database reports [${branchId || 'none'}].`
+      `Expected branch [${expectedBranchId}], but database reports [${branchId}].`
     );
   }
 
   return {
-    branchId: branchId || 'verified-non-neon-staging',
+    branchId,
     timelineId,
     database: dbName,
   };
