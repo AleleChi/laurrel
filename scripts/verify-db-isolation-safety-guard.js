@@ -28,7 +28,7 @@ function assert(condition, testName, details = '') {
 
 async function runProof() {
   console.log('========================================================================');
-  console.log('LAURREL SERVICES — DATABASE ISOLATION SAFETY GUARD PROOF');
+  console.log('LAURREL SERVICES — FAIL-CLOSED DATABASE ISOLATION SAFETY GUARD PROOF');
   console.log('========================================================================\n');
 
   // 1. Missing TEST_DATABASE_URL
@@ -116,7 +116,35 @@ async function runProof() {
     assert(false, 'Accepts genuinely isolated staging Neon branch endpoint', err.message);
   }
 
-  // 8. Live Neon Branch Identity Guard: Rejects production branch ID even if accessed via custom/spoofed host
+  // 8. Expected Endpoint Mismatch Test (Fail-Closed)
+  try {
+    assertStagingDatabaseIsolation(
+      'postgresql://staging_user:pass@ep-actual-12345-pooler.c-6.us-east-2.aws.neon.tech/neondb?sslmode=require',
+      PROD_URL,
+      { expectedEndpoint: 'ep-expected-99999' }
+    );
+    assert(false, 'Refuses execution when expected staging endpoint does not match');
+  } catch (err) {
+    assert(
+      err.message.includes('endpoint mismatch') && err.message.includes('ep-expected-99999'),
+      'Refuses execution when expected staging endpoint does not match',
+      err.message
+    );
+  }
+
+  // 9. Expected Endpoint Match Test
+  try {
+    const matched = assertStagingDatabaseIsolation(
+      'postgresql://staging_user:pass@ep-expected-99999-pooler.c-6.us-east-2.aws.neon.tech/neondb?sslmode=require',
+      PROD_URL,
+      { expectedEndpoint: 'ep-expected-99999' }
+    );
+    assert(matched.valid === true, 'Accepts connection when expected staging endpoint matches');
+  } catch (err) {
+    assert(false, 'Accepts connection when expected staging endpoint matches', err.message);
+  }
+
+  // 10. Live Neon Branch Identity Guard: Rejects production branch ID even if accessed via custom/spoofed host
   const mockProdClient = {
     query: async () => ({
       rows: [{
@@ -139,7 +167,30 @@ async function runProof() {
     );
   }
 
-  // 9. Live Neon Branch Identity Guard: Accepts isolated staging branch ID
+  // 11. Fail-closed on Missing Database Identity (null/empty branch_id)
+  const mockNullBranchClient = {
+    query: async () => ({
+      rows: [{
+        branch_id: null,
+        timeline_id: null,
+        db: 'neondb_staging',
+        user_name: 'staging_user',
+      }],
+    }),
+  };
+
+  try {
+    await verifyLiveNeonBranchIdentity(mockNullBranchClient);
+    assert(false, 'Refuses execution when staging database branch identity is null/empty (Fail-Closed)');
+  } catch (err) {
+    assert(
+      err.message.includes('branch identity is MISSING') || err.message.includes('fails closed'),
+      'Refuses execution when staging database branch identity is null/empty (Fail-Closed)',
+      err.message
+    );
+  }
+
+  // 12. Live Neon Branch Identity Guard: Accepts isolated staging branch ID
   const mockStagingClient = {
     query: async () => ({
       rows: [{
@@ -162,9 +213,21 @@ async function runProof() {
     assert(false, 'Accepts verified isolated staging branch identity', err.message);
   }
 
-  // 10. Subprocess negative test: invoke verify-staging-integration-acceptance.js without TEST_DATABASE_URL
+  // 13. Expected Branch ID Mismatch Test
+  try {
+    await verifyLiveNeonBranchIdentity(mockStagingClient, { expectedBranchId: 'br-different-branch-443322' });
+    assert(false, 'Refuses execution when expected database branch ID does not match');
+  } catch (err) {
+    assert(
+      err.message.includes('branch mismatch') && err.message.includes('br-different-branch-443322'),
+      'Refuses execution when expected database branch ID does not match',
+      err.message
+    );
+  }
+
+  // 14. Subprocess negative test: invoke verify-staging-integration-acceptance.js with missing TEST_DATABASE_URL
   console.log('\nTesting verify-staging-integration-acceptance.js subprocess invocation with missing TEST_DATABASE_URL...');
-  const child = spawnSync('node', ['scripts/verify-staging-integration-acceptance.js'], {
+  const childMissing = spawnSync('node', ['scripts/verify-staging-integration-acceptance.js'], {
     cwd: path.join(__dirname, '..'),
     env: {
       ...process.env,
@@ -173,10 +236,27 @@ async function runProof() {
     encoding: 'utf8',
   });
 
-  assert(child.status !== 0, 'verify-staging-integration-acceptance.js terminates with non-zero exit code when TEST_DATABASE_URL is absent');
+  assert(childMissing.status !== 0, 'verify-staging-integration-acceptance.js terminates with non-zero exit code when TEST_DATABASE_URL is absent');
   assert(
-    child.stdout.includes('FATAL SAFETY GUARD') || child.stderr.includes('FATAL SAFETY GUARD'),
-    'verify-staging-integration-acceptance.js prints FATAL SAFETY GUARD message and halts'
+    childMissing.stdout.includes('FATAL SAFETY GUARD') || childMissing.stderr.includes('FATAL SAFETY GUARD'),
+    'verify-staging-integration-acceptance.js prints FATAL SAFETY GUARD message and halts when URL missing'
+  );
+
+  // 15. Subprocess negative test: invoke verify-staging-integration-acceptance.js with production DATABASE_URL
+  console.log('Testing verify-staging-integration-acceptance.js subprocess invocation with production DATABASE_URL...');
+  const childProd = spawnSync('node', ['scripts/verify-staging-integration-acceptance.js'], {
+    cwd: path.join(__dirname, '..'),
+    env: {
+      ...process.env,
+      TEST_DATABASE_URL: PROD_URL, // deliberately passing production URL
+    },
+    encoding: 'utf8',
+  });
+
+  assert(childProd.status !== 0, 'verify-staging-integration-acceptance.js terminates with non-zero exit code when production URL is configured');
+  assert(
+    childProd.stdout.includes('FATAL SAFETY GUARD') || childProd.stderr.includes('FATAL SAFETY GUARD'),
+    'verify-staging-integration-acceptance.js prints FATAL SAFETY GUARD message and halts against production URL'
   );
 
   console.log('\n------------------------------------------------------------------------');

@@ -12,6 +12,7 @@ import { appointmentsRouter } from './routes/appointments';
 import { publicBookingRouter } from './routes/publicBooking';
 import { appointmentSettingsRouter } from './routes/appointmentSettings';
 import { getDbPool } from './database/pool';
+import { isStagingEnvironment, assertStagingConnectionUrl, verifyLiveDatabaseIdentity } from './database/stagingGuard';
 import { runMigrations } from './database/migrate';
 import { bootstrapOwnerAccount } from './database/adminRepo';
 import { syncHistoricalEnquiries } from './database/syncData';
@@ -123,32 +124,23 @@ async function initializeDependencies() {
   if (process.env.DATABASE_URL) {
     try {
       console.log('[Startup] Executing controlled database initialization...');
-      // Staging isolation guard: Prevent staging backend from ever running against production Neon branch
-      const isStagingEnv =
-        process.env.APP_ENV === 'staging' ||
-        process.env.STAGING_MODE === 'true' ||
-        process.env.STAGING_SCHEMA_ONLY === 'true' ||
-        process.env.PUBLIC_SITE_URL?.includes('deploy-preview');
+      // Fail-closed staging isolation guard: Enforce dedicated staging branch and reject production
+      if (isStagingEnvironment()) {
+        console.log('[Startup Safety] Staging environment detected. Verifying database isolation...');
+        assertStagingConnectionUrl(process.env.DATABASE_URL);
 
-      if (isStagingEnv) {
         const pool = getDbPool();
         if (pool) {
           const client = await pool.connect();
           try {
-            const branchCheck = await client.query("SELECT current_setting('neon.branch_id', true) as branch_id;");
-            const branchId = branchCheck.rows[0]?.branch_id;
-            const PROD_BRANCH_ID = 'br-bitter-shape-b41zw3xj';
-            if (branchId && branchId === PROD_BRANCH_ID) {
-              throw new Error(
-                'FATAL SAFETY VIOLATION: Staging backend is connected to the PRODUCTION Neon branch (br-bitter-shape-b41zw3xj). Startup migrations and seeding halted immediately to protect production data!'
-              );
-            }
-            console.log('[Startup Safety] Staging database branch verified as isolated: ' + (branchId || 'non-neon'));
+            const identity = await verifyLiveDatabaseIdentity(client);
+            console.log(`[Startup Safety] Staging database branch verified as isolated: ${identity.branchId}`);
           } finally {
             client.release();
           }
         }
       }
+
       const migrationRes = await runMigrations();
       if (!migrationRes.success) {
         throw new Error(`Database migration failed: ${migrationRes.message}`);
