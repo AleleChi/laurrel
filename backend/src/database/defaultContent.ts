@@ -18,7 +18,7 @@ export const defaultCmsPages = [
       ogTitle: 'Cleaning, Moving & Storage in Ottawa | Laurrel Services',
       ogDescription:
         'Cleaning, moving and storage services in Ottawa. Explore Laurrel Services and request a quote for your home, property or business.',
-      ogImage: '/assets/hero/laurrel-room.png',
+      ogImage: '/assets/hero/cleaning-hero.webp',
       noIndex: false,
     },
     sections: [
@@ -48,7 +48,7 @@ export const defaultCmsPages = [
             actionText: 'Get in Touch',
           },
           media: {
-            imageSrc: '/assets/hero/laurrel-room.png',
+            imageSrc: '/assets/hero/cleaning-hero.webp',
             altText:
               'Sunlit living room with pristine cream furniture and architectural staircase in Ottawa, Canada',
             videos: [
@@ -236,7 +236,7 @@ export const defaultCmsPages = [
                 'Furniture may need to be moved out of the way before work begins. Once the work is finished, there may also be cleaning to arrange. Tell us which parts of the job you need.',
               relatedServicesText: 'Moving, Storage and Cleaning',
               preselectedServices: ['moving', 'storage', 'cleaning'],
-              imageSrc: '/assets/hero/laurrel-room.png',
+              imageSrc: '/assets/hero/moving-hero.webp',
               imageAlt:
                 'Laurrel Services protected Ottawa property and furnishings during home renovation',
               details: {
@@ -453,7 +453,7 @@ export const defaultCmsPages = [
                 'Moving dates, property handovers and renovations can involve different deadlines. Include your preferred dates when making an enquiry.',
             },
           ],
-          imageSrc: '/assets/hero/laurrel-room.png',
+          imageSrc: '/assets/about/about-how-we-work.webp',
           altText: 'Prepared residential space in Ottawa arranged by Laurrel Services',
           cutoutImageSrc: '/assets/about/mover-cutout-trimmed.png',
           cutoutAltText: 'Laurrel Services moving specialist holding a packaged carton',
@@ -534,7 +534,7 @@ export const defaultCmsPages = [
       ogTitle: 'Cleaning, Moving & Storage Services Ottawa | Laurrel Services',
       ogDescription:
         'Explore cleaning, moving and storage services in Ottawa. Learn what to include in your enquiry and request availability and a quote from Laurrel Services.',
-      ogImage: '/assets/hero/laurrel-room.png',
+      ogImage: '/assets/hero/cleaning-hero.webp',
       noIndex: false,
     },
     sections: [
@@ -548,7 +548,7 @@ export const defaultCmsPages = [
             { label: 'Home', href: '/' },
             { label: 'Services', href: '/services' },
           ],
-          imageSrc: '/assets/hero/laurrel-room.png',
+          imageSrc: '/assets/hero/cleaning-hero.webp',
           altText: 'Laurrel Services cleaning, moving and storage services in Ottawa, Canada',
         },
       },
@@ -776,7 +776,7 @@ export const defaultCmsPages = [
       ogTitle: 'Contact Us | Laurrel Services Ottawa',
       ogDescription:
         'Get in touch with Laurrel Services for cleaning, moving and storage in Ottawa. Send an enquiry or discuss your property transition plans.',
-      ogImage: '/assets/hero/laurrel-room.png',
+      ogImage: '/assets/hero/cleaning-hero.webp',
       noIndex: false,
     },
     sections: [
@@ -790,7 +790,7 @@ export const defaultCmsPages = [
             { label: 'Home', href: '/' },
             { label: 'Contact Us', href: '/contact' },
           ],
-          imageSrc: '/assets/hero/laurrel-room.png',
+          imageSrc: '/assets/hero/about-handover.webp',
           altText: 'Laurrel Services clean Ottawa property and customer service',
         },
       },

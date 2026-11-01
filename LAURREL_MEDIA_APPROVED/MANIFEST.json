@@ -1,0 +1,109 @@
+{
+  "package": "LAURREL_MEDIA_APPROVED",
+  "version": "1.0.0",
+  "company": "Laurrel Services",
+  "generatedAt": "2026-11-01T08:50:27.005Z",
+  "assets": [
+    {
+      "filename": "cleaning-hero.webp",
+      "fallbackFilename": "cleaning-hero.jpg",
+      "dimensions": "1600x1067",
+      "aspectRatio": "3:2",
+      "serviceCategory": "Cleaning",
+      "description": "Professional cleaning specialist wearing yellow protective gloves meticulously wiping and detailing kitchen surfaces with spray and microfibre cloth.",
+      "pagePlacements": [
+        "Homepage Hero (Cleaning tab)",
+        "Homepage Services Highlight (Cleaning card)",
+        "Homepage Plans Overlap (Handback Keys scenario)",
+        "Services Page (/services) Banner",
+        "Services Page Cleaning Section"
+      ],
+      "altText": "Professional cleaner wearing yellow protective gloves detailing bright kitchen surfaces in an Ottawa home",
+      "source": "Unsplash (photo-1581578731548-c64695cc6952)",
+      "photographer": "Anton",
+      "license": "Unsplash License (Free commercial use, no copyright infringement)"
+    },
+    {
+      "filename": "moving-hero.webp",
+      "fallbackFilename": "moving-hero.jpg",
+      "dimensions": "1600x1067",
+      "aspectRatio": "3:2",
+      "serviceCategory": "Moving",
+      "description": "Two professional movers in navy uniforms carrying moving boxes across a sunlit hardwood floor in a residential living space.",
+      "pagePlacements": [
+        "Homepage Hero (Moving tab)",
+        "Homepage Services Highlight (Moving card)",
+        "Homepage Plans Overlap (Renovation scenario)",
+        "Services Page Moving Section"
+      ],
+      "altText": "Professional moving specialists in uniform carrying moving boxes in an Ottawa residence",
+      "source": "Pexels (7464687)",
+      "photographer": "Blue Bird",
+      "license": "Pexels License (Free commercial use, no copyright infringement)"
+    },
+    {
+      "filename": "storage-hero.webp",
+      "fallbackFilename": "storage-hero.jpg",
+      "dimensions": "1600x1067",
+      "aspectRatio": "3:2",
+      "serviceCategory": "Storage",
+      "description": "Clean, modern, secure self-storage facility corridor with roll-up doors, bright overhead lighting, and numbered individual units.",
+      "pagePlacements": [
+        "Homepage Hero (Storage tab)",
+        "Homepage Services Highlight (Storage card)",
+        "Homepage Plans Overlap (Moving dates gap scenario)",
+        "Services Page Storage Section"
+      ],
+      "altText": "Clean, modern, and secure storage facility corridor with private locked units",
+      "source": "Unsplash (photo-1595246140625-573b715d11dc)",
+      "photographer": "Jannis Lucas",
+      "license": "Unsplash License (Free commercial use, no copyright infringement)"
+    },
+    {
+      "filename": "about-handover.webp",
+      "fallbackFilename": "about-handover.jpg",
+      "dimensions": "1600x1067",
+      "aspectRatio": "3:2",
+      "serviceCategory": "Handover & Coordination",
+      "description": "Genuine property transition with residential door keys being handed over in front of the doorway entrance.",
+      "pagePlacements": [
+        "Homepage About Teaser Section",
+        "About Page (/about) Banner",
+        "About Page FAQ Section",
+        "Contact Page (/contact) Banner"
+      ],
+      "altText": "Laurrel Services property handover and customer service coordination in Ottawa",
+      "source": "Unsplash (photo-1560518883-ce09059eeffa)",
+      "photographer": "Tierra Mallorca",
+      "license": "Unsplash License (Free commercial use, no copyright infringement)"
+    },
+    {
+      "filename": "about-company-work.webp",
+      "fallbackFilename": "about-company-work.jpg",
+      "dimensions": "1200x1600",
+      "aspectRatio": "3:4",
+      "serviceCategory": "Operations",
+      "description": "Professional team discussing and carefully coordinating moving operations in residence.",
+      "pagePlacements": [
+        "About Page (/about) Company Story Section"
+      ],
+      "altText": "Laurrel Services team coordinating residential service operations in Ottawa",
+      "source": "Verified Project Media",
+      "license": "Laurrel Services Project Asset (Approved)"
+    },
+    {
+      "filename": "about-how-we-work.webp",
+      "fallbackFilename": "about-how-we-work.jpg",
+      "dimensions": "1200x800",
+      "aspectRatio": "3:2",
+      "serviceCategory": "Operations",
+      "description": "Careful preparation, packing, and organization of residential belongings.",
+      "pagePlacements": [
+        "About Page (/about) How We Work Section"
+      ],
+      "altText": "Professional team carefully preparing and organizing household belongings in Ottawa",
+      "source": "Verified Project Media",
+      "license": "Laurrel Services Project Asset (Approved)"
+    }
+  ]
+}
