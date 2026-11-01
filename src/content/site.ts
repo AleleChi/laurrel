@@ -1,11 +1,25 @@
+export const PRODUCTION_SITE_URL = 'https://laurrelservices.com';
+
 export function getSiteUrl(): string {
+  // Enforce authoritative production domain in production builds
+  if (process.env.NODE_ENV === 'production' && !process.env.IS_PREVIEW_BUILD) {
+    return PRODUCTION_SITE_URL;
+  }
   if (process.env.NEXT_PUBLIC_SITE_URL) {
     return process.env.NEXT_PUBLIC_SITE_URL.replace(/\/$/, '');
   }
-  if (process.env.URL) {
-    return process.env.URL.replace(/\/$/, '');
-  }
-  return 'https://laurrelservices.com';
+  return PRODUCTION_SITE_URL;
+}
+
+export interface PageSeoConfig {
+  title: string;
+  description: string;
+  canonical?: string;
+  ogTitle?: string;
+  ogDescription?: string;
+  ogImage?: string;
+  noIndex?: boolean;
+  locale?: string;
 }
 
 export interface NavDropdownItem {
@@ -166,10 +180,7 @@ export interface AboutPageConfig {
     body: string;
     ctaLabel: string;
   };
-  meta: {
-    title: string;
-    description: string;
-  };
+  meta: PageSeoConfig;
 }
 
 export interface ServiceHighlightItem {
@@ -217,10 +228,7 @@ export interface GettingStartedStep {
 }
 
 export interface ServicesPageConfig {
-  meta: {
-    title: string;
-    description: string;
-  };
+  meta: PageSeoConfig;
   banner: {
     title: string;
     breadcrumb: { label: string; href: string }[];
@@ -314,10 +322,7 @@ export interface HomeFaqConfig {
 }
 
 export interface ContactPageConfig {
-  meta: {
-    title: string;
-    description: string;
-  };
+  meta: PageSeoConfig;
   banner: {
     title: string;
     breadcrumb: { label: string; href: string }[];
@@ -356,11 +361,7 @@ export interface SiteConfig {
   companyName: string;
   tagline: string;
   location: string;
-  meta: {
-    title: string;
-    description: string;
-    locale: string;
-  };
+  meta: PageSeoConfig;
   navigation: {
     links: NavLink[];
     cta: {
@@ -420,7 +421,9 @@ export const siteConfig: SiteConfig = {
   meta: {
     title: 'Cleaning, Moving & Storage in Ottawa | Laurrel Services',
     description:
-      'Residential cleaning, careful local moving, and transitional storage arrangements in Ottawa. Request a straightforward quote for your property or transition.',
+      'Cleaning, moving and storage services in Ottawa and the National Capital Region. Tell Laurrel Services what you need and request a quote for your home or business.',
+    canonical: 'https://laurrelservices.com/',
+    ogImage: '/assets/brand/og-image.jpg',
     locale: 'en-CA',
   },
   navigation: {
@@ -712,9 +715,11 @@ export const siteConfig: SiteConfig = {
       ctaLabel: 'Request a Quote',
     },
     meta: {
-      title: 'About Laurrel Services | Cleaning, Moving & Storage in Ottawa',
+      title: 'About Laurrel Services | Cleaning, Moving & Storage Ottawa',
       description:
-        'Learn about Laurrel Services in Ottawa. We coordinate residential cleaning, careful local moving, and transitional storage under one roof.',
+        'Learn about Laurrel Services and our cleaning, moving and storage services in Ottawa. Find out how to enquire about one service or several related jobs.',
+      canonical: 'https://laurrelservices.com/about',
+      ogImage: '/assets/brand/og-image.jpg',
     },
   },
   servicesHighlight: {
@@ -776,9 +781,11 @@ export const siteConfig: SiteConfig = {
   },
   servicesPage: {
     meta: {
-      title: 'Cleaning, Moving & Storage Services Ottawa | Laurrel Services',
+      title: 'Cleaning, Moving & Storage Services in Ottawa | Laurrel',
       description:
-        'Explore residential cleaning, local moving, and transitional storage services in Ottawa. Understand service scope, customer prep, and request a clear quote.',
+        "Explore Laurrel's cleaning, moving and storage services in Ottawa. Find out what details to include when requesting a service estimate or discussing your plans.",
+      canonical: 'https://laurrelservices.com/services',
+      ogImage: '/assets/brand/og-image.jpg',
     },
     banner: {
       title: 'Our Services',
@@ -1068,9 +1075,11 @@ export const siteConfig: SiteConfig = {
   },
   contactPage: {
     meta: {
-      title: 'Contact Us | Laurrel Services Ottawa',
+      title: 'Contact Laurrel Services | Ottawa, Ontario',
       description:
-        'Get in touch with Laurrel Services for cleaning, moving, and transitional storage in Ottawa. Send an enquiry or discuss your property plans.',
+        'Contact Laurrel Services about cleaning, moving or storage in Ottawa. Call (343) 843-3032 or send an enquiry with your location and preferred date.',
+      canonical: 'https://laurrelservices.com/contact',
+      ogImage: '/assets/brand/og-image.jpg',
     },
     banner: {
       title: 'Contact Us',

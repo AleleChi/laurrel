@@ -70,7 +70,7 @@ export function PageSeoEditor({ seo, onChange, disabled }: PageSeoEditorProps) {
               disabled={disabled}
               value={seo.canonical || ''}
               onChange={(e) => handleChange('canonical', e.target.value)}
-              placeholder="https://laurrelservices.ca/"
+              placeholder="https://laurrelservices.com/"
             />
           </CmsField>
 

@@ -13,12 +13,12 @@ export const defaultCmsPages = [
     seo: {
       title: 'Cleaning, Moving & Storage in Ottawa | Laurrel Services',
       description:
-        'Cleaning, moving and storage services in Ottawa. Explore Laurrel Services and request a quote for your home, property or business.',
+        'Cleaning, moving and storage services in Ottawa and the National Capital Region. Tell Laurrel Services what you need and request a quote for your home or business.',
       canonical: 'https://laurrelservices.com/',
       ogTitle: 'Cleaning, Moving & Storage in Ottawa | Laurrel Services',
       ogDescription:
-        'Cleaning, moving and storage services in Ottawa. Explore Laurrel Services and request a quote for your home, property or business.',
-      ogImage: '/assets/hero/cleaning-hero.webp',
+        'Cleaning, moving and storage services in Ottawa and the National Capital Region. Tell Laurrel Services what you need and request a quote for your home or business.',
+      ogImage: '/assets/brand/og-image.jpg',
       noIndex: false,
     },
     sections: [
@@ -329,14 +329,14 @@ export const defaultCmsPages = [
     template: 'editorial',
     status: 'published',
     seo: {
-      title: 'About Laurrel Services | Cleaning, Moving & Storage in Ottawa',
+      title: 'About Laurrel Services | Cleaning, Moving & Storage Ottawa',
       description:
-        'Learn about Laurrel Services and our cleaning, moving and storage services in Ottawa. Understand our approach to planning related service requests.',
+        'Learn about Laurrel Services and our cleaning, moving and storage services in Ottawa. Find out how to enquire about one service or several related jobs.',
       canonical: 'https://laurrelservices.com/about',
-      ogTitle: 'About Laurrel Services | Cleaning, Moving & Storage in Ottawa',
+      ogTitle: 'About Laurrel Services | Cleaning, Moving & Storage Ottawa',
       ogDescription:
-        'Learn about Laurrel Services and our cleaning, moving and storage services in Ottawa. Understand our approach to planning related service requests.',
-      ogImage: '/assets/videos/moving-poster.jpg',
+        'Learn about Laurrel Services and our cleaning, moving and storage services in Ottawa. Find out how to enquire about one service or several related jobs.',
+      ogImage: '/assets/brand/og-image.jpg',
       noIndex: false,
     },
     sections: [
@@ -527,14 +527,14 @@ export const defaultCmsPages = [
     template: 'services_detail',
     status: 'published',
     seo: {
-      title: 'Cleaning, Moving & Storage Services Ottawa | Laurrel Services',
+      title: 'Cleaning, Moving & Storage Services in Ottawa | Laurrel',
       description:
-        'Explore cleaning, moving and storage services in Ottawa. Learn what to include in your enquiry and request availability and a quote from Laurrel Services.',
+        "Explore Laurrel's cleaning, moving and storage services in Ottawa. Find out what details to include when requesting a service estimate or discussing your plans.",
       canonical: 'https://laurrelservices.com/services',
-      ogTitle: 'Cleaning, Moving & Storage Services Ottawa | Laurrel Services',
+      ogTitle: 'Cleaning, Moving & Storage Services in Ottawa | Laurrel',
       ogDescription:
-        'Explore cleaning, moving and storage services in Ottawa. Learn what to include in your enquiry and request availability and a quote from Laurrel Services.',
-      ogImage: '/assets/hero/cleaning-hero.webp',
+        "Explore Laurrel's cleaning, moving and storage services in Ottawa. Find out what details to include when requesting a service estimate or discussing your plans.",
+      ogImage: '/assets/brand/og-image.jpg',
       noIndex: false,
     },
     sections: [
@@ -769,14 +769,14 @@ export const defaultCmsPages = [
     template: 'contact',
     status: 'published',
     seo: {
-      title: 'Contact Us | Laurrel Services Ottawa',
+      title: 'Contact Laurrel Services | Ottawa, Ontario',
       description:
-        'Get in touch with Laurrel Services for cleaning, moving and storage in Ottawa. Send an enquiry or discuss your property transition plans.',
+        'Contact Laurrel Services about cleaning, moving or storage in Ottawa. Call (343) 843-3032 or send an enquiry with your location and preferred date.',
       canonical: 'https://laurrelservices.com/contact',
-      ogTitle: 'Contact Us | Laurrel Services Ottawa',
+      ogTitle: 'Contact Laurrel Services | Ottawa, Ontario',
       ogDescription:
-        'Get in touch with Laurrel Services for cleaning, moving and storage in Ottawa. Send an enquiry or discuss your property transition plans.',
-      ogImage: '/assets/hero/cleaning-hero.webp',
+        'Contact Laurrel Services about cleaning, moving or storage in Ottawa. Call (343) 843-3032 or send an enquiry with your location and preferred date.',
+      ogImage: '/assets/brand/og-image.jpg',
       noIndex: false,
     },
     sections: [

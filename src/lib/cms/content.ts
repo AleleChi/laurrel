@@ -1,5 +1,7 @@
 import {
   siteConfig,
+  getSiteUrl,
+  PageSeoConfig,
   AboutPageConfig,
   ServicesPageConfig,
   ContactPageConfig,
@@ -14,6 +16,17 @@ const BACKEND_URL =
   process.env.BACKEND_API_URL ||
   process.env.API_BASE_URL ||
   'http://localhost:5000';
+
+export interface PageSeoData {
+  title: string;
+  description: string;
+  canonical?: string;
+  ogTitle?: string;
+  ogDescription?: string;
+  ogImage?: string;
+  noIndex?: boolean;
+  locale?: string;
+}
 
 export interface PublishedPagePayload<TSections = Record<string, any>> {
   page: {
@@ -82,7 +95,7 @@ export async function getPublishedHomePageData(): Promise<{
   requestQuote: RequestQuoteSectionConfig;
   faq: HomeFaqConfig;
   contact: HomeContactConfig;
-  seo: typeof siteConfig.meta;
+  seo: PageSeoData;
   source: 'cms' | 'local_fallback';
 }> {
   const result = await fetchPublishedPage('home');
@@ -112,6 +125,11 @@ export async function getPublishedHomePageData(): Promise<{
       seo: {
         title: result.page.seo?.title || siteConfig.meta.title,
         description: result.page.seo?.description || siteConfig.meta.description,
+        canonical: result.page.seo?.canonical || siteConfig.meta.canonical || `${getSiteUrl()}/`,
+        ogTitle: result.page.seo?.ogTitle || result.page.seo?.title || siteConfig.meta.title,
+        ogDescription: result.page.seo?.ogDescription || result.page.seo?.description || siteConfig.meta.description,
+        ogImage: result.page.seo?.ogImage || siteConfig.meta.ogImage || '/assets/brand/og-image.jpg',
+        noIndex: Boolean(result.page.seo?.noIndex),
         locale: siteConfig.meta.locale,
       },
       source: 'cms',
@@ -150,9 +168,14 @@ export async function getPublishedAboutPageData(): Promise<{
     const marquee = sec['marquee'] || siteConfig.aboutPage.marquee;
     const faq = sec['faq'] || siteConfig.aboutPage.faq;
     const finalCta = sec['finalCta'] || siteConfig.aboutPage.finalCta;
-    const meta = {
+    const meta: PageSeoData = {
       title: result.page.seo?.title || siteConfig.aboutPage.meta.title,
       description: result.page.seo?.description || siteConfig.aboutPage.meta.description,
+      canonical: result.page.seo?.canonical || siteConfig.aboutPage.meta.canonical || `${getSiteUrl()}/about`,
+      ogTitle: result.page.seo?.ogTitle || result.page.seo?.title || siteConfig.aboutPage.meta.title,
+      ogDescription: result.page.seo?.ogDescription || result.page.seo?.description || siteConfig.aboutPage.meta.description,
+      ogImage: result.page.seo?.ogImage || siteConfig.aboutPage.meta.ogImage || '/assets/brand/og-image.jpg',
+      noIndex: Boolean(result.page.seo?.noIndex),
     };
 
     return {
@@ -195,9 +218,14 @@ export async function getPublishedServicesPageData(): Promise<{
     const finalCta = sec['finalCta'] || siteConfig.servicesPage.finalCta;
     const sidebarForm = sec['sidebarForm'] || siteConfig.servicesPage.sidebarForm;
     const sidebarInfoPanel = sec['sidebarInfoPanel'] || siteConfig.servicesPage.sidebarInfoPanel;
-    const meta = {
+    const meta: PageSeoData = {
       title: result.page.seo?.title || siteConfig.servicesPage.meta.title,
       description: result.page.seo?.description || siteConfig.servicesPage.meta.description,
+      canonical: result.page.seo?.canonical || siteConfig.servicesPage.meta.canonical || `${getSiteUrl()}/services`,
+      ogTitle: result.page.seo?.ogTitle || result.page.seo?.title || siteConfig.servicesPage.meta.title,
+      ogDescription: result.page.seo?.ogDescription || result.page.seo?.description || siteConfig.servicesPage.meta.description,
+      ogImage: result.page.seo?.ogImage || siteConfig.servicesPage.meta.ogImage || '/assets/brand/og-image.jpg',
+      noIndex: Boolean(result.page.seo?.noIndex),
     };
 
     return {
@@ -236,9 +264,14 @@ export async function getPublishedContactPageData(): Promise<{
     const banner = sec['banner'] || siteConfig.contactPage.banner;
     const info = sec['contactInfo'] || {};
     const form = sec['form'] || siteConfig.contactPage.form;
-    const meta = {
+    const meta: PageSeoData = {
       title: result.page.seo?.title || siteConfig.contactPage.meta.title,
       description: result.page.seo?.description || siteConfig.contactPage.meta.description,
+      canonical: result.page.seo?.canonical || siteConfig.contactPage.meta.canonical || `${getSiteUrl()}/contact`,
+      ogTitle: result.page.seo?.ogTitle || result.page.seo?.title || siteConfig.contactPage.meta.title,
+      ogDescription: result.page.seo?.ogDescription || result.page.seo?.description || siteConfig.contactPage.meta.description,
+      ogImage: result.page.seo?.ogImage || siteConfig.contactPage.meta.ogImage || '/assets/brand/og-image.jpg',
+      noIndex: Boolean(result.page.seo?.noIndex),
     };
 
     return {
