@@ -8,7 +8,7 @@ import { revalidatePath, revalidateTag } from 'next/cache';
  * eliminating the need to trigger a full site rebuild.
  *
  * Configured in Sanity Management -> API -> Webhooks:
- * URL: https://laurrel.netlify.app/api/revalidate
+ * URL: https://laurrelservices.com/api/revalidate
  * HTTP method: POST
  * Trigger on: Create, Update, Delete
  * Filter: _type in ["homeHero", "homeAbout", "homeServices", "homeOverlappingPlans", "aboutPage", "servicesPage", "contactPage", "siteSettings"]

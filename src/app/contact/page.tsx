@@ -35,25 +35,55 @@ export default async function ContactPage() {
   const { data: content } = await getPublishedContactPageData();
   const siteUrl = getSiteUrl();
 
-  // Structured Data (JSON-LD) for BreadcrumbList
-  const jsonLd = {
-    '@context': 'https://schema.org',
-    '@type': 'BreadcrumbList',
-    itemListElement: [
-      {
-        '@type': 'ListItem',
-        position: 1,
-        name: 'Home',
-        item: siteUrl,
+  // Structured Data (JSON-LD) for BreadcrumbList and LocalBusiness
+  const jsonLd = [
+    {
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        {
+          '@type': 'ListItem',
+          position: 1,
+          name: 'Home',
+          item: siteUrl,
+        },
+        {
+          '@type': 'ListItem',
+          position: 2,
+          name: 'Contact Us',
+          item: `${siteUrl}/contact`,
+        },
+      ],
+    },
+    {
+      '@context': 'https://schema.org',
+      '@type': 'LocalBusiness',
+      name: 'Laurrel Services',
+      url: siteUrl,
+      telephone: content.businessPhone || '(343) 843-3032',
+      email:
+        content.businessEmail && !content.businessEmail.endsWith('@laurrelservices.ca')
+          ? content.businessEmail
+          : 'info@laurrelservices.com',
+      priceRange: '$$',
+      address: {
+        '@type': 'PostalAddress',
+        addressLocality: 'Ottawa',
+        addressRegion: 'ON',
+        addressCountry: 'CA',
       },
-      {
-        '@type': 'ListItem',
-        position: 2,
-        name: 'Contact Us',
-        item: `${siteUrl}/contact`,
-      },
-    ],
-  };
+      areaServed: [
+        {
+          '@type': 'City',
+          name: 'Ottawa',
+        },
+        {
+          '@type': 'AdministrativeArea',
+          name: 'National Capital Region',
+        },
+      ],
+    },
+  ];
 
   return (
     <>

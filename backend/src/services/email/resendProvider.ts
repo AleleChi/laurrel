@@ -366,7 +366,7 @@ export class ResendEmailProvider implements IEmailProvider {
           </div>
 
           <p style="font-size: 13px; color: #666666; margin-top: 24px;">
-            If you need to reschedule or have questions before our meeting, please contact our Ottawa dispatch team at <a href="mailto:info@laurrelservices.ca" style="color: #390044; font-weight: 600;">info@laurrelservices.ca</a> referencing appointment <strong>${safeId}</strong>.
+            If you need to reschedule or have questions before our meeting, please contact our Ottawa dispatch team at <a href="mailto:info@laurrelservices.com" style="color: #390044; font-weight: 600;">info@laurrelservices.com</a> referencing appointment <strong>${safeId}</strong>.
           </p>
 
           <div style="font-size: 11px; color: #888888; border-top: 1px solid #EEEEEE; padding-top: 16px; margin-top: 28px;">
@@ -478,7 +478,7 @@ export class ResendEmailProvider implements IEmailProvider {
           </div>
 
           <p style="font-size: 13px; color: #666666; margin-top: 24px;">
-            Please contact our dispatch team at <a href="mailto:info@laurrelservices.ca" style="color: #390044; font-weight: 600;">info@laurrelservices.ca</a> if you would like to book a new appointment or modify your request.
+            Please contact our dispatch team at <a href="mailto:info@laurrelservices.com" style="color: #390044; font-weight: 600;">info@laurrelservices.com</a> if you would like to book a new appointment or modify your request.
           </p>
         </div>
       </div>

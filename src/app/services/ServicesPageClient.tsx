@@ -90,7 +90,7 @@ export const ServicesPageClient: React.FC<ServicesPageClientProps> = ({
                 
                 {/* Introduction Block */}
                 <div className="flex flex-col items-start pt-1">
-                  <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-[54px] font-medium text-white tracking-[-0.03em] leading-[1.1] mb-6 sm:mb-8">
+                  <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-[54px] font-medium text-[#18181B] tracking-[-0.03em] leading-[1.1] mb-6 sm:mb-8">
                     {content.articleIntro.h2}
                   </h2>
                   <div className="space-y-4 text-lg sm:text-[19px] text-[#202024]/85 leading-relaxed font-normal">
@@ -164,10 +164,10 @@ export const ServicesPageClient: React.FC<ServicesPageClientProps> = ({
                       {/* Contextual CTA Button focusing the enquiry form */}
                       <button
                         onClick={() => handleEnquireService(service.id as any)}
-                        className="inline-flex items-center gap-3 bg-[#18181B] hover:bg-[#49056B] text-white px-7 py-3.5 rounded-full font-medium text-base transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#18181B] shadow-sm cursor-pointer"
+                        className="inline-flex items-center gap-3 bg-[#18181B] hover:bg-[#49056B] text-white px-7 py-3.5 rounded-full font-medium text-base transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#18181B] shadow-sm cursor-pointer group"
                       >
                         <span>{service.ctaLabel}</span>
-                        <ArrowRight className="w-4 h-4 text-[#18181B]" />
+                        <ArrowRight className="w-4 h-4 text-white group-hover:translate-x-0.5 transition-transform" />
                       </button>
                     </div>
 

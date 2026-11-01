@@ -159,7 +159,7 @@ npm --prefix backend run build
    - `ADMIN_API_SECRET=<your-chosen-secure-passkey>`
    - `RESEND_API_KEY=<your-resend-key>`
    - `EMAIL_FROM=Laurrel Dispatch <dispatch@laurrelservices.ca>`
-   - `ENQUIRY_TO_EMAIL=info@laurrelservices.ca`
+   - `ENQUIRY_TO_EMAIL=info@laurrelservices.com`
    - `GEMINI_API_KEY=<your-gemini-key>`
 
 ### B. Frontend on Netlify

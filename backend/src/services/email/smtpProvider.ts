@@ -269,7 +269,7 @@ export class SmtpEmailProvider implements IEmailProvider {
             <p style="margin: 0; font-size: 13px;"><strong>Coordinator:</strong> ${safeStaff}</p>
           </div>
           <p style="font-size: 13px; color: #666666; margin-top: 24px;">
-            Questions or rescheduling? Contact us at <a href="mailto:info@laurrelservices.ca" style="color: #390044;">info@laurrelservices.ca</a> referencing ${safeId}.
+            Questions or rescheduling? Contact us at <a href="mailto:info@laurrelservices.com" style="color: #390044;">info@laurrelservices.com</a> referencing ${safeId}.
           </p>
         </div>
       </div>

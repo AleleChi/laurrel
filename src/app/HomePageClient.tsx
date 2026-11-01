@@ -43,7 +43,10 @@ export function HomePageClient({ initialData }: HomePageClientProps) {
 
       {/* Main Experience: Hero, Ticker, About, Services Highlight, Overlapping Plans, Request Quote, FAQs & Contact */}
       <main className="flex-1">
-        <Hero onOpenQuote={() => handleOpenQuote()} initialData={initialData?.hero} />
+        <Hero
+          onOpenQuote={(service) => handleOpenQuote(service ? [service] : undefined)}
+          initialData={initialData?.hero}
+        />
         <ServiceTicker />
         <AboutSection onOpenQuote={() => handleOpenQuote()} initialData={initialData?.about} />
         <ServicesHighlightSection content={initialData?.servicesHighlight} />

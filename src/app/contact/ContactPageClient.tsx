@@ -156,25 +156,32 @@ export const ContactPageClient: React.FC<ContactPageClientProps> = ({
 
                 {/* Straightforward Typographic Contact Information (No decorative cards or fake systems) */}
                 <div className="w-full max-w-xl border-t border-[#202024]/10 pt-6 space-y-6">
-                  {/* Verified Business Email (Clickable mailto:) if available */}
-                  {content.businessEmail && content.businessEmail.trim().length > 0 && (
-                    <div className="flex items-start gap-4">
-                      <div className="w-10 h-10 rounded-xl bg-white border border-[#202024]/10 flex items-center justify-center flex-shrink-0">
-                        <Mail className="w-4 h-4 text-[#49056B]" />
+                  {/* Verified Business Email (Clickable mailto:) */}
+                  {(() => {
+                    const rawEmail = content.businessEmail?.trim();
+                    const email =
+                      rawEmail && rawEmail !== 'info@laurrelservices.ca'
+                        ? rawEmail.replace(/@laurrelservices\.ca$/i, '@laurrelservices.com')
+                        : 'info@laurrelservices.com';
+                    return (
+                      <div className="flex items-start gap-4">
+                        <div className="w-10 h-10 rounded-xl bg-white border border-[#202024]/10 flex items-center justify-center flex-shrink-0">
+                          <Mail className="w-4 h-4 text-[#49056B]" />
+                        </div>
+                        <div>
+                          <span className="block text-xs font-semibold uppercase tracking-wider text-[#202024]/60 mb-0.5">
+                            Email Enquiries
+                          </span>
+                          <a
+                            href={`mailto:${email}`}
+                            className="text-base font-semibold text-[#18181B] hover:text-[#49056B] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#49056B] rounded"
+                          >
+                            {email}
+                          </a>
+                        </div>
                       </div>
-                      <div>
-                        <span className="block text-xs font-semibold uppercase tracking-wider text-[#202024]/60 mb-0.5">
-                          Email Enquiries
-                        </span>
-                        <a
-                          href={`mailto:${content.businessEmail}`}
-                          className="text-base font-semibold text-[#18181B] hover:text-[#49056B] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#49056B] rounded"
-                        >
-                          {content.businessEmail}
-                        </a>
-                      </div>
-                    </div>
-                  )}
+                    );
+                  })()}
 
                   {/* Verified Business Phone (Clickable tel:) if available */}
                   {content.businessPhone && content.businessPhone.trim().length > 0 && (
@@ -187,7 +194,7 @@ export const ContactPageClient: React.FC<ContactPageClientProps> = ({
                           Phone Enquiries
                         </span>
                         <a
-                          href={`tel:${content.businessPhone}`}
+                          href={content.businessPhoneHref || `tel:+1${content.businessPhone.replace(/[^0-9]/g, '')}`}
                           className="text-base font-semibold text-[#18181B] hover:text-[#49056B] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#49056B] rounded"
                         >
                           {content.businessPhone}

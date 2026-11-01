@@ -657,11 +657,11 @@ export default function AppointmentManagementPage() {
             Our Ottawa team is available Monday through Saturday to answer any questions about your upcoming cleaning, moving, or storage consultation.
           </p>
           <div className="flex items-center justify-center gap-6 text-xs font-semibold text-[#390044]">
-            <a href="tel:+16135550199" className="flex items-center gap-1.5 hover:underline">
-              <PhoneCall className="w-3.5 h-3.5" /> +1 (613) 555-0199
+            <a href="tel:+13438433032" className="flex items-center gap-1.5 hover:underline">
+              <PhoneCall className="w-3.5 h-3.5" /> +1 (343) 843-3032
             </a>
-            <a href="mailto:info@laurrelservices.ca" className="flex items-center gap-1.5 hover:underline">
-              <Mail className="w-3.5 h-3.5" /> info@laurrelservices.ca
+            <a href="mailto:info@laurrelservices.com" className="flex items-center gap-1.5 hover:underline">
+              <Mail className="w-3.5 h-3.5" /> info@laurrelservices.com
             </a>
           </div>
         </div>

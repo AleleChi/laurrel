@@ -44,7 +44,7 @@ services:
       - key: EMAIL_FROM
         sync: false # Set your verified sender (e.g. "Laurrel Dispatch <dispatch@laurrelservices.ca>" or "onboarding@resend.dev")
       - key: ENQUIRY_TO_EMAIL
-        sync: false # Set your intake mailbox address (e.g. info@laurrelservices.ca)
+        sync: false # Set your intake mailbox address (e.g. info@laurrelservices.com)
       - key: STORAGE_PROVIDER
         value: r2 # Cloudflare R2 object storage provider
       - key: R2_ACCOUNT_ID

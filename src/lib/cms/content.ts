@@ -90,7 +90,18 @@ export async function getPublishedHomePageData(): Promise<{
   if (result && result.sections) {
     const sec = result.sections;
     return {
-      hero: sec['hero'] || siteConfig.hero,
+      hero: {
+        ...siteConfig.hero,
+        ...(sec['hero'] || {}),
+        media: {
+          ...siteConfig.hero.media,
+          ...((sec['hero'] && sec['hero'].media) || {}),
+          services:
+            (sec['hero']?.media?.services && sec['hero'].media.services.length > 0)
+              ? sec['hero'].media.services
+              : siteConfig.hero.media.services,
+        },
+      },
       ticker: sec['ticker'] || siteConfig.ticker,
       about: sec['about'] || siteConfig.about,
       servicesHighlight: sec['servicesHighlight'] || siteConfig.servicesHighlight,
@@ -236,8 +247,15 @@ export async function getPublishedContactPageData(): Promise<{
         eyebrow: info.eyebrow || siteConfig.contactPage.eyebrow,
         headline: info.headline || siteConfig.contactPage.headline,
         supportingParagraph: info.supportingParagraph || siteConfig.contactPage.supportingParagraph,
-        businessEmail: info.businessEmail ?? siteConfig.contactPage.businessEmail,
-        businessPhone: info.businessPhone ?? siteConfig.contactPage.businessPhone,
+        businessEmail:
+          info.businessEmail && info.businessEmail.trim().length > 0 && info.businessEmail !== 'info@laurrelservices.ca'
+            ? info.businessEmail.replace(/@laurrelservices\.ca$/i, '@laurrelservices.com')
+            : siteConfig.contactPage.businessEmail,
+        businessPhone:
+          info.businessPhone && info.businessPhone.trim().length > 0
+            ? info.businessPhone
+            : siteConfig.contactPage.businessPhone,
+        businessPhoneHref: siteConfig.contactPage.businessPhoneHref,
         hasPublicOffice: info.hasPublicOffice ?? siteConfig.contactPage.hasPublicOffice,
         officeAddress: info.officeAddress ?? siteConfig.contactPage.officeAddress,
         googleMapsPlaceId: info.googleMapsPlaceId ?? siteConfig.contactPage.googleMapsPlaceId,

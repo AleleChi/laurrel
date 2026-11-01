@@ -1,15 +1,14 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { MessageSquare, ChevronRight } from 'lucide-react';
 import { Button } from '../ui/Button';
-import { HeroVideoRotator } from './HeroVideoRotator';
 import { siteConfig } from '@/content/site';
-import { useState, useEffect } from 'react';
 import { getHomeHeroData, isCmsConfigured } from '@/sanity/client';
 
 interface HeroProps {
-  onOpenQuote: () => void;
+  onOpenQuote: (service?: 'cleaning' | 'moving' | 'storage') => void;
   initialData?: typeof siteConfig.hero;
 }
 
@@ -20,14 +19,20 @@ export const Hero: React.FC<HeroProps> = ({ onOpenQuote, initialData }) => {
     if (initialData) {
       setHero(initialData);
     } else if (isCmsConfigured) {
-      getHomeHeroData().then((res) => {
-        if (res?.data) {
-          setHero(res.data);
-        }
-      }).catch(() => {});
+      getHomeHeroData()
+        .then((res) => {
+          if (res?.data) {
+            setHero(res.data);
+          }
+        })
+        .catch(() => {});
     }
   }, [initialData]);
 
+  const heroImageSrc = hero.media?.imageSrc || '/assets/hero/cleaning-hero.webp';
+  const heroImageAlt =
+    hero.media?.altText ||
+    'Professional cleaner wearing yellow gloves detailing a bright kitchen counter in an Ottawa home';
 
   return (
     <section
@@ -46,11 +51,13 @@ export const Hero: React.FC<HeroProps> = ({ onOpenQuote, initialData }) => {
               </span>
             </div>
 
-            {/* Deliberate 3-Line H1 Headline */}
+            {/* H1 Headline */}
             <h1 className="text-[2.5rem] sm:text-[3.25rem] lg:text-[3.8rem] xl:text-[4.3rem] font-extrabold tracking-tight leading-[1.08] text-[#49056B]">
-              <span className="block">{hero.headline.line1}</span>
-              <span className="block text-[#FE6000]">{hero.headline.line2}</span>
-              <span className="block">{hero.headline.line3}</span>
+              <span>{hero.headline.line1} </span>
+              <span className="text-[#FE6000]">{hero.headline.line2}</span>
+              {hero.headline.line3 ? (
+                <span className="block">{hero.headline.line3}</span>
+              ) : null}
             </h1>
 
             {/* Explanatory Body Copy */}
@@ -63,7 +70,7 @@ export const Hero: React.FC<HeroProps> = ({ onOpenQuote, initialData }) => {
               <Button
                 variant="primary"
                 size="lg"
-                onClick={onOpenQuote}
+                onClick={() => onOpenQuote()}
                 className="w-full sm:w-auto"
               >
                 {hero.primaryCta.label}
@@ -95,8 +102,8 @@ export const Hero: React.FC<HeroProps> = ({ onOpenQuote, initialData }) => {
                 </div>
                 <button
                   type="button"
-                  onClick={onOpenQuote}
-                  className="flex-shrink-0 inline-flex items-center gap-1 text-xs font-bold text-[#49056B] hover:text-[#FE6000] transition-colors py-1 pl-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#49056B] rounded whitespace-nowrap self-center"
+                  onClick={() => onOpenQuote()}
+                  className="flex-shrink-0 inline-flex items-center gap-1 text-xs font-bold text-[#49056B] hover:text-[#FE6000] transition-colors py-1 pl-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#49056B] rounded whitespace-nowrap self-center cursor-pointer"
                 >
                   <span>{hero.supportCard.actionText}</span>
                   <ChevronRight className="w-3.5 h-3.5" />
@@ -105,13 +112,18 @@ export const Hero: React.FC<HeroProps> = ({ onOpenQuote, initialData }) => {
             </div>
           </div>
 
-          {/* Right Column: Hero Showcase Media Display (~52% of layout) */}
+          {/* Right Column: High-Impact Authentic Service Photography (~52% of layout) */}
           <div className="lg:col-span-6 xl:col-span-6 w-full">
-            <HeroVideoRotator
-              videos={hero.media.videos || []}
-              fallbackImage={hero.media.imageSrc}
-              fallbackAlt={hero.media.altText}
-            />
+            <div className="relative w-full aspect-[4/3] sm:aspect-[16/11] lg:aspect-[4/3] xl:aspect-[16/11] rounded-2xl overflow-hidden border border-black/[0.08] shadow-card-soft bg-[#202024]">
+              <Image
+                src={heroImageSrc}
+                alt={heroImageAlt}
+                fill
+                priority
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 680px"
+                className="object-cover object-center"
+              />
+            </div>
           </div>
         </div>
       </div>

@@ -280,7 +280,7 @@ export const SidebarEnquiryForm: React.FC<SidebarEnquiryFormProps> = ({
               type="tel"
               id="sidebar-form-phone"
               name="phone"
-              placeholder="(613) 555-0199"
+              placeholder="(343) 843-3032"
               value={phone}
               hasError={Boolean(fieldErrors.phone)}
               onChange={(e) => {
