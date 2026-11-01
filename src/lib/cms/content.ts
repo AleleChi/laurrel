@@ -90,7 +90,18 @@ export async function getPublishedHomePageData(): Promise<{
   if (result && result.sections) {
     const sec = result.sections;
     return {
-      hero: sec['hero'] || siteConfig.hero,
+      hero: {
+        ...siteConfig.hero,
+        ...(sec['hero'] || {}),
+        media: {
+          ...siteConfig.hero.media,
+          ...((sec['hero'] && sec['hero'].media) || {}),
+          services:
+            (sec['hero']?.media?.services && sec['hero'].media.services.length > 0)
+              ? sec['hero'].media.services
+              : siteConfig.hero.media.services,
+        },
+      },
       ticker: sec['ticker'] || siteConfig.ticker,
       about: sec['about'] || siteConfig.about,
       servicesHighlight: sec['servicesHighlight'] || siteConfig.servicesHighlight,

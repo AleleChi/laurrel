@@ -911,7 +911,7 @@ export default function PublicBookingPage() {
                       required={selectedChannel === 'telephone'}
                       value={customerPhone}
                       onChange={(e) => setCustomerPhone(e.target.value)}
-                      placeholder="e.g. (613) 555-0192"
+                      placeholder="e.g. (343) 843-3032"
                       className="w-full pl-9 pr-3 py-2 bg-zinc-50 border border-zinc-200 rounded-lg text-xs text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-1 focus:ring-[#390044] focus:bg-white transition-all"
                     />
                     <Phone className="w-4 h-4 text-zinc-400 absolute left-3 top-2.5 pointer-events-none" />

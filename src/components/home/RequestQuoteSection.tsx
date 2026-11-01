@@ -42,11 +42,12 @@ export const RequestQuoteSection: React.FC<RequestQuoteSectionProps> = ({
         {/* Action Controls */}
         <div className="flex flex-col sm:flex-row items-center justify-center gap-5 sm:gap-8">
           <button
+            type="button"
             onClick={onOpenQuote}
             className="inline-flex items-center gap-3 bg-[#FE6000] hover:bg-[#E05500] text-[#18181B] px-8 py-4 rounded-full font-bold text-base transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#FE6000] shadow-sm cursor-pointer w-full sm:w-auto justify-center"
           >
             <span>{content.primaryCta.label}</span>
-            <ArrowRight className="w-4 h-4 text-white" />
+            <ArrowRight className="w-4 h-4 text-[#18181B]" />
           </button>
 
           <Link

@@ -187,7 +187,7 @@ export const ContactPageClient: React.FC<ContactPageClientProps> = ({
                           Phone Enquiries
                         </span>
                         <a
-                          href={`tel:${content.businessPhone}`}
+                          href={content.businessPhoneHref || `tel:+1${content.businessPhone.replace(/[^0-9]/g, '')}`}
                           className="text-base font-semibold text-[#18181B] hover:text-[#49056B] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#49056B] rounded"
                         >
                           {content.businessPhone}

@@ -42,12 +42,12 @@ export const SidebarInfoPanel: React.FC<SidebarInfoPanelProps> = ({
         </div>
 
         {/* Heading */}
-        <h3 className="text-2xl sm:text-[26px] font-semibold text-[#18181B] tracking-[-0.02em] leading-tight mb-3">
+        <h3 className="text-2xl sm:text-[26px] font-semibold text-white tracking-[-0.02em] leading-tight mb-3">
           {heading}
         </h3>
 
         {/* Body Copy */}
-        <p className="text-sm sm:text-[15px] text-[#18181B]/85 leading-relaxed font-normal mb-8">
+        <p className="text-sm sm:text-[15px] text-white/85 leading-relaxed font-normal mb-8">
           {body}
         </p>
       </div>

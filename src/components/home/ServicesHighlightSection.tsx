@@ -1,8 +1,9 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { motion, useReducedMotion } from 'framer-motion';
+import { ArrowRight } from 'lucide-react';
 import {
   CleaningIllustration,
   MovingIllustration,
@@ -10,7 +11,6 @@ import {
 } from '@/components/icons/services';
 import { siteConfig, ServicesHighlightConfig } from '@/content/site';
 import { getHomeServicesData, isCmsConfigured } from '@/sanity/client';
-import { useState, useEffect } from 'react';
 
 interface ServicesHighlightSectionProps {
   content?: ServicesHighlightConfig;
@@ -25,11 +25,13 @@ export const ServicesHighlightSection: React.FC<ServicesHighlightSectionProps> =
 
   useEffect(() => {
     if (isCmsConfigured && !content) {
-      getHomeServicesData().then((res) => {
-        if (res?.data) {
-          setActiveContent(res.data);
-        }
-      }).catch(() => {});
+      getHomeServicesData()
+        .then((res) => {
+          if (res?.data) {
+            setActiveContent(res.data);
+          }
+        })
+        .catch(() => {});
     }
   }, [content]);
 
@@ -96,7 +98,7 @@ export const ServicesHighlightSection: React.FC<ServicesHighlightSectionProps> =
       <div className="max-w-[1440px] 2xl:max-w-[1560px] mx-auto">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 xl:gap-24 items-start">
           {/* ========================================================= */}
-          {/* LEFT COLUMN: Eyebrow + Editorial H2 + Black CTA Button    */}
+          {/* LEFT COLUMN: Eyebrow + Editorial H2 + Intro + CTA Button  */}
           {/* ========================================================= */}
           <motion.div
             variants={containerVariants}
@@ -108,7 +110,7 @@ export const ServicesHighlightSection: React.FC<ServicesHighlightSectionProps> =
             {/* 1. Small Eyebrow */}
             <motion.div
               variants={itemVariants}
-              className="text-xs sm:text-sm font-bold tracking-[0.14em] uppercase text-[#FE6000] mb-5 sm:mb-6"
+              className="text-xs sm:text-sm font-bold tracking-[0.14em] uppercase text-[#FE6000] mb-4 sm:mb-5"
             >
               {activeContent.eyebrow}
             </motion.div>
@@ -116,10 +118,20 @@ export const ServicesHighlightSection: React.FC<ServicesHighlightSectionProps> =
             {/* 2. Large Editorial Headline */}
             <motion.h2
               variants={itemVariants}
-              className="text-[36px] sm:text-[46px] md:text-[52px] lg:text-[56px] xl:text-[62px] 2xl:text-[68px] font-medium tracking-[-0.035em] leading-[1.08] text-white mb-8 sm:mb-10 lg:mb-14 max-w-[540px]"
+              className="text-[32px] sm:text-[40px] md:text-[46px] lg:text-[52px] font-semibold tracking-[-0.03em] leading-[1.12] text-white mb-5 max-w-[540px]"
             >
               {activeContent.headline}
             </motion.h2>
+
+            {/* 2.1 Introductory Paragraph */}
+            {activeContent.intro && (
+              <motion.p
+                variants={itemVariants}
+                className="text-base sm:text-lg text-white/85 leading-relaxed mb-8 max-w-[480px] font-normal"
+              >
+                {activeContent.intro}
+              </motion.p>
+            )}
 
             {/* 3. Accent CTA Button with Arrow Holder */}
             <motion.div variants={itemVariants}>
@@ -155,7 +167,7 @@ export const ServicesHighlightSection: React.FC<ServicesHighlightSectionProps> =
           </motion.div>
 
           {/* ========================================================= */}
-          {/* RIGHT COLUMN: 3 Service Rows with Animated Illustrations  */}
+          {/* RIGHT COLUMN: 3 Service Rows with Distinct Descriptions   */}
           {/* ========================================================= */}
           <div className="lg:col-span-7 xl:col-span-7 flex flex-col space-y-12 sm:space-y-14 lg:space-y-16 pt-2 lg:pt-3">
             {activeContent.services.map((service, index) => (
@@ -181,9 +193,22 @@ export const ServicesHighlightSection: React.FC<ServicesHighlightSectionProps> =
                   <h3 className="text-2xl sm:text-[26px] lg:text-[28px] font-semibold text-white tracking-[-0.02em] leading-snug mb-2 sm:mb-3">
                     {service.title}
                   </h3>
-                  <p className="text-base sm:text-[17px] lg:text-[18px] font-normal text-white/85 leading-[1.62]">
+                  <p className="text-base sm:text-[17px] lg:text-[18px] font-normal text-white/85 leading-[1.62] mb-3">
                     {service.description}
                   </p>
+                  <Link
+                    href={service.anchor}
+                    className="inline-flex items-center gap-1.5 text-sm sm:text-base font-bold text-[#FE6000] hover:text-[#FFA040] transition-colors py-1 group/link cursor-pointer"
+                  >
+                    <span>
+                      {service.id === 'cleaning'
+                        ? 'View Cleaning Services'
+                        : service.id === 'moving'
+                        ? 'View Moving Services'
+                        : 'View Storage Options'}
+                    </span>
+                    <ArrowRight className="w-4 h-4 group-hover/link:translate-x-1 transition-transform" />
+                  </Link>
                 </div>
               </motion.div>
             ))}
