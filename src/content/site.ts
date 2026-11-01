@@ -421,9 +421,12 @@ export const siteConfig: SiteConfig = {
   meta: {
     title: 'Cleaning, Moving & Storage in Ottawa | Laurrel Services',
     description:
-      'Cleaning, moving and storage services in Ottawa and the National Capital Region. Tell Laurrel Services what you need and request a quote for your home or business.',
+      'Cleaning, moving and storage services for homes and businesses in Ottawa and the National Capital Region. Explore our services and request a quote.',
     canonical: 'https://laurrelservices.com/',
-    ogImage: '/assets/brand/og-image.jpg',
+    ogTitle: 'Laurrel Services | Cleaning, Moving & Storage in Ottawa',
+    ogDescription:
+      'Cleaning, moving and storage services for homes and businesses in Ottawa and the National Capital Region. Explore our services and request a quote.',
+    ogImage: '/assets/brand/laurrel-social-preview-v2.jpg',
     locale: 'en-CA',
   },
   navigation: {
@@ -719,7 +722,7 @@ export const siteConfig: SiteConfig = {
       description:
         'Learn about Laurrel Services and our cleaning, moving and storage services in Ottawa. Find out how to enquire about one service or several related jobs.',
       canonical: 'https://laurrelservices.com/about',
-      ogImage: '/assets/brand/og-image.jpg',
+      ogImage: '/assets/brand/laurrel-social-preview-v2.jpg',
     },
   },
   servicesHighlight: {
@@ -785,7 +788,7 @@ export const siteConfig: SiteConfig = {
       description:
         "Explore Laurrel's cleaning, moving and storage services in Ottawa. Find out what details to include when requesting a service estimate or discussing your plans.",
       canonical: 'https://laurrelservices.com/services',
-      ogImage: '/assets/brand/og-image.jpg',
+      ogImage: '/assets/brand/laurrel-social-preview-v2.jpg',
     },
     banner: {
       title: 'Our Services',
@@ -1079,7 +1082,7 @@ export const siteConfig: SiteConfig = {
       description:
         'Contact Laurrel Services about cleaning, moving or storage in Ottawa. Call (343) 843-3032 or send an enquiry with your location and preferred date.',
       canonical: 'https://laurrelservices.com/contact',
-      ogImage: '/assets/brand/og-image.jpg',
+      ogImage: '/assets/brand/laurrel-social-preview-v2.jpg',
     },
     banner: {
       title: 'Contact Us',

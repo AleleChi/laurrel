@@ -34,12 +34,12 @@ const pageSeoUpdates: Record<string, any> = {
   home: {
     title: 'Cleaning, Moving & Storage in Ottawa | Laurrel Services',
     description:
-      'Cleaning, moving and storage services in Ottawa and the National Capital Region. Tell Laurrel Services what you need and request a quote for your home or business.',
+      'Cleaning, moving and storage services for homes and businesses in Ottawa and the National Capital Region. Explore our services and request a quote.',
     canonical: 'https://laurrelservices.com/',
-    ogTitle: 'Cleaning, Moving & Storage in Ottawa | Laurrel Services',
+    ogTitle: 'Laurrel Services | Cleaning, Moving & Storage in Ottawa',
     ogDescription:
-      'Cleaning, moving and storage services in Ottawa and the National Capital Region. Tell Laurrel Services what you need and request a quote for your home or business.',
-    ogImage: '/assets/brand/og-image.jpg',
+      'Cleaning, moving and storage services for homes and businesses in Ottawa and the National Capital Region. Explore our services and request a quote.',
+    ogImage: '/assets/brand/laurrel-social-preview-v2.jpg',
     noIndex: false,
   },
   about: {
@@ -50,7 +50,7 @@ const pageSeoUpdates: Record<string, any> = {
     ogTitle: 'About Laurrel Services | Cleaning, Moving & Storage Ottawa',
     ogDescription:
       'Learn about Laurrel Services and our cleaning, moving and storage services in Ottawa. Find out how to enquire about one service or several related jobs.',
-    ogImage: '/assets/brand/og-image.jpg',
+    ogImage: '/assets/brand/laurrel-social-preview-v2.jpg',
     noIndex: false,
   },
   services: {
@@ -61,7 +61,7 @@ const pageSeoUpdates: Record<string, any> = {
     ogTitle: 'Cleaning, Moving & Storage Services in Ottawa | Laurrel',
     ogDescription:
       "Explore Laurrel's cleaning, moving and storage services in Ottawa. Find out what details to include when requesting a service estimate or discussing your plans.",
-    ogImage: '/assets/brand/og-image.jpg',
+    ogImage: '/assets/brand/laurrel-social-preview-v2.jpg',
     noIndex: false,
   },
   contact: {
@@ -72,7 +72,7 @@ const pageSeoUpdates: Record<string, any> = {
     ogTitle: 'Contact Laurrel Services | Ottawa, Ontario',
     ogDescription:
       'Contact Laurrel Services about cleaning, moving or storage in Ottawa. Call (343) 843-3032 or send an enquiry with your location and preferred date.',
-    ogImage: '/assets/brand/og-image.jpg',
+    ogImage: '/assets/brand/laurrel-social-preview-v2.jpg',
     noIndex: false,
   },
 };
@@ -83,7 +83,7 @@ async function reconcile() {
     throw new Error('Database pool unavailable');
   }
 
-  console.log('=== STARTING SEO CMS RECONCILIATION ===\n');
+  console.log('=== STARTING SOCIAL PREVIEW CMS RECONCILIATION ===\n');
 
   for (const [pageId, seo] of Object.entries(pageSeoUpdates)) {
     console.log(`Processing page: ${pageId}...`);
@@ -100,7 +100,7 @@ async function reconcile() {
     const pubRes = await publishPage(
       pageId,
       editor,
-      'SEO upgrade: authoritative canonicals, meta titles, descriptions, and 1200x630 social preview image'
+      'Branded social preview release: laurrel-social-preview-v2.jpg and updated OpenGraph metadata'
     );
     console.log(
       `  [SUCCESS] Published revision #${pubRes.revision.revisionNumber} (ID: ${pubRes.revision.id})`

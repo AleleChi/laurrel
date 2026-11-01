@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { getPublishedServicesPageData } from '@/lib/cms/content';
-import { getSiteUrl } from '@/content/site';
+import { siteConfig, getSiteUrl } from '@/content/site';
 import { ServicesPageClient } from './ServicesPageClient';
 
 export const dynamic = 'force-dynamic';
@@ -9,7 +9,8 @@ export async function generateMetadata(): Promise<Metadata> {
   const { data } = await getPublishedServicesPageData();
   const siteUrl = getSiteUrl();
   const canonicalUrl = data.meta?.canonical || `${siteUrl}/services`;
-  const ogImageUrl = data.meta?.ogImage || '/assets/brand/og-image.jpg';
+  const ogImageUrl =
+    data.meta?.ogImage || siteConfig.servicesPage.meta.ogImage || '/assets/brand/laurrel-social-preview-v2.jpg';
   const title = data.meta?.title;
   const description = data.meta?.description;
 
@@ -35,6 +36,7 @@ export async function generateMetadata(): Promise<Metadata> {
           url: ogImageUrl,
           width: 1200,
           height: 630,
+          type: 'image/jpeg',
           alt: data.banner?.altText || 'Cleaning, Moving & Storage Services in Ottawa',
         },
       ],

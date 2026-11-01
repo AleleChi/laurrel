@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { getPublishedContactPageData } from '@/lib/cms/content';
-import { getSiteUrl } from '@/content/site';
+import { siteConfig, getSiteUrl } from '@/content/site';
 import { ContactPageClient } from './ContactPageClient';
 
 export const dynamic = 'force-dynamic';
@@ -9,7 +9,8 @@ export async function generateMetadata(): Promise<Metadata> {
   const { data: content } = await getPublishedContactPageData();
   const siteUrl = getSiteUrl();
   const canonicalUrl = content.meta?.canonical || `${siteUrl}/contact`;
-  const ogImageUrl = content.meta?.ogImage || '/assets/brand/og-image.jpg';
+  const ogImageUrl =
+    content.meta?.ogImage || siteConfig.contactPage.meta.ogImage || '/assets/brand/laurrel-social-preview-v2.jpg';
   const title = content.meta?.title;
   const description = content.meta?.description;
 
@@ -35,6 +36,7 @@ export async function generateMetadata(): Promise<Metadata> {
           url: ogImageUrl,
           width: 1200,
           height: 630,
+          type: 'image/jpeg',
           alt: content.banner?.altText || 'Contact Laurrel Services Ottawa',
         },
       ],
@@ -78,7 +80,7 @@ export default async function ContactPage() {
     name: 'Laurrel Services',
     url: `${siteUrl}/`,
     logo: `${siteUrl}/assets/brand/laurrel-symbol.png`,
-    image: `${siteUrl}/assets/brand/og-image.jpg`,
+    image: `${siteUrl}/assets/brand/laurrel-social-preview-v2.jpg`,
     description:
       'Professional residential cleaning, careful local moving, and transitional storage arrangements in Ottawa and the National Capital Region.',
     email: 'info@laurrelservices.com',

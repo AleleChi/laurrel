@@ -128,7 +128,7 @@ export async function getPublishedHomePageData(): Promise<{
         canonical: result.page.seo?.canonical || siteConfig.meta.canonical || `${getSiteUrl()}/`,
         ogTitle: result.page.seo?.ogTitle || result.page.seo?.title || siteConfig.meta.title,
         ogDescription: result.page.seo?.ogDescription || result.page.seo?.description || siteConfig.meta.description,
-        ogImage: result.page.seo?.ogImage || siteConfig.meta.ogImage || '/assets/brand/og-image.jpg',
+        ogImage: result.page.seo?.ogImage || siteConfig.meta.ogImage || '/assets/brand/laurrel-social-preview-v2.jpg',
         noIndex: Boolean(result.page.seo?.noIndex),
         locale: siteConfig.meta.locale,
       },
@@ -174,7 +174,7 @@ export async function getPublishedAboutPageData(): Promise<{
       canonical: result.page.seo?.canonical || siteConfig.aboutPage.meta.canonical || `${getSiteUrl()}/about`,
       ogTitle: result.page.seo?.ogTitle || result.page.seo?.title || siteConfig.aboutPage.meta.title,
       ogDescription: result.page.seo?.ogDescription || result.page.seo?.description || siteConfig.aboutPage.meta.description,
-      ogImage: result.page.seo?.ogImage || siteConfig.aboutPage.meta.ogImage || '/assets/brand/og-image.jpg',
+      ogImage: result.page.seo?.ogImage || siteConfig.aboutPage.meta.ogImage || '/assets/brand/laurrel-social-preview-v2.jpg',
       noIndex: Boolean(result.page.seo?.noIndex),
     };
 
@@ -224,7 +224,7 @@ export async function getPublishedServicesPageData(): Promise<{
       canonical: result.page.seo?.canonical || siteConfig.servicesPage.meta.canonical || `${getSiteUrl()}/services`,
       ogTitle: result.page.seo?.ogTitle || result.page.seo?.title || siteConfig.servicesPage.meta.title,
       ogDescription: result.page.seo?.ogDescription || result.page.seo?.description || siteConfig.servicesPage.meta.description,
-      ogImage: result.page.seo?.ogImage || siteConfig.servicesPage.meta.ogImage || '/assets/brand/og-image.jpg',
+      ogImage: result.page.seo?.ogImage || siteConfig.servicesPage.meta.ogImage || '/assets/brand/laurrel-social-preview-v2.jpg',
       noIndex: Boolean(result.page.seo?.noIndex),
     };
 
@@ -270,7 +270,7 @@ export async function getPublishedContactPageData(): Promise<{
       canonical: result.page.seo?.canonical || siteConfig.contactPage.meta.canonical || `${getSiteUrl()}/contact`,
       ogTitle: result.page.seo?.ogTitle || result.page.seo?.title || siteConfig.contactPage.meta.title,
       ogDescription: result.page.seo?.ogDescription || result.page.seo?.description || siteConfig.contactPage.meta.description,
-      ogImage: result.page.seo?.ogImage || siteConfig.contactPage.meta.ogImage || '/assets/brand/og-image.jpg',
+      ogImage: result.page.seo?.ogImage || siteConfig.contactPage.meta.ogImage || '/assets/brand/laurrel-social-preview-v2.jpg',
       noIndex: Boolean(result.page.seo?.noIndex),
     };
 

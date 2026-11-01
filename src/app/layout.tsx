@@ -16,26 +16,27 @@ export const metadata: Metadata = {
   description: siteConfig.meta.description,
   metadataBase: new URL(getSiteUrl()),
   openGraph: {
-    title: siteConfig.meta.title,
-    description: siteConfig.meta.description,
+    title: siteConfig.meta.ogTitle || siteConfig.meta.title,
+    description: siteConfig.meta.ogDescription || siteConfig.meta.description,
     url: getSiteUrl(),
     siteName: 'Laurrel Services',
     locale: 'en_CA',
     type: 'website',
     images: [
       {
-        url: '/assets/brand/og-image.jpg',
+        url: '/assets/brand/laurrel-social-preview-v2.jpg',
         width: 1200,
         height: 630,
+        type: 'image/jpeg',
         alt: 'Laurrel Services — Cleaning, Moving & Storage in Ottawa',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: siteConfig.meta.title,
-    description: siteConfig.meta.description,
-    images: ['/assets/brand/og-image.jpg'],
+    title: siteConfig.meta.ogTitle || siteConfig.meta.title,
+    description: siteConfig.meta.ogDescription || siteConfig.meta.description,
+    images: ['/assets/brand/laurrel-social-preview-v2.jpg'],
   },
   icons: {
     icon: '/assets/brand/laurrel-symbol.png',
