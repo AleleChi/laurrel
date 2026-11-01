@@ -17,6 +17,7 @@ export interface ConfirmDialogProps {
   initialInputValue?: string;
   inputRequired?: boolean;
   isLoading?: boolean;
+  errorMessage?: string;
   onConfirm: (inputValue?: string) => void | Promise<void>;
   onCancel: () => void;
 }
@@ -34,6 +35,7 @@ export function ConfirmDialog({
   initialInputValue = '',
   inputRequired = false,
   isLoading = false,
+  errorMessage,
   onConfirm,
   onCancel,
 }: ConfirmDialogProps) {
@@ -246,6 +248,13 @@ export function ConfirmDialog({
                   {inputError}
                 </p>
               )}
+            </div>
+          )}
+
+          {errorMessage && (
+            <div className="mt-4 p-3 rounded-md bg-red-50 border border-red-200 text-xs text-red-700 flex items-start gap-2">
+              <AlertCircle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
+              <span className="font-medium">{errorMessage}</span>
             </div>
           )}
 

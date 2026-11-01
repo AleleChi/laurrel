@@ -45,6 +45,29 @@ export function MediaDetailDrawer({
   const [errorMsg, setErrorMsg] = useState('');
   const [confirmDelete, setConfirmDelete] = useState(false);
   const lastAssetIdRef = React.useRef<string | null>(null);
+  const videoRef = React.useRef<HTMLVideoElement>(null);
+
+  const stopVideoPlayback = () => {
+    if (videoRef.current) {
+      try {
+        videoRef.current.pause();
+        videoRef.current.currentTime = 0;
+      } catch (e) {
+        // Safe ignore
+      }
+    }
+  };
+
+  const handleClose = () => {
+    stopVideoPlayback();
+    onClose();
+  };
+
+  useEffect(() => {
+    return () => {
+      stopVideoPlayback();
+    };
+  }, [asset?.id]);
 
   useEffect(() => {
     if (asset) {
@@ -149,8 +172,8 @@ export function MediaDetailDrawer({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-end bg-black/30 backdrop-blur-2xs">
-      <div className="w-full max-w-lg h-full bg-white shadow-2xl flex flex-col border-l border-zinc-200 overflow-hidden animate-in slide-in-from-right duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-end bg-black/30 backdrop-blur-2xs" onClick={handleClose}>
+      <div className="w-full max-w-lg h-full bg-white shadow-2xl flex flex-col border-l border-zinc-200 overflow-hidden animate-in slide-in-from-right duration-200" onClick={(e) => e.stopPropagation()}>
         {/* Drawer Header */}
         <div className="px-6 py-4 border-b border-zinc-200/80 flex items-center justify-between bg-zinc-50/70">
           <div className="min-w-0 pr-3">
@@ -189,7 +212,11 @@ export function MediaDetailDrawer({
           <div className="rounded-md border border-zinc-200/80 bg-zinc-950/5 p-2 flex items-center justify-center overflow-hidden">
             {asset.assetType === 'video' ? (
               <video
+                ref={videoRef}
                 src={asset.publicUrl}
+                preload="none"
+                poster={asset.thumbnailUrl || '/assets/brand/laurrel-symbol.png'}
+                playsInline
                 controls
                 className="w-full max-h-[260px] rounded object-contain bg-black"
               />

@@ -98,9 +98,9 @@ app.use(assistantRouter);
 app.use(adminRouter);
 app.use(cmsRouter);
 app.use(mediaRouter);
+app.use(appointmentSettingsRouter);
 app.use(appointmentsRouter);
 app.use(publicBookingRouter);
-app.use(appointmentSettingsRouter);
 
 // Root informational endpoint
 app.get('/', (_req, res) => {

@@ -42,6 +42,15 @@ export function getDbPool(): Pool | null {
       max: 10,
       idleTimeoutMillis: 30000,
       connectionTimeoutMillis: 20000,
+      keepAlive: true,
+      keepAliveInitialDelayMillis: 10000,
+    });
+
+    // Handle acquired clients emitting disconnect errors while idle
+    poolInstance.on('connect', (client) => {
+      client.on('error', (err) => {
+        console.warn('[PostgreSQL Idle Client Error (Recovered)]:', err.message);
+      });
     });
 
     poolInstance.on('error', (err) => {
