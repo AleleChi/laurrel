@@ -660,8 +660,8 @@ export default function AppointmentManagementPage() {
             <a href="tel:+13438433032" className="flex items-center gap-1.5 hover:underline">
               <PhoneCall className="w-3.5 h-3.5" /> +1 (343) 843-3032
             </a>
-            <a href="mailto:info@laurrelservices.ca" className="flex items-center gap-1.5 hover:underline">
-              <Mail className="w-3.5 h-3.5" /> info@laurrelservices.ca
+            <a href="mailto:info@laurrelservices.com" className="flex items-center gap-1.5 hover:underline">
+              <Mail className="w-3.5 h-3.5" /> info@laurrelservices.com
             </a>
           </div>
         </div>

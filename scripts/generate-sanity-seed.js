@@ -30,7 +30,7 @@ const documents = [
     location: siteConfig.location,
     businessInfo: {
       phone: siteConfig.contactPage.businessPhone || '(343) 843-3032',
-      email: siteConfig.contactPage.businessEmail || 'info@laurrelservices.ca',
+      email: siteConfig.contactPage.businessEmail || 'info@laurrelservices.com',
       serviceArea: 'Ottawa & the National Capital Region (NCR)',
       officeAddress: siteConfig.contactPage.officeAddress || '',
     },
@@ -224,7 +224,7 @@ const documents = [
     eyebrow: siteConfig.contactPage.eyebrow,
     headline: siteConfig.contactPage.headline,
     supportingParagraph: siteConfig.contactPage.supportingParagraph,
-    businessEmail: siteConfig.contactPage.businessEmail || 'info@laurrelservices.ca',
+    businessEmail: siteConfig.contactPage.businessEmail || 'info@laurrelservices.com',
     businessPhone: siteConfig.contactPage.businessPhone || '(343) 843-3032',
     hasPublicOffice: siteConfig.contactPage.hasPublicOffice,
     officeAddress: siteConfig.contactPage.officeAddress || '',

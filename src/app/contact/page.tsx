@@ -61,7 +61,10 @@ export default async function ContactPage() {
       name: 'Laurrel Services',
       url: siteUrl,
       telephone: content.businessPhone || '(343) 843-3032',
-      email: content.businessEmail || 'info@laurrelservices.ca',
+      email:
+        content.businessEmail && !content.businessEmail.endsWith('@laurrelservices.ca')
+          ? content.businessEmail
+          : 'info@laurrelservices.com',
       priceRange: '$$',
       address: {
         '@type': 'PostalAddress',

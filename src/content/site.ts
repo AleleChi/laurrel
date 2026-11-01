@@ -1085,7 +1085,7 @@ export const siteConfig: SiteConfig = {
     headline: 'Tell us about your upcoming project.',
     supportingParagraph:
       'Whether you have a confirmed date or you are just beginning to plan, share a few details about what you need. Letting us know the service, Ottawa location, and approximate timeline helps us provide a clear, accurate response.',
-    businessEmail: 'info@laurrelservices.ca',
+    businessEmail: 'info@laurrelservices.com',
     businessPhone: '(343) 843-3032',
     businessPhoneHref: 'tel:+13438433032',
     hasPublicOffice: false,

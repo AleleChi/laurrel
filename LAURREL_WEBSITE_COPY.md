@@ -17,7 +17,7 @@
   - `Contact` (`/contact`)
   - `Book Online` (`/book`)
 - **Header Primary CTA Button:** `Get a Quote`
-- **Utility Contact:** `(343) 843-3032` | `info@laurrelservices.ca` | `https://laurrelservices.com/`
+- **Utility Contact:** `(343) 843-3032` | `info@laurrelservices.com` | `https://laurrelservices.com/`
 
 ---
 
@@ -244,7 +244,7 @@
   - Your preferred date and any critical time constraints (e.g. lease cutoff hour)
 - **Direct Contact:**
   - Phone: `(343) 843-3032` (`tel:+13438433032`)
-  - Email: `info@laurrelservices.ca`
+  - Email: `info@laurrelservices.com`
   - Website: `https://laurrelservices.com/`
   - Service Hours: `Monday to Saturday: 8:00 AM – 6:00 PM`
   - Sunday: `By appointment for scheduled weekend moves`

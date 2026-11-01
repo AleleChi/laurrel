@@ -53,7 +53,7 @@ export const siteSettingsSchema = {
           name: 'email',
           title: 'Direct Business Email',
           type: 'string',
-          description: 'Official intake mailbox (e.g. info@laurrelservices.ca)',
+          description: 'Official intake mailbox (e.g. info@laurrelservices.com)',
         },
         {
           name: 'serviceArea',
