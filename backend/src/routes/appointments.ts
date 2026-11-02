@@ -1,4 +1,4 @@
-import { Router, Request, Response } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
 import { requireAdminAuth, requireRole } from '../middleware/auth';
 import {
   createAppointment,
@@ -332,9 +332,13 @@ appointmentsRouter.post(
 appointmentsRouter.get(
   '/api/admin/appointments/:id',
   requireRole(['owner', 'admin', 'operations_staff', 'viewer', 'content_editor']),
-  async (req: Request, res: Response) => {
+  async (req: Request, res: Response, next: NextFunction) => {
     try {
       const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+      // Guard against shadowing literal administrative sub-routes (e.g. settings)
+      if (id === 'settings' || id === 'staff' || id === 'enquiry') {
+        return next();
+      }
       const appointment = await getAppointmentById(id);
 
       if (!appointment) {

@@ -39,7 +39,7 @@ export interface AiHandoffRecord {
   services?: string[];
   serviceLocation?: string;
   reason: string;
-  status: 'pending' | 'contacted' | 'resolved';
+  status: 'pending' | 'contacted' | 'resolved' | 'dismissed';
   createdAt: string;
   updatedAt: string;
 }
@@ -318,6 +318,73 @@ export async function countEnquiries(filter?: { status?: string; service?: strin
 /**
  * Lists enquiries with optional status or service filter
  */
+export interface EnquiryStatusCounts {
+  all: number;
+  new: number;
+  reviewed: number;
+  quoted: number;
+  scheduled: number;
+  closed: number;
+}
+
+/**
+ * Computes exact count of enquiries partitioned by status
+ */
+export async function getEnquiryStatusCounts(service?: string): Promise<EnquiryStatusCounts> {
+  const pool = getDbPool();
+  if (pool) {
+    try {
+      let query = `
+        SELECT 
+          COUNT(*)::int as all_count,
+          COUNT(*) FILTER (WHERE status = 'new')::int as new_count,
+          COUNT(*) FILTER (WHERE status = 'reviewed')::int as reviewed_count,
+          COUNT(*) FILTER (WHERE status = 'quoted')::int as quoted_count,
+          COUNT(*) FILTER (WHERE status = 'scheduled')::int as scheduled_count,
+          COUNT(*) FILTER (WHERE status = 'closed')::int as closed_count
+        FROM enquiries
+      `;
+      const values: any[] = [];
+      if (service && service !== 'all') {
+        values.push(service);
+        query += ` WHERE $1 = ANY(services)`;
+      }
+      const res = await pool.query(query, values);
+      const row = res.rows[0] || {};
+      return {
+        all: Number(row.all_count) || 0,
+        new: Number(row.new_count) || 0,
+        reviewed: Number(row.reviewed_count) || 0,
+        quoted: Number(row.quoted_count) || 0,
+        scheduled: Number(row.scheduled_count) || 0,
+        closed: Number(row.closed_count) || 0,
+      };
+    } catch (err: any) {
+      console.error('[PostgreSQL getEnquiryStatusCounts Error]:', err);
+      throw new Error(`Database error counting enquiries by status: ${err.message}`);
+    }
+  }
+
+  // Local file fallback
+  try {
+    ensureLocalDir();
+    if (fs.existsSync(LOCAL_ENQUIRIES_FILE)) {
+      const all: EnquiryRecord[] = JSON.parse(fs.readFileSync(LOCAL_ENQUIRIES_FILE, 'utf8'));
+      const filtered = service && service !== 'all' ? all.filter((e) => e.services.includes(service)) : all;
+      return {
+        all: filtered.length,
+        new: filtered.filter((e) => e.status === 'new').length,
+        reviewed: filtered.filter((e) => e.status === 'reviewed').length,
+        quoted: filtered.filter((e) => e.status === 'quoted').length,
+        scheduled: filtered.filter((e) => e.status === 'scheduled').length,
+        closed: filtered.filter((e) => e.status === 'closed').length,
+      };
+    }
+  } catch (e) {}
+
+  return { all: 0, new: 0, reviewed: 0, quoted: 0, scheduled: 0, closed: 0 };
+}
+
 export async function listEnquiries(filter?: { status?: string; service?: string; limit?: number }): Promise<EnquiryRecord[]> {
   const pool = getDbPool();
   const limit = filter?.limit || 50;
@@ -527,20 +594,141 @@ export async function createAiHandoff(payload: {
   return record;
 }
 
-/**
- * Lists AI handoff requests for administrator review
- */
-export async function listAiHandoffs(status?: string): Promise<AiHandoffRecord[]> {
+export class HandoffTransitionError extends Error {
+  public currentStatus: string;
+  public requestedStatus: string;
+  public allowedTransitions: string[];
+
+  constructor(currentStatus: string, requestedStatus: string, allowedTransitions: string[]) {
+    super(
+      `Invalid status transition from '${currentStatus}' to '${requestedStatus}'. Allowed transitions: ${
+        allowedTransitions.length > 0 ? allowedTransitions.join(', ') : 'none'
+      }`
+    );
+    this.name = 'HandoffTransitionError';
+    this.currentStatus = currentStatus;
+    this.requestedStatus = requestedStatus;
+    this.allowedTransitions = allowedTransitions;
+  }
+}
+
+export const PERMITTED_HANDOFF_TRANSITIONS: Record<string, string[]> = {
+  pending: ['contacted', 'resolved', 'dismissed'],
+  contacted: ['resolved', 'dismissed', 'pending'],
+  resolved: ['pending'],
+  dismissed: ['pending'],
+};
+
+export function validateHandoffTransition(currentStatus: string, newStatus: string): void {
+  if (currentStatus === newStatus) {
+    throw new HandoffTransitionError(currentStatus, newStatus, PERMITTED_HANDOFF_TRANSITIONS[currentStatus] || []);
+  }
+  const allowed = PERMITTED_HANDOFF_TRANSITIONS[currentStatus] || [];
+  if (!allowed.includes(newStatus)) {
+    throw new HandoffTransitionError(currentStatus, newStatus, allowed);
+  }
+}
+
+export interface AiHandoffStatusCounts {
+  all: number;
+  pending: number;
+  contacted: number;
+  resolved: number;
+  dismissed: number;
+}
+
+export async function countAiHandoffs(status?: string): Promise<number> {
   const pool = getDbPool();
+  if (pool) {
+    try {
+      let query = 'SELECT COUNT(*)::int as count FROM ai_handoffs';
+      const values: any[] = [];
+      if (status && status !== 'all') {
+        values.push(status);
+        query += ' WHERE status = $1';
+      }
+      const res = await pool.query(query, values);
+      return res.rows[0]?.count || 0;
+    } catch (err: any) {
+      console.error('[PostgreSQL countAiHandoffs Error]:', err);
+      throw err;
+    }
+  }
+
+  ensureLocalDir();
+  if (fs.existsSync(LOCAL_HANDOFFS_FILE)) {
+    let records: AiHandoffRecord[] = JSON.parse(fs.readFileSync(LOCAL_HANDOFFS_FILE, 'utf8'));
+    if (status && status !== 'all') records = records.filter((r) => r.status === status);
+    return records.length;
+  }
+  return 0;
+}
+
+export async function getAiHandoffStatusCounts(): Promise<AiHandoffStatusCounts> {
+  const pool = getDbPool();
+  if (pool) {
+    try {
+      const res = await pool.query(`
+        SELECT 
+          COUNT(*)::int as all_count,
+          COUNT(*) FILTER (WHERE status = 'pending')::int as pending_count,
+          COUNT(*) FILTER (WHERE status = 'contacted')::int as contacted_count,
+          COUNT(*) FILTER (WHERE status = 'resolved')::int as resolved_count,
+          COUNT(*) FILTER (WHERE status = 'dismissed')::int as dismissed_count
+        FROM ai_handoffs
+      `);
+      const row = res.rows[0] || {};
+      return {
+        all: Number(row.all_count) || 0,
+        pending: Number(row.pending_count) || 0,
+        contacted: Number(row.contacted_count) || 0,
+        resolved: Number(row.resolved_count) || 0,
+        dismissed: Number(row.dismissed_count) || 0,
+      };
+    } catch (err: any) {
+      console.error('[PostgreSQL getAiHandoffStatusCounts Error]:', err);
+      throw err;
+    }
+  }
+
+  ensureLocalDir();
+  if (fs.existsSync(LOCAL_HANDOFFS_FILE)) {
+    const list: AiHandoffRecord[] = JSON.parse(fs.readFileSync(LOCAL_HANDOFFS_FILE, 'utf8'));
+    return {
+      all: list.length,
+      pending: list.filter((h) => h.status === 'pending').length,
+      contacted: list.filter((h) => h.status === 'contacted').length,
+      resolved: list.filter((h) => h.status === 'resolved').length,
+      dismissed: list.filter((h) => h.status === 'dismissed').length,
+    };
+  }
+
+  return { all: 0, pending: 0, contacted: 0, resolved: 0, dismissed: 0 };
+}
+
+/**
+ * Lists AI handoff requests for administrator review with server-side pagination
+ */
+export async function listAiHandoffs(filter?: {
+  status?: string;
+  limit?: number;
+  offset?: number;
+}): Promise<AiHandoffRecord[]> {
+  const pool = getDbPool();
+  const limit = Math.min(Math.max(filter?.limit || 50, 1), 200);
+  const offset = Math.max(filter?.offset || 0, 0);
+
   if (pool) {
     try {
       let query = 'SELECT * FROM ai_handoffs';
       const values: any[] = [];
-      if (status) {
-        values.push(status);
-        query += ' WHERE status = $1';
+      if (filter?.status && filter.status !== 'all') {
+        values.push(filter.status);
+        query += ` WHERE status = $${values.length}`;
       }
-      query += ' ORDER BY created_at DESC LIMIT 50';
+      query += ` ORDER BY created_at DESC LIMIT $${values.length + 1} OFFSET $${values.length + 2}`;
+      values.push(limit, offset);
+
       const res = await pool.query(query, values);
       return res.rows.map((row: any) => ({
         id: row.id,
@@ -555,19 +743,157 @@ export async function listAiHandoffs(status?: string): Promise<AiHandoffRecord[]
         createdAt: row.created_at,
         updatedAt: row.updated_at,
       }));
-    } catch (e) {
+    } catch (e: any) {
       console.error('[PostgreSQL listAiHandoffs Error]:', e);
+      throw e;
     }
   }
 
-  try {
-    ensureLocalDir();
-    if (fs.existsSync(LOCAL_HANDOFFS_FILE)) {
-      let records: AiHandoffRecord[] = JSON.parse(fs.readFileSync(LOCAL_HANDOFFS_FILE, 'utf8'));
-      if (status) records = records.filter((r) => r.status === status);
-      return records;
-    }
-  } catch (e) {}
+  ensureLocalDir();
+  if (fs.existsSync(LOCAL_HANDOFFS_FILE)) {
+    let records: AiHandoffRecord[] = JSON.parse(fs.readFileSync(LOCAL_HANDOFFS_FILE, 'utf8'));
+    if (filter?.status && filter.status !== 'all') records = records.filter((r) => r.status === filter.status);
+    return records.slice(offset, offset + limit);
+  }
 
   return [];
 }
+
+/**
+ * Retrieves a single AI human handoff record by ID
+ */
+export async function getAiHandoffById(id: string): Promise<AiHandoffRecord | null> {
+  const pool = getDbPool();
+  if (pool) {
+    try {
+      const res = await pool.query('SELECT * FROM ai_handoffs WHERE id = $1', [id]);
+      if (res.rows.length > 0) {
+        const row = res.rows[0];
+        return {
+          id: row.id,
+          sessionId: row.session_id,
+          customerName: row.customer_name,
+          customerEmail: row.customer_email,
+          customerPhone: row.customer_phone,
+          services: row.services,
+          serviceLocation: row.service_location,
+          reason: row.reason,
+          status: row.status,
+          createdAt: row.created_at,
+          updatedAt: row.updated_at,
+        };
+      }
+      return null;
+    } catch (e: any) {
+      console.error('[PostgreSQL getAiHandoffById Error]:', e);
+      throw e;
+    }
+  }
+
+  ensureLocalDir();
+  if (fs.existsSync(LOCAL_HANDOFFS_FILE)) {
+    const records: AiHandoffRecord[] = JSON.parse(fs.readFileSync(LOCAL_HANDOFFS_FILE, 'utf8'));
+    return records.find((r) => r.id === id) || null;
+  }
+
+  return null;
+}
+
+/**
+ * Updates AI handoff status, enforces permitted transitions, records audit trail event, and returns updated record.
+ * Error Handling: Throws error on database failure; never falls back to local files when pool is configured.
+ */
+export async function updateAiHandoffStatus(
+  id: string,
+  newStatus: 'pending' | 'contacted' | 'resolved' | 'dismissed',
+  author: string,
+  noteText?: string
+): Promise<AiHandoffRecord | null> {
+  const now = new Date().toISOString();
+  const pool = getDbPool();
+
+  if (pool) {
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      
+      // Check existing record with row-level lock
+      const checkRes = await client.query('SELECT status FROM ai_handoffs WHERE id = $1 FOR UPDATE', [id]);
+      if (checkRes.rows.length === 0) {
+        await client.query('ROLLBACK');
+        return null;
+      }
+
+      const prevStatus = checkRes.rows[0].status;
+
+      // Enforce status transition lifecycle
+      validateHandoffTransition(prevStatus, newStatus);
+
+      const updateRes = await client.query(
+        'UPDATE ai_handoffs SET status = $1, updated_at = $2 WHERE id = $3 RETURNING *',
+        [newStatus, now, id]
+      );
+
+      // Record audit event in audit_logs
+      await client.query(
+        'INSERT INTO audit_logs (id, event_type, entity_type, entity_id, payload, created_at) VALUES ($1, $2, $3, $4, $5, $6)',
+        [
+          `audit_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+          'handoff_status_updated',
+          'ai_handoff',
+          id,
+          JSON.stringify({
+            previousStatus: prevStatus,
+            newStatus,
+            author,
+            note: noteText || null,
+          }),
+          now,
+        ]
+      );
+
+      await client.query('COMMIT');
+
+      const row = updateRes.rows[0];
+      return {
+        id: row.id,
+        sessionId: row.session_id,
+        customerName: row.customer_name,
+        customerEmail: row.customer_email,
+        customerPhone: row.customer_phone,
+        services: row.services,
+        serviceLocation: row.service_location,
+        reason: row.reason,
+        status: row.status,
+        createdAt: row.created_at,
+        updatedAt: row.updated_at,
+      };
+    } catch (e: any) {
+      try {
+        await client.query('ROLLBACK');
+      } catch (rollbackErr) {}
+      console.error('[PostgreSQL updateAiHandoffStatus Error]:', e);
+      throw e; // ALWAYS throw on error when pool is configured. Never silently fall back to files.
+    } finally {
+      client.release();
+    }
+  }
+
+  // Local file fallback ONLY when database pool is not configured (offline development)
+  ensureLocalDir();
+  if (fs.existsSync(LOCAL_HANDOFFS_FILE)) {
+    const records: AiHandoffRecord[] = JSON.parse(fs.readFileSync(LOCAL_HANDOFFS_FILE, 'utf8'));
+    const idx = records.findIndex((r) => r.id === id);
+    if (idx !== -1) {
+      const prevStatus = records[idx].status;
+      validateHandoffTransition(prevStatus, newStatus);
+      records[idx].status = newStatus;
+      records[idx].updatedAt = now;
+      fs.writeFileSync(LOCAL_HANDOFFS_FILE, JSON.stringify(records, null, 2));
+      return records[idx];
+    }
+  }
+
+  return null;
+}
+

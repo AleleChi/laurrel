@@ -6,6 +6,11 @@ import {
   getEnquiryById,
   updateEnquiryStatus,
   listAiHandoffs,
+  countAiHandoffs,
+  getAiHandoffStatusCounts,
+  updateAiHandoffStatus,
+  getEnquiryStatusCounts,
+  HandoffTransitionError,
 } from '../database/enquiryRepo';
 import {
   findAdminByEmail,
@@ -369,11 +374,12 @@ adminRouter.get(
       const service = req.query.service as string | undefined;
       const limit = parseInt((req.query.limit as string) || '100', 10);
 
-      const [enquiries, total] = await Promise.all([
+      const [enquiries, total, statusCounts] = await Promise.all([
         listEnquiries({ status, service, limit }),
         countEnquiries({ status, service }),
+        getEnquiryStatusCounts(service),
       ]);
-      res.status(200).json({ enquiries, total });
+      res.status(200).json({ enquiries, total, statusCounts });
     } catch (err: any) {
       res.status(500).json({ error: err.message });
     }
@@ -453,10 +459,86 @@ adminRouter.get(
   async (req: Request, res: Response) => {
     try {
       const status = req.query.status as string | undefined;
-      const handoffs = await listAiHandoffs(status);
-      res.status(200).json({ handoffs });
+      const limit = Math.min(Math.max(parseInt((req.query.limit as string) || '50', 10), 1), 200);
+      const page = Math.max(parseInt((req.query.page as string) || '1', 10), 1);
+      const offset = (page - 1) * limit;
+
+      const [handoffs, total, statusCounts] = await Promise.all([
+        listAiHandoffs({ status: status === 'all' ? undefined : status, limit, offset }),
+        countAiHandoffs(status === 'all' ? undefined : status),
+        getAiHandoffStatusCounts(),
+      ]);
+
+      res.status(200).json({
+        handoffs,
+        total,
+        statusCounts,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit) || 1,
+      });
     } catch (err: any) {
-      res.status(500).json({ error: err.message });
+      console.error('[Admin List Handoffs Error]:', err);
+      res.status(500).json({ error: err.message || 'Failed to list callback requests' });
+    }
+  }
+);
+
+/**
+ * PATCH /api/admin/handoffs/:id/status - Update AI human callback handoff status
+ * Security: Author identity is strictly derived from authenticated session, never client body
+ */
+adminRouter.patch(
+  '/api/admin/handoffs/:id/status',
+  requireRole(['owner', 'admin', 'operations_staff']),
+  async (req: Request, res: Response) => {
+    try {
+      const { status, note } = req.body;
+      const allowed = ['pending', 'contacted', 'resolved', 'dismissed'];
+
+      if (!status || !allowed.includes(status)) {
+        res.status(400).json({ error: `Invalid status. Must be one of: ${allowed.join(', ')}` });
+        return;
+      }
+
+      const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+      if (!id || typeof id !== 'string' || id.trim().length === 0) {
+        res.status(400).json({ error: 'Valid handoff ID is required.' });
+        return;
+      }
+
+      const cleanId = id.trim();
+
+      // Author identity strictly derived from server session
+      const author = req.adminUser
+        ? `${req.adminUser.name} (${req.adminUser.role})`
+        : 'Administrator';
+
+      const updated = await updateAiHandoffStatus(
+        cleanId,
+        status as 'pending' | 'contacted' | 'resolved' | 'dismissed',
+        author,
+        note ? String(note).trim() : undefined
+      );
+
+      if (!updated) {
+        res.status(404).json({ error: 'AI callback handoff request not found.' });
+        return;
+      }
+
+      res.status(200).json({ success: true, handoff: updated });
+    } catch (err: any) {
+      if (err instanceof HandoffTransitionError || err.name === 'HandoffTransitionError') {
+        res.status(422).json({
+          error: err.message,
+          currentStatus: err.currentStatus,
+          requestedStatus: err.requestedStatus,
+          allowedTransitions: err.allowedTransitions,
+        });
+        return;
+      }
+      console.error('[Admin Handoff Status Error]:', err);
+      res.status(500).json({ error: err.message || 'Failed to update handoff status.' });
     }
   }
 );

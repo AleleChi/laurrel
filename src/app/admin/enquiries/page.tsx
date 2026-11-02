@@ -18,6 +18,7 @@ import {
   CalendarPlus,
   ChevronDown,
   ChevronRight,
+  ChevronLeft,
   RotateCcw,
   Ban,
   Check,
@@ -79,8 +80,27 @@ interface AiHandoffItem {
   services?: string[];
   serviceLocation?: string;
   reason: string;
-  status: 'pending' | 'resolved' | 'dismissed';
+  status: 'pending' | 'contacted' | 'resolved' | 'dismissed';
+  notes?: string;
   createdAt: string;
+  updatedAt?: string;
+}
+
+interface StatusCounts {
+  all: number;
+  new: number;
+  reviewed: number;
+  quoted: number;
+  scheduled: number;
+  closed: number;
+}
+
+interface HandoffCounts {
+  all: number;
+  pending: number;
+  contacted: number;
+  resolved: number;
+  dismissed: number;
 }
 
 export default function AdminEnquiriesPage() {
@@ -110,6 +130,34 @@ export default function AdminEnquiriesPage() {
   const [enquiryAppointments, setEnquiryAppointments] = useState<any[]>([]);
   const [loadingAppointments, setLoadingAppointments] = useState(false);
   const [appointmentActionMsg, setAppointmentActionMsg] = useState<string | null>(null);
+
+  const [statusCounts, setStatusCounts] = useState<StatusCounts | null>(null);
+  const [handoffStatusFilter, setHandoffStatusFilter] = useState<string>('all');
+  const [handoffSearchQuery, setHandoffSearchQuery] = useState<string>('');
+  const [handoffActionMsg, setHandoffActionMsg] = useState<string | null>(null);
+  const [isUpdatingHandoffId, setIsUpdatingHandoffId] = useState<string | null>(null);
+
+  const [serverHandoffCounts, setServerHandoffCounts] = useState<HandoffCounts | null>(null);
+  const [handoffTotal, setHandoffTotal] = useState<number>(0);
+  const [handoffPage, setHandoffPage] = useState<number>(1);
+  const [handoffPageSize, setHandoffPageSize] = useState<number>(10);
+  const [handoffTotalPages, setHandoffTotalPages] = useState<number>(1);
+  const [isHandoffsLoading, setIsHandoffsLoading] = useState<boolean>(false);
+  const [dismissDialogState, setDismissDialogState] = useState<{
+    isOpen: boolean;
+    handoffId: string | null;
+    customerName: string;
+    reason: string;
+    errorMessage: string | null;
+    isLoading: boolean;
+  }>({
+    isOpen: false,
+    handoffId: null,
+    customerName: '',
+    reason: '',
+    errorMessage: null,
+    isLoading: false,
+  });
 
   // Custom confirmation dialog for cancellations
   const [cancelDialogState, setCancelDialogState] = useState<{
@@ -212,13 +260,63 @@ export default function AdminEnquiriesPage() {
     }
   };
 
+  const loadHandoffsPage = async (pageToLoad: number, filterToUse = handoffStatusFilter) => {
+    try {
+      setIsHandoffsLoading(true);
+      const params = new URLSearchParams({
+        page: String(pageToLoad),
+        limit: String(handoffPageSize),
+      });
+      if (filterToUse && filterToUse !== 'all') {
+        params.set('status', filterToUse);
+      }
+      const res = await fetch(`/api/admin/handoffs?${params.toString()}`, { cache: 'no-store' });
+      if (res.ok) {
+        const hData = await res.json();
+        setHandoffs(hData.handoffs || []);
+        if (hData.statusCounts) {
+          setServerHandoffCounts(hData.statusCounts);
+        }
+        if (typeof hData.total === 'number') {
+          setHandoffTotal(hData.total);
+        }
+        if (typeof hData.totalPages === 'number') {
+          setHandoffTotalPages(hData.totalPages);
+        }
+        if (typeof hData.page === 'number') {
+          setHandoffPage(hData.page);
+        }
+      }
+    } catch (err) {
+      console.error('[Handoffs Load Error]:', err);
+    } finally {
+      setIsHandoffsLoading(false);
+    }
+  };
+
+  const handleSelectHandoffTab = (tab: string) => {
+    setHandoffStatusFilter(tab);
+    setHandoffPage(1);
+    loadHandoffsPage(1, tab);
+  };
+
+  const handleHandoffSearchChange = (query: string) => {
+    setHandoffSearchQuery(query);
+    setHandoffPage(1);
+  };
+
+  const handleClearHandoffSearch = () => {
+    setHandoffSearchQuery('');
+    setHandoffPage(1);
+  };
+
   const loadData = async () => {
     try {
       setLoading(true);
       setApiError(null);
       const [enqRes, handoffsRes] = await Promise.all([
         fetch('/api/admin/enquiries?limit=200', { cache: 'no-store' }),
-        fetch('/api/admin/handoffs', { cache: 'no-store' }),
+        fetch(`/api/admin/handoffs?page=${handoffPage}&limit=${handoffPageSize}${handoffStatusFilter !== 'all' ? `&status=${handoffStatusFilter}` : ''}`, { cache: 'no-store' }),
       ]);
 
       if (enqRes.ok) {
@@ -226,6 +324,9 @@ export default function AdminEnquiriesPage() {
         const list: EnquiryItem[] = enqData.enquiries || [];
         setEnquiries(list);
         setTotalDbCount(typeof enqData.total === 'number' ? enqData.total : list.length);
+        if (enqData.statusCounts) {
+          setStatusCounts(enqData.statusCounts);
+        }
 
         if (initialEnquiryId) {
           const match = list.find((e) => e.id === initialEnquiryId);
@@ -242,6 +343,12 @@ export default function AdminEnquiriesPage() {
       if (handoffsRes.ok) {
         const hData = await handoffsRes.json();
         setHandoffs(hData.handoffs || []);
+        if (hData.statusCounts) {
+          setServerHandoffCounts(hData.statusCounts);
+        }
+        if (typeof hData.total === 'number') {
+          setHandoffTotal(hData.total);
+        }
       }
     } catch (err: any) {
       console.error('[Enquiries Page Load Error]:', err);
@@ -284,10 +391,18 @@ export default function AdminEnquiriesPage() {
       }
 
       if (data.enquiry) {
+        const prevStatus = selectedEnquiry.status;
         setSelectedEnquiry(data.enquiry);
         setEnquiries((prev) =>
           prev.map((e) => (e.id === selectedEnquiry.id ? data.enquiry : e))
         );
+        if (prevStatus !== newStatus && statusCounts) {
+          setStatusCounts({
+            ...statusCounts,
+            [prevStatus]: Math.max(0, (statusCounts as any)[prevStatus] - 1),
+            [newStatus]: ((statusCounts as any)[newStatus] || 0) + 1,
+          });
+        }
       }
       setNewNoteText('');
     } catch (err: any) {
@@ -301,6 +416,183 @@ export default function AdminEnquiriesPage() {
     e.preventDefault();
     if (!selectedEnquiry || !newNoteText.trim()) return;
     await handleStatusUpdate(selectedEnquiry.status);
+  };
+
+  // Status Counts calculation (Task 4)
+  const counts: StatusCounts = statusCounts || {
+    all: enquiries.length,
+    new: enquiries.filter((e) => e.status === 'new').length,
+    reviewed: enquiries.filter((e) => e.status === 'reviewed').length,
+    quoted: enquiries.filter((e) => e.status === 'quoted').length,
+    scheduled: enquiries.filter((e) => e.status === 'scheduled').length,
+    closed: enquiries.filter((e) => e.status === 'closed').length,
+  };
+
+  const handoffCounts: HandoffCounts = serverHandoffCounts || {
+    all: handoffs.length,
+    pending: handoffs.filter((h) => h.status === 'pending').length,
+    contacted: handoffs.filter((h) => h.status === 'contacted').length,
+    resolved: handoffs.filter((h) => h.status === 'resolved').length,
+    dismissed: handoffs.filter((h) => h.status === 'dismissed').length,
+  };
+
+  const canManageHandoffs = userRole ? ['owner', 'admin', 'operations_staff'].includes(userRole) : true;
+
+  const handleUpdateHandoffStatus = async (
+    id: string,
+    newStatus: string,
+    note?: string
+  ): Promise<{ success: boolean; error?: string }> => {
+    try {
+      setIsUpdatingHandoffId(id);
+      const res = await fetch(`/api/admin/handoffs/${id}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus, note }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        const errorMsg = data.error || 'Failed to update callback status.';
+        setHandoffActionMsg(errorMsg);
+        setTimeout(() => setHandoffActionMsg(null), 5000);
+        return { success: false, error: errorMsg };
+      }
+
+      setHandoffs((prev) =>
+        prev.map((h) => (h.id === id ? { ...h, status: newStatus as any, notes: note || h.notes } : h))
+      );
+
+      // Optimistically adjust status counts
+      if (serverHandoffCounts) {
+        const target = handoffs.find((h) => h.id === id);
+        const prev = target?.status;
+        if (prev && prev !== newStatus) {
+          setServerHandoffCounts({
+            ...serverHandoffCounts,
+            [prev]: Math.max(0, (serverHandoffCounts as any)[prev] - 1),
+            [newStatus]: ((serverHandoffCounts as any)[newStatus] || 0) + 1,
+          });
+        }
+      }
+
+      const statusLabels: Record<string, string> = {
+        contacted: 'marked as Contacted',
+        resolved: 'marked as Resolved',
+        dismissed: 'dismissed',
+        pending: 'reopened as Awaiting Contact',
+      };
+      setHandoffActionMsg(`Callback request ${statusLabels[newStatus] || newStatus}.`);
+      setTimeout(() => setHandoffActionMsg(null), 3500);
+
+      // Re-fetch current page to ensure next records flow in and counts stay accurate
+      const targetPage = handoffs.length === 1 && handoffPage > 1 ? handoffPage - 1 : handoffPage;
+      await loadHandoffsPage(targetPage, handoffStatusFilter);
+
+      return { success: true };
+    } catch (err: any) {
+      console.error('Error updating handoff status:', err);
+      const errorMsg = 'Network error updating callback status.';
+      setHandoffActionMsg(errorMsg);
+      setTimeout(() => setHandoffActionMsg(null), 5000);
+      return { success: false, error: errorMsg };
+    } finally {
+      setIsUpdatingHandoffId(null);
+    }
+  };
+
+  const openDismissDialog = (h: AiHandoffItem) => {
+    setDismissDialogState({
+      isOpen: true,
+      handoffId: h.id,
+      customerName: h.customerName || h.customerEmail,
+      reason: '',
+      errorMessage: null,
+      isLoading: false,
+    });
+  };
+
+  const handleConfirmDismissHandoff = async (reason?: string) => {
+    if (!dismissDialogState.handoffId) return;
+    setDismissDialogState((prev) => ({ ...prev, isLoading: true, reason: reason || '', errorMessage: null }));
+
+    const result = await handleUpdateHandoffStatus(
+      dismissDialogState.handoffId,
+      'dismissed',
+      reason || 'Dismissed by coordinator'
+    );
+
+    if (result.success) {
+      // Close modal ONLY on confirmed API success
+      setDismissDialogState({
+        isOpen: false,
+        handoffId: null,
+        customerName: '',
+        reason: '',
+        errorMessage: null,
+        isLoading: false,
+      });
+    } else {
+      // Keep modal open, preserve entered reason, show error, permit retry
+      setDismissDialogState((prev) => ({
+        ...prev,
+        isLoading: false,
+        reason: reason || '',
+        errorMessage: result.error || 'Failed to dismiss callback request. Please try again.',
+      }));
+    }
+  };
+
+  const filteredHandoffs = handoffs.filter((h) => {
+    if (handoffStatusFilter !== 'all' && h.status !== handoffStatusFilter) return false;
+    if (handoffSearchQuery.trim()) {
+      const q = handoffSearchQuery.toLowerCase().trim();
+      const matchName = h.customerName?.toLowerCase().includes(q);
+      const matchEmail = h.customerEmail.toLowerCase().includes(q);
+      const matchPhone = h.customerPhone?.toLowerCase().includes(q);
+      const matchReason = h.reason.toLowerCase().includes(q);
+      const matchLoc = h.serviceLocation?.toLowerCase().includes(q);
+      return matchName || matchEmail || matchPhone || matchReason || matchLoc;
+    }
+    return true;
+  });
+
+  const renderHandoffStatusBadge = (status: string) => {
+    switch (status) {
+      case 'pending':
+        return (
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-900 border border-amber-300">
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+            Awaiting Contact
+          </span>
+        );
+      case 'contacted':
+        return (
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-900 border border-blue-200">
+            <Clock className="w-3 h-3 text-blue-600" />
+            Contacted
+          </span>
+        );
+      case 'resolved':
+        return (
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-900 border border-emerald-200">
+            <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+            Resolved
+          </span>
+        );
+      case 'dismissed':
+        return (
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-zinc-100 text-zinc-600 border border-zinc-200">
+            <Ban className="w-3 h-3 text-zinc-400" />
+            Dismissed
+          </span>
+        );
+      default:
+        return (
+          <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-zinc-100 text-zinc-600">
+            {status}
+          </span>
+        );
+    }
   };
 
   // Filter logic
@@ -395,9 +687,13 @@ export default function AdminEnquiriesPage() {
             }`}
           >
             Assistant Callbacks
-            {handoffs.length > 0 && (
-              <span className="ml-2 px-2 py-0.5 text-xs rounded-[4px] bg-orange-100 text-[#FE6000] font-bold">
-                {handoffs.length}
+            {handoffCounts.all > 0 && (
+              <span className={`ml-2 px-2 py-0.5 text-xs rounded-full font-bold ${
+                handoffCounts.pending > 0
+                  ? 'bg-amber-100 text-amber-900 border border-amber-300'
+                  : 'bg-zinc-100 text-zinc-600'
+              }`}>
+                {handoffCounts.pending > 0 ? `${handoffCounts.pending} pending` : handoffCounts.all}
               </span>
             )}
           </button>
@@ -409,6 +705,42 @@ export default function AdminEnquiriesPage() {
       {/* ========================================================================= */}
       {activeTab === 'enquiries' && (
         <div className="bg-white p-4 sm:p-5 rounded-md border border-zinc-200 shadow-sm space-y-4">
+          {/* Quick-Filter Status Chips with Live Counts (Task 4) */}
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar text-xs">
+            {[
+              { id: 'all', label: 'All', count: counts.all },
+              { id: 'new', label: 'Awaiting Review', count: counts.new, alert: counts.new > 0 },
+              { id: 'reviewed', label: 'Reviewed', count: counts.reviewed },
+              { id: 'quoted', label: 'Quoted', count: counts.quoted },
+              { id: 'scheduled', label: 'Scheduled', count: counts.scheduled },
+              { id: 'closed', label: 'Closed', count: counts.closed },
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setStatusFilter(tab.id)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 whitespace-nowrap transition-all ${
+                  statusFilter === tab.id
+                    ? 'bg-[#390044] text-white shadow-2xs'
+                    : 'bg-zinc-100 text-zinc-600 hover:bg-zinc-200/80 hover:text-zinc-900'
+                }`}
+              >
+                <span>{tab.label}</span>
+                <span
+                  className={`px-1.5 py-0.2 rounded-full text-[11px] font-bold ${
+                    statusFilter === tab.id
+                      ? 'bg-white/20 text-white'
+                      : tab.alert
+                      ? 'bg-amber-100 text-amber-900 border border-amber-300'
+                      : 'bg-zinc-200/80 text-zinc-600'
+                  }`}
+                >
+                  {tab.count}
+                </span>
+              </button>
+            ))}
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
             {/* Search Input (6 cols) */}
             <div className="md:col-span-6 relative flex items-center">
@@ -437,12 +769,12 @@ export default function AdminEnquiriesPage() {
                 onChange={(e) => setStatusFilter(e.target.value)}
                 className="w-full h-11 px-3.5 text-sm bg-white text-zinc-900 border border-zinc-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#49056B]/20 focus:border-[#49056B] transition-all"
               >
-                <option value="all">All Statuses</option>
-                <option value="new">Awaiting Review</option>
-                <option value="reviewed">Reviewed</option>
-                <option value="quoted">Quoted</option>
-                <option value="scheduled">Scheduled</option>
-                <option value="closed">Closed</option>
+                <option value="all">All Statuses ({counts.all})</option>
+                <option value="new">Awaiting Review ({counts.new})</option>
+                <option value="reviewed">Reviewed ({counts.reviewed})</option>
+                <option value="quoted">Quoted ({counts.quoted})</option>
+                <option value="scheduled">Scheduled ({counts.scheduled})</option>
+                <option value="closed">Closed ({counts.closed})</option>
               </select>
             </div>
 
@@ -608,48 +940,365 @@ export default function AdminEnquiriesPage() {
         </div>
       )}
 
-      {/* Assistant Handoffs Tab */}
+      {/* Assistant Handoffs Tab (Task 2: AI Callback Management) */}
       {activeTab === 'handoffs' && (
-        <div className="bg-white rounded-md border border-zinc-200 shadow-sm overflow-hidden">
-          <div className="p-5 border-b border-zinc-200">
-            <h2 className="text-base font-bold text-zinc-900">Customer Callback Requests</h2>
-            <p className="text-xs text-zinc-500 mt-0.5">
-              Direct telephone or escalation requests received via the interactive assistant.
-            </p>
+        <div className="space-y-4">
+          {handoffActionMsg && (
+            <div className="p-3.5 rounded-md bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs flex items-center justify-between animate-in fade-in">
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                <span>{handoffActionMsg}</span>
+              </div>
+              <button onClick={() => setHandoffActionMsg(null)} className="text-emerald-700 hover:text-emerald-900">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          )}
+
+          {/* Callback Toolbar */}
+          <div className="bg-white p-4 sm:p-5 rounded-md border border-zinc-200 shadow-sm space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div>
+                <h2 className="text-base font-bold text-zinc-900">Customer Callback Requests</h2>
+                <p className="text-xs text-zinc-500 mt-0.5">
+                  Direct telephone or escalation requests received via the interactive assistant.
+                </p>
+              </div>
+
+              {/* Status Quick Filter Pills */}
+              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar text-xs">
+                {[
+                  { id: 'all', label: 'All', count: handoffCounts.all },
+                  { id: 'pending', label: 'Awaiting Contact', count: handoffCounts.pending, alert: handoffCounts.pending > 0 },
+                  { id: 'contacted', label: 'Contacted', count: handoffCounts.contacted },
+                  { id: 'resolved', label: 'Resolved', count: handoffCounts.resolved },
+                  { id: 'dismissed', label: 'Dismissed', count: handoffCounts.dismissed },
+                ].map((st) => (
+                  <button
+                    key={st.id}
+                    type="button"
+                    onClick={() => handleSelectHandoffTab(st.id)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 whitespace-nowrap transition-all ${
+                      handoffStatusFilter === st.id
+                        ? 'bg-[#390044] text-white shadow-2xs'
+                        : 'bg-zinc-100 text-zinc-600 hover:bg-zinc-200/80 hover:text-zinc-900'
+                    }`}
+                  >
+                    <span>{st.label}</span>
+                    <span
+                      className={`px-1.5 py-0.2 rounded-full text-[11px] font-bold ${
+                        handoffStatusFilter === st.id
+                          ? 'bg-white/20 text-white'
+                          : st.alert
+                          ? 'bg-amber-100 text-amber-900 border border-amber-300'
+                          : 'bg-zinc-200/80 text-zinc-600'
+                      }`}
+                    >
+                      {st.count}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Search Input */}
+            <div className="relative flex items-center">
+              <Search className="w-4 h-4 text-zinc-400 absolute left-3.5 pointer-events-none" />
+              <input
+                type="text"
+                value={handoffSearchQuery}
+                onChange={(e) => handleHandoffSearchChange(e.target.value)}
+                placeholder="Search callbacks by customer name, email, phone, location, reason..."
+                className="w-full h-11 pl-10 pr-10 text-sm bg-white text-zinc-900 border border-zinc-300 rounded-lg placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#49056B]/20 focus:border-[#49056B] transition-all"
+              />
+              {handoffSearchQuery && (
+                <button
+                  onClick={handleClearHandoffSearch}
+                  className="absolute right-3 text-zinc-400 hover:text-zinc-600 p-1"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between text-xs text-zinc-500 pt-2 border-t border-zinc-100 gap-2">
+              <span>
+                {handoffSearchQuery ? (
+                  <>
+                    Showing <strong className="text-zinc-900 font-semibold">{filteredHandoffs.length}</strong> matching on this page of{' '}
+                    <strong className="text-zinc-900 font-semibold">{handoffTotal}</strong> total
+                  </>
+                ) : (
+                  <>
+                    Showing{' '}
+                    <strong className="text-zinc-900 font-semibold">
+                      {handoffTotal === 0 ? 0 : (handoffPage - 1) * handoffPageSize + 1}–
+                      {Math.min(handoffPage * handoffPageSize, handoffTotal)}
+                    </strong>{' '}
+                    of <strong className="text-zinc-900 font-semibold">{handoffTotal}</strong> callback requests
+                  </>
+                )}
+                {handoffStatusFilter !== 'all' ? ` (${handoffStatusFilter})` : ''}
+              </span>
+              <div className="flex items-center gap-2 text-zinc-500 font-medium">
+                <span>Ottawa Dispatch Operations</span>
+                <span>•</span>
+                <span>Page {handoffPage} of {handoffTotalPages}</span>
+              </div>
+            </div>
           </div>
 
-          <div className="divide-y divide-zinc-100">
-            {handoffs.length > 0 ? (
-              handoffs.map((h) => (
-                <div key={h.id} className="p-5 hover:bg-zinc-50/70 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className="font-semibold text-zinc-900 text-sm">
-                        {h.customerName || 'Anonymous Customer'}
-                      </span>
-                      <span className="px-2 py-0.5 rounded-[4px] text-xs font-semibold bg-orange-100 text-[#FE6000]">
-                        {h.status}
-                      </span>
+          {/* Callbacks List Container */}
+          <div className="bg-white rounded-md border border-zinc-200 shadow-sm overflow-hidden">
+            <div className="divide-y divide-zinc-100">
+              {filteredHandoffs.length > 0 ? (
+                filteredHandoffs.map((h) => {
+                  const isUpdating = isUpdatingHandoffId === h.id;
+                  return (
+                    <div
+                      key={h.id}
+                      className="p-5 hover:bg-zinc-50/70 transition-colors flex flex-col md:flex-row md:items-start justify-between gap-4"
+                    >
+                      {/* Left: Customer Info & Request Details */}
+                      <div className="space-y-2 flex-1 min-w-0">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="font-bold text-zinc-900 text-sm">
+                            {h.customerName || 'Anonymous Customer'}
+                          </span>
+                          {renderHandoffStatusBadge(h.status)}
+                          <span className="text-xs font-mono text-zinc-400">
+                            #{h.id.slice(0, 8)}
+                          </span>
+                        </div>
+
+                        {/* Contact details */}
+                        <div className="flex flex-wrap items-center gap-3 text-xs text-zinc-600">
+                          <a
+                            href={`mailto:${h.customerEmail}`}
+                            className="inline-flex items-center gap-1.5 text-zinc-700 hover:text-[#390044] font-medium"
+                          >
+                            <Mail className="w-3.5 h-3.5 text-[#390044]" />
+                            <span>{h.customerEmail}</span>
+                          </a>
+                          {h.customerPhone && (
+                            <a
+                              href={`tel:${h.customerPhone.replace(/[^0-9+]/g, '')}`}
+                              className="inline-flex items-center gap-1.5 text-zinc-700 hover:text-[#FE6000] font-medium"
+                            >
+                              <Phone className="w-3.5 h-3.5 text-[#FE6000]" />
+                              <span>{h.customerPhone}</span>
+                            </a>
+                          )}
+                          <div className="inline-flex items-center gap-1 text-zinc-500">
+                            <MapPin className="w-3.5 h-3.5 text-zinc-400" />
+                            <span>{h.serviceLocation || 'Ottawa, ON'}</span>
+                          </div>
+                        </div>
+
+                        {/* Services tags */}
+                        {h.services && h.services.length > 0 && (
+                          <div className="flex flex-wrap gap-1 pt-0.5">
+                            {h.services.map((svc) => (
+                              <span
+                                key={svc}
+                                className="px-2 py-0.5 rounded text-[11px] font-medium bg-zinc-100 text-zinc-700 capitalize"
+                              >
+                                {svc}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* Customer Reason / Assistant Transcript summary */}
+                        <div className="p-3 rounded-lg bg-zinc-50 border border-zinc-200/80 text-xs text-zinc-800 space-y-1">
+                          <div className="text-[11px] font-bold uppercase tracking-wider text-zinc-400">
+                            Customer Message / Escalation Reason
+                          </div>
+                          <p className="text-sm text-zinc-900 leading-relaxed font-normal">
+                            {h.reason}
+                          </p>
+                          {h.notes && (
+                            <div className="pt-2 mt-2 border-t border-zinc-200/60 text-xs text-zinc-600 flex items-start gap-1.5">
+                              <span className="font-semibold text-zinc-700">Staff Note:</span>
+                              <span>{h.notes}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Right: Timestamp & Action Controls */}
+                      <div className="flex flex-col md:items-end justify-between shrink-0 gap-3">
+                        <div className="text-xs text-zinc-400 md:text-right">
+                          <div>Received: {formatCanadianDateTime(h.createdAt)}</div>
+                          {h.updatedAt && (
+                            <div className="text-[11px] text-zinc-400 mt-0.5">
+                              Updated: {formatCanadianDateTime(h.updatedAt)}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Action Buttons for Authorized Staff */}
+                        {canManageHandoffs && (
+                          <div className="flex flex-wrap items-center gap-2">
+                            {h.status === 'pending' && (
+                              <>
+                                <AdminButton
+                                  variant="outline"
+                                  size="sm"
+                                  disabled={isUpdating}
+                                  isLoading={isUpdating}
+                                  onClick={() => handleUpdateHandoffStatus(h.id, 'contacted')}
+                                  className="text-blue-700 border-blue-200 hover:bg-blue-50"
+                                  leftIcon={<Clock className="w-3.5 h-3.5" />}
+                                >
+                                  Mark Contacted
+                                </AdminButton>
+
+                                <AdminButton
+                                  variant="outline"
+                                  size="sm"
+                                  disabled={isUpdating}
+                                  isLoading={isUpdating}
+                                  onClick={() => handleUpdateHandoffStatus(h.id, 'resolved')}
+                                  className="text-emerald-700 border-emerald-200 hover:bg-emerald-50"
+                                  leftIcon={<Check className="w-3.5 h-3.5" />}
+                                >
+                                  Mark Resolved
+                                </AdminButton>
+
+                                <AdminButton
+                                  variant="ghost"
+                                  size="sm"
+                                  disabled={isUpdating}
+                                  onClick={() => openDismissDialog(h)}
+                                  className="text-zinc-500 hover:text-red-700 hover:bg-red-50"
+                                >
+                                  Dismiss
+                                </AdminButton>
+                              </>
+                            )}
+
+                            {h.status === 'contacted' && (
+                              <>
+                                <AdminButton
+                                  variant="outline"
+                                  size="sm"
+                                  disabled={isUpdating}
+                                  isLoading={isUpdating}
+                                  onClick={() => handleUpdateHandoffStatus(h.id, 'resolved')}
+                                  className="text-emerald-700 border-emerald-200 hover:bg-emerald-50"
+                                  leftIcon={<Check className="w-3.5 h-3.5" />}
+                                >
+                                  Mark Resolved
+                                </AdminButton>
+
+                                <AdminButton
+                                  variant="ghost"
+                                  size="sm"
+                                  disabled={isUpdating}
+                                  onClick={() => openDismissDialog(h)}
+                                  className="text-zinc-500 hover:text-red-700 hover:bg-red-50"
+                                >
+                                  Dismiss
+                                </AdminButton>
+                              </>
+                            )}
+
+                            {(h.status === 'resolved' || h.status === 'dismissed') && (
+                              <AdminButton
+                                variant="outline"
+                                size="sm"
+                                disabled={isUpdating}
+                                isLoading={isUpdating}
+                                onClick={() => handleUpdateHandoffStatus(h.id, 'pending')}
+                                className="text-zinc-700 border-zinc-200 hover:bg-zinc-100"
+                                leftIcon={<RotateCcw className="w-3.5 h-3.5" />}
+                              >
+                                Reopen
+                              </AdminButton>
+                            )}
+                          </div>
+                        )}
+                      </div>
                     </div>
-                    <div className="text-xs text-zinc-500 flex flex-wrap gap-3">
-                      <span>Email: {h.customerEmail}</span>
-                      {h.customerPhone && <span>Phone: {h.customerPhone}</span>}
-                      <span>Location: {h.serviceLocation || 'Ottawa'}</span>
-                    </div>
-                    <p className="text-sm text-zinc-700 pt-1">
-                      Reason: {h.reason}
+                  );
+                })
+              ) : (
+                <div className="py-16 text-center space-y-3">
+                  <div className="w-12 h-12 rounded-md bg-zinc-100 flex items-center justify-center mx-auto text-zinc-400">
+                    <Search className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-semibold text-zinc-900">No callback requests found</h3>
+                    <p className="text-sm text-zinc-500 mt-1">
+                      {handoffStatusFilter !== 'all' || handoffSearchQuery
+                        ? 'Try clearing your search query or status filter.'
+                        : 'No assistant callback requests recorded yet.'}
                     </p>
                   </div>
-                  <div className="text-xs text-zinc-400 sm:text-right">
-                    {formatCanadianDateTime(h.createdAt)}
-                  </div>
                 </div>
-              ))
-            ) : (
-              <div className="py-16 text-center text-sm text-zinc-400">
-                No customer callback requests recorded.
+              )}
+            </div>
+
+            {/* Callback Pagination Controls Bar */}
+            <div className="px-5 py-3.5 bg-zinc-50 border-t border-zinc-200 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-zinc-600">
+              <div className="flex items-center gap-2">
+                <span>
+                  Showing{' '}
+                  <strong className="text-zinc-900 font-semibold">
+                    {handoffTotal === 0 ? 0 : (handoffPage - 1) * handoffPageSize + 1}
+                  </strong>{' '}
+                  to{' '}
+                  <strong className="text-zinc-900 font-semibold">
+                    {Math.min(handoffPage * handoffPageSize, handoffTotal)}
+                  </strong>{' '}
+                  of <strong className="text-zinc-900 font-semibold">{handoffTotal}</strong> requests
+                </span>
+                {isHandoffsLoading && (
+                  <RefreshCw className="w-3.5 h-3.5 animate-spin text-zinc-400 ml-1" />
+                )}
               </div>
-            )}
+
+              <div className="flex items-center gap-2" role="navigation" aria-label="Callback requests pagination">
+                {/* Previous Page Button */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (handoffPage > 1 && !isHandoffsLoading) {
+                      loadHandoffsPage(handoffPage - 1);
+                    }
+                  }}
+                  disabled={handoffPage <= 1 || isHandoffsLoading}
+                  aria-label="Go to previous page"
+                  className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold rounded-md border border-zinc-300 bg-white text-zinc-700 hover:bg-zinc-100 focus:outline-none focus:ring-2 focus:ring-[#390044] focus:ring-offset-1 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                >
+                  <ChevronLeft className="w-3.5 h-3.5" />
+                  <span>Previous</span>
+                </button>
+
+                {/* Page Indicator */}
+                <span className="px-2.5 py-1 text-xs font-medium text-zinc-600">
+                  Page <span className="font-semibold text-zinc-900">{handoffPage}</span> of{' '}
+                  <span className="font-semibold text-zinc-900">{handoffTotalPages}</span>
+                </span>
+
+                {/* Next Page Button */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (handoffPage < handoffTotalPages && !isHandoffsLoading) {
+                      loadHandoffsPage(handoffPage + 1);
+                    }
+                  }}
+                  disabled={handoffPage >= handoffTotalPages || isHandoffsLoading}
+                  aria-label="Go to next page"
+                  className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold rounded-md border border-zinc-300 bg-white text-zinc-700 hover:bg-zinc-100 focus:outline-none focus:ring-2 focus:ring-[#390044] focus:ring-offset-1 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                >
+                  <span>Next</span>
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
@@ -1079,7 +1728,35 @@ export default function AdminEnquiriesPage() {
         />
       )}
 
-      {/* Custom Confirmation Dialog for Cancellations (replaces window.prompt!) */}
+      {/* Custom Confirmation Dialog for Handoff Dismissal (Task 2) */}
+      <ConfirmDialog
+        isOpen={dismissDialogState.isOpen}
+        title="Dismiss Callback Request"
+        description={`Are you sure you want to dismiss the callback request from ${dismissDialogState.customerName}? Please provide an optional reason or note for the audit log.`}
+        confirmLabel="Dismiss Request"
+        cancelLabel="Keep Active"
+        variant="danger"
+        requiresInput={true}
+        inputRequired={false}
+        initialInputValue={dismissDialogState.reason}
+        errorMessage={dismissDialogState.errorMessage || undefined}
+        inputLabel="Dismissal Note / Reason (Optional)"
+        inputPlaceholder="e.g. Addressed over phone, spam, test message..."
+        isLoading={dismissDialogState.isLoading}
+        onConfirm={handleConfirmDismissHandoff}
+        onCancel={() =>
+          setDismissDialogState({
+            isOpen: false,
+            handoffId: null,
+            customerName: '',
+            reason: '',
+            errorMessage: null,
+            isLoading: false,
+          })
+        }
+      />
+
+            {/* Custom Confirmation Dialog for Cancellations (replaces window.prompt!) */}
       <ConfirmDialog
         isOpen={cancelDialogState.isOpen}
         title="Cancel Consultation"

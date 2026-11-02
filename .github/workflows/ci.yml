@@ -1,0 +1,115 @@
+name: CI Release Verification
+
+on:
+  push:
+    branches:
+      - main
+      - 'feat/**'
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  verify:
+    name: Build & Release Verification Gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: laurrel_test
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js (LTS 20)
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install Frontend Dependencies
+        run: npm ci
+
+      - name: Install Backend Dependencies
+        run: npm --prefix backend ci
+
+      - name: Frontend TypeScript Check
+        run: npx tsc --noEmit
+
+      - name: Backend TypeScript Check & Build
+        run: |
+          cd backend
+          npm run build
+          cd ..
+
+      - name: Safe Automated CI Test Suite
+        run: npm run test:ci
+
+      - name: Next.js Production Build
+        env:
+          NEXT_TELEMETRY_DISABLED: '1'
+          ADMIN_SESSION_SECRET: ci_verification_session_secret_32c
+          ADMIN_API_SECRET: ci_verification_gateway_api_secret
+          BACKEND_API_URL: http://localhost:5000
+        run: npm run build
+
+      - name: Isolated Database Behavioural Verification
+        env:
+          PORT: 5000
+          DATABASE_URL: postgres://test_user:test_password@localhost:5432/laurrel_test
+          TEST_DATABASE_URL: postgres://test_user:test_password@localhost:5432/laurrel_test
+          ADMIN_OWNER_EMAIL: test_admin@laurrelservices.internal
+          ADMIN_OWNER_PASSWORD: TestPassword123!
+          TEST_ADMIN_EMAIL: test_admin@laurrelservices.internal
+          TEST_ADMIN_PASSWORD: TestPassword123!
+          ADMIN_API_SECRET: ci_verification_gateway_api_secret
+          STORAGE_PROVIDER: local
+          ENCRYPTION_SECRET: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+          ALLOW_ISOLATED_TEST_DB_RUN: 'true'
+          TEST_DB_NO_SSL: 'true'
+          TEST_API_BASE_URL: http://localhost:5000
+          NODE_ENV: test
+        run: |
+          echo "Starting isolated test backend on port 5000..."
+          node backend/dist/index.js &
+          BACKEND_PID=$!
+
+          echo "Waiting for test backend to report ready..."
+          READY=false
+          for i in {1..30}; do
+            if curl -f -s http://localhost:5000/ready | grep -q '"status":"ready"'; then
+              echo "Isolated test backend is ready (PID: $BACKEND_PID)!"
+              READY=true
+              break
+            fi
+            echo "Waiting for backend readiness... ($i/30)"
+            sleep 1
+          done
+
+          if [ "$READY" != "true" ]; then
+            echo "ERROR: Test backend failed to report ready within 30 seconds."
+            kill $BACKEND_PID 2>/dev/null || true
+            exit 1
+          fi
+
+          echo "Executing behavioural test suite against isolated environment..."
+          node scripts/test-sprint1-behavioural.js
+          TEST_EXIT_CODE=$?
+
+          echo "Stopping test backend (PID: $BACKEND_PID)..."
+          kill $BACKEND_PID 2>/dev/null || true
+
+          exit $TEST_EXIT_CODE
