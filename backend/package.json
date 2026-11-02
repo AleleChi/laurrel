@@ -5,7 +5,7 @@
   "main": "dist/index.js",
   "private": true,
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && node -e \"const fs=require('fs'),path=require('path'); const src='src/database/schema.sql',dst='dist/database/schema.sql'; if(fs.existsSync(src)){fs.mkdirSync(path.dirname(dst),{recursive:true}); fs.copyFileSync(src,dst);}\"",
     "start": "node dist/index.js",
     "dev": "ts-node src/index.ts",
     "migrate": "ts-node src/database/migrate.ts",

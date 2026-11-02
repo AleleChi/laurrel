@@ -120,15 +120,12 @@ Enforced strict state machine rules via `validateHandoffTransition()`:
 5. **Replenishing State Updates:** Upon completing or dismissing a callback, `loadHandoffsPage` re-fetches the current page so the next records automatically flow into view; if the last record on page $N > 1$ is removed, it automatically navigates back to page $N - 1$.
 6. **Accessible Keyboard Controls:** Controls include `aria-label`, visible focus rings, and proper `disabled` states during loading.
 
-### 2.9 Automated CI Workflow (`.github/workflows/ci.yml`)
+### 2.9 Automated CI Workflow & Ephemeral Test Service (`.github/workflows/ci.yml`)
 1. **Continuous Integration Pipeline:** Configured GitHub Actions workflow triggering on pushes and pull requests to `main`.
-2. **Verification Gates:**
-   - Frontend TypeScript check (`npx tsc --noEmit`)
-   - Backend TypeScript build (`npm --prefix backend run build`)
-   - Safe automated test suite (`npm run test:ci`)
-   - Next.js production build (`npm run build`)
-   - Isolated staging behavioural verification (guarded by `TEST_DATABASE_URL` secret check)
-3. **Zero Credential Exposure:** Secrets are never echoed to logs or artifacts; safe tests execute completely offline without database dependencies.
+2. **Ephemeral Service Container:** Uses a dedicated `postgres:16` service container on `localhost:5432/laurrel_test` with health checks.
+3. **Dedicated Test Backend Process:** Spins up the compiled Express backend connected exclusively to the ephemeral container, automatically applies migrations, and bootstraps the test admin.
+4. **Unconditional Behavioural Verification:** Executes `scripts/test-sprint1-behavioural.js` in CI without conditional skipping. Neither the backend nor the test runner connects to production Neon or touches production data.
+5. **Zero Credential Exposure:** Secrets and credentials used in CI are ephemeral synthetic fixtures (`test_admin@laurrelservices.internal`).
 
 ---
 
@@ -168,6 +165,7 @@ Because the remote branch `feat/admin-sprint-1-fixes` was deleted, its commits a
 | `.gitignore` | Hardening | Adds `docs/screenshots/` to permanently prevent tracking visual fixtures. |
 | `.github/workflows/ci.yml` | CI / Release | GitHub Actions workflow for automated TypeScript checks, builds, and safe tests. |
 | `package.json` | Tooling | Registers `test:ci` script for release verification. |
+| `backend/package.json` | Build | Ensures `schema.sql` is copied to `dist/database/schema.sql` during build. |
 | `backend/src/database/pool.ts` | Reliability | Adds TCP keepAlive and client error handler to avoid unhandled idle socket drops on Neon PostgreSQL. |
 | `backend/src/database/enquiryRepo.ts` | Integrity | Implements `validateHandoffTransition`, row locks (`FOR UPDATE`), atomic audit logs, strict rollback/error throw, server-side status counts, and pagination. |
 | `backend/src/routes/admin.ts` | Contract | Updates `/api/admin/handoffs` with pagination & statusCounts; catches transition errors and returns HTTP 422 with transition metadata. |
