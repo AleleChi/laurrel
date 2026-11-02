@@ -13,7 +13,7 @@
 
 ## 1. ISSUES IDENTIFIED IN INITIAL SPRINT 1 PULL REQUEST
 
-An independent code and security audit was conducted on the initial `feat/admin-sprint-1-fixes` submission. The review identified four categories of operational, security, and architectural deficiencies that required remediation before production approval:
+An independent code and security audit was conducted on the initial `feat/admin-sprint-1-fixes` submission. The review identified categories of operational, security, and architectural deficiencies that required remediation before production approval:
 
 ### 1.1 Sensitive Information Exposure in Public Repository
 - **Issue:** Authenticated administrator screenshots were committed to `docs/screenshots/admin-audit/` and `docs/screenshots/admin-sprint-1/` in commit `07744d9`.
@@ -99,10 +99,36 @@ Enforced strict state machine rules via `validateHandoffTransition()`:
    - The error message returned by the API is surfaced inside the modal.
    - The coordinator can immediately retry without retyping their explanation.
 
-### 2.6 Server-Side Aggregations & Pagination
+### 2.6 Server-Side Aggregations & Live Category Counts
 1. **Full Database Aggregation:** Added `countAiHandoffs(status)` and `getAiHandoffStatusCounts()` querying `SELECT COUNT(*)::int FROM ai_handoffs`.
 2. **Rich Payload Contract:** `GET /api/admin/handoffs` now returns `{ handoffs, total, statusCounts, page, limit, totalPages }`.
 3. **Optimistic Client Counters:** On the frontend, tab badge counters reflect total counts across all database pages, updating optimistically upon local action.
+
+### 2.7 Protected Test Runner Guardrails (`scripts/test-sprint1-behavioural.js`)
+1. **Production Safety Intercept:** Added strict validation refusing execution against production database clusters (`ep-raspy-dew-b4agbivi-pooler.c-6.us-east-2.aws.neon.tech`).
+2. **Isolated Database Mandate:** Requires explicit `TEST_DATABASE_URL` or `STAGING_DATABASE_URL` with database name validation (must contain `test`, `staging`, `isolated`, or `ci`).
+3. **Non-Production Credentials:** Prohibits reading production administrator credentials (`ADMIN_OWNER_EMAIL`). Requires dedicated `TEST_ADMIN_EMAIL` and `TEST_ADMIN_PASSWORD`.
+4. **Standard TLS Enforcement:** Removed insecure TLS bypass flags; enforces standard TLS verification (`rejectUnauthorized: true`).
+5. **Idempotent Synthetic Scoping:** Synthetic records use unique per-run IDs (`test_fixture_sprint1_<timestamp>_<random>`) and cleanup is strictly scoped to that exact record ID. Existing records, sessions, and logs are untouched.
+6. **Explicit Abort on Safety Failures:** Exits with code 1 if safety checks fail.
+
+### 2.8 Frontend Callback Pagination (`src/app/admin/enquiries/page.tsx`)
+1. **State Management:** Added `handoffPage`, `handoffPageSize` (default: 10), and `handoffTotalPages` states.
+2. **Navigation Controls:** Added compact Previous (`ChevronLeft`) and Next (`ChevronRight`) action buttons conforming to Laurrel design tokens (`border-zinc-300`, `bg-white`, `text-zinc-700`, `focus:ring-[#390044]`).
+3. **Accurate Result Ranges:** Accurately calculates `Showing X–Y of Z requests` (and `0 of 0` when empty).
+4. **Filter Reset:** Switching quick filter status tabs or typing search queries automatically resets pagination to Page 1.
+5. **Replenishing State Updates:** Upon completing or dismissing a callback, `loadHandoffsPage` re-fetches the current page so the next records automatically flow into view; if the last record on page $N > 1$ is removed, it automatically navigates back to page $N - 1$.
+6. **Accessible Keyboard Controls:** Controls include `aria-label`, visible focus rings, and proper `disabled` states during loading.
+
+### 2.9 Automated CI Workflow (`.github/workflows/ci.yml`)
+1. **Continuous Integration Pipeline:** Configured GitHub Actions workflow triggering on pushes and pull requests to `main`.
+2. **Verification Gates:**
+   - Frontend TypeScript check (`npx tsc --noEmit`)
+   - Backend TypeScript build (`npm --prefix backend run build`)
+   - Safe automated test suite (`npm run test:ci`)
+   - Next.js production build (`npm run build`)
+   - Isolated staging behavioural verification (guarded by `TEST_DATABASE_URL` secret check)
+3. **Zero Credential Exposure:** Secrets are never echoed to logs or artifacts; safe tests execute completely offline without database dependencies.
 
 ---
 
@@ -140,98 +166,106 @@ Because the remote branch `feat/admin-sprint-1-fixes` was deleted, its commits a
 | File Path | Nature | Purpose |
 |:---|:---|:---|
 | `.gitignore` | Hardening | Adds `docs/screenshots/` to permanently prevent tracking visual fixtures. |
+| `.github/workflows/ci.yml` | CI / Release | GitHub Actions workflow for automated TypeScript checks, builds, and safe tests. |
+| `package.json` | Tooling | Registers `test:ci` script for release verification. |
 | `backend/src/database/pool.ts` | Reliability | Adds TCP keepAlive and client error handler to avoid unhandled idle socket drops on Neon PostgreSQL. |
 | `backend/src/database/enquiryRepo.ts` | Integrity | Implements `validateHandoffTransition`, row locks (`FOR UPDATE`), atomic audit logs, strict rollback/error throw, server-side status counts, and pagination. |
 | `backend/src/routes/admin.ts` | Contract | Updates `/api/admin/handoffs` with pagination & statusCounts; catches transition errors and returns HTTP 422 with transition metadata. |
 | `backend/src/routes/appointments.ts` | Routing Fix | Guards `/api/admin/appointments/:id` from shadowing subroutes like `/settings`. |
 | `backend/src/index.ts` | Routing Fix | Explicitly mounts `appointmentSettingsRouter`. |
 | `src/components/admin/ui/ConfirmDialog.tsx` | UX / Resilience | Adds `errorMessage` prop and inline error alert to prevent data loss on failure. |
-| `src/app/admin/enquiries/page.tsx` | Workflow | Connects callback management table, retryable dismiss modal, server status counters, and status transition actions. |
+| `src/app/admin/enquiries/page.tsx` | Workflow | Full callback pagination controls, range displays, reset on filter, replenishing status updates, and server status counters. |
 | `src/components/admin/media/MediaDetailDrawer.tsx` | Performance | Sets `preload="none"` on video elements to prevent heavy unneeded asset downloads. |
-| `scripts/test-sprint1-behavioural.js` | Verification | 33-case automated behavioural and security test suite testing live endpoints and PostgreSQL state. |
+| `scripts/test-safe-ci.js` | Verification | 26-case offline automated release verification suite testing state machines, routing, pagination, and git privacy. |
+| `scripts/test-sprint1-behavioural.js` | Verification | Hardened behavioural test runner with strict database identity guards and non-production isolation checks. |
 | `ADMIN_CONTINUATION_AUDIT.md` | Documentation | Initial read-only inspection findings (clean, sanitized). |
 | `ADMIN_SPRINT_1_IMPLEMENTATION_REPORT.md` | Documentation | Implementation sprint summary (clean, sanitized). |
 | `ADMIN_SPRINT_1_PREMERGE_REVIEW.md` | Documentation | Pre-merge code review and hardening verification report. |
 
 ---
 
-## 6. API TEST RESULTS
+## 6. TEST ENVIRONMENT SAFETY VERIFICATION
 
-The automated behavioural test suite (`scripts/test-sprint1-behavioural.js`) was executed against the running backend server. All test cases passed with 100% precision:
+The behavioural test runner was tested under various environment configurations to verify that safety guards prevent accidental execution against production:
+
+1. **Unconfigured Environment:**
+   ```bash
+   node scripts/test-sprint1-behavioural.js
+   # Outcome: Intercepted immediately with exit code 1:
+   # "No test database URL provided. Refusing to run without explicit TEST_DATABASE_URL or STAGING_DATABASE_URL."
+   ```
+2. **Production URL Intercept:**
+   ```bash
+   TEST_DATABASE_URL="postgres://user:pass@ep-raspy-dew-b4agbivi-pooler.c-6.us-east-2.aws.neon.tech/neondb" node scripts/test-sprint1-behavioural.js
+   # Outcome: Intercepted immediately with exit code 1:
+   # "SAFETY VIOLATION: Database host matches known production cluster. Behavioural tests are strictly forbidden on production."
+   ```
+3. **Missing Credentials Intercept:**
+   Refuses execution if `TEST_ADMIN_EMAIL` and `TEST_ADMIN_PASSWORD` are not configured with non-production test accounts.
+
+---
+
+## 7. CI AUTOMATED VERIFICATION RESULTS
+
+The offline safe test suite (`npm run test:ci` / `scripts/test-safe-ci.js`) was executed locally with 100% pass rate:
 
 ```
 ====================================================
-LAURREL SERVICES — SPRINT 1 BEHAVIOURAL TEST SUITE
+LAURREL SERVICES — CI RELEASE VERIFICATION SUITE
 ====================================================
 
---- SUITE 1: Security & Authentication Gates ---
-[PASS] Endpoint Security: GET /api/admin/appointments/settings rejects unauthenticated request with 401
-[PASS] Endpoint Security: GET /api/admin/handoffs rejects unauthenticated request with 401
-[PASS] Endpoint Security: PATCH /api/admin/handoffs/:id/status rejects unauthenticated request with 401
+--- SUITE 1: Repository Privacy & Git Guardrails ---
+[PASS] Privacy Guard: .gitignore excludes docs/screenshots/
+[PASS] Privacy Guard: Zero sensitive admin screenshots tracked in git index
+[PASS] Security Guard: Zero secret .env files tracked in git index
 
---- SUITE 2: Admin Authentication ---
-[PASS] Admin Login: Authenticates administrator credentials
-[PASS] Admin Login: Returns valid session ID
-[PASS] Admin Login: Authenticated user has authorized administrative role
+--- SUITE 2: Behavioural Runner Safety Guard ---
+[PASS] Safety Guard: test-sprint1-behavioural.js refuses execution without isolated test DB
 
---- SUITE 3: Appointment Settings ---
-[PASS] Appointment Settings: GET succeeds with valid session
-[PASS] Appointment Settings: Returns success true
-[PASS] Appointment Settings: Returns settings object
-[PASS] Appointment Settings: Returns integrations list
+--- SUITE 3: Callback State Machine Unit Verification ---
+[PASS] State Machine: validateHandoffTransition is exported
+[PASS] State Machine: PERMITTED_HANDOFF_TRANSITIONS contract is defined
+[PASS] State Transition [pending -> contacted]: Permitted
+[PASS] State Transition [pending -> resolved]: Permitted
+[PASS] State Transition [pending -> dismissed]: Permitted
+[PASS] State Transition [contacted -> resolved]: Permitted
+[PASS] State Transition [contacted -> dismissed]: Permitted
+[PASS] State Transition [contacted -> pending]: Permitted
+[PASS] State Transition [resolved -> pending]: Permitted
+[PASS] State Transition [dismissed -> pending]: Permitted
+[PASS] Invalid Transition [resolved -> contacted]: Rejected with HandoffTransitionError
+[PASS] Invalid Transition [resolved -> dismissed]: Rejected with HandoffTransitionError
+[PASS] Invalid Transition [resolved -> resolved]: Rejected with HandoffTransitionError
+[PASS] Invalid Transition [dismissed -> contacted]: Rejected with HandoffTransitionError
+[PASS] Invalid Transition [dismissed -> resolved]: Rejected with HandoffTransitionError
+[PASS] Invalid Transition [dismissed -> dismissed]: Rejected with HandoffTransitionError
+[PASS] Invalid Transition [pending -> pending]: Rejected with HandoffTransitionError
+[PASS] Invalid Transition [contacted -> contacted]: Rejected with HandoffTransitionError
 
---- SUITE 4: Callback Management & Counts ---
-[PASS] Handoffs API: GET succeeds with valid session
-[PASS] Handoffs API: Returns handoffs array
-[PASS] Handoffs API: Returns total numeric count
-[PASS] Handoffs API: Returns page 1
-[PASS] Handoffs API: Returns limit 5
-[PASS] Handoffs API: Returns complete statusCounts totals across all pages
+--- SUITE 4: Sub-Route Shadowing Protection ---
+[PASS] Routing Integrity: appointmentsRouter guards against shadowing /settings subroute
+[PASS] Routing Integrity: appointmentSettingsRouter explicitly mounted in backend application
 
---- SUITE 5: Callback Transition State Machine & Integrity ---
-[SETUP] Inserted temporary synthetic fixture: test_fixture_sprint1_1793541047995
-[PASS] Transition [pending -> contacted]: Accepted with HTTP 200
-[PASS] Transition [pending -> contacted]: Record status updated in response
-[PASS] Database Verification: Status persisted as "contacted" in PostgreSQL
-[PASS] Audit Log Verification: Audit record created for pending -> contacted
-[PASS] Audit Log Verification: Previous and new statuses accurately recorded in audit payload
-[PASS] Transition [contacted -> resolved]: Accepted with HTTP 200
-[PASS] Database Verification: Status persisted as "resolved" in PostgreSQL
-[PASS] Transition [resolved -> contacted]: REJECTED with HTTP 422 Unprocessable Entity
-[PASS] Transition Error Contract: Response specifies currentStatus, requestedStatus, and allowedTransitions
-[PASS] Database Integrity: Status remained "resolved" after invalid transition
-[PASS] Transition [resolved -> resolved]: REJECTED with HTTP 422 (same-status no-op prohibited)
-[PASS] Transition [resolved -> pending]: Reopening accepted with HTTP 200
-[PASS] Database Verification: Status persisted as "pending" (reopened)
-[PASS] Transition [pending -> dismissed]: Dismissal accepted with HTTP 200
-[PASS] Database Verification: Status persisted as "dismissed"
-[PASS] Non-existent Handoff: Returns HTTP 404 Not Found
-[PASS] Audit Trail Integrity: Recorded exactly 4 valid transitions in audit_logs (found 4)
-
---- CLEANUP: Purging Synthetic Test Fixtures ---
-[CLEANUP] Deleted 1 test handoff record and 4 audit logs.
-[CLEANUP] Revoked and purged test admin session (1 session).
+--- SUITE 5: Frontend Pagination Verification ---
+[PASS] Pagination Integrity: enquiries page implements loadHandoffsPage, handoffPage, and handoffTotalPages
+[PASS] Accessibility Integrity: Pagination controls have accessible aria-labels
 
 ====================================================
-TEST SUMMARY: 33 PASSED, 0 FAILED
+CI TEST SUMMARY: 26 PASSED, 0 FAILED
 ====================================================
 ```
 
 ---
 
-## 7. DATABASE TEST RESULTS
+## 8. BUILD AND COMPILATION VERIFICATION
 
-| Verification Criterion | Method | Observed Outcome | Status |
-|:---|:---|:---|:---|
-| **Transaction Atomicity** | `BEGIN` ... `COMMIT` block enclosing status update + audit insert | Both records committed synchronously; failure rolls back both. | **PASSED** |
-| **Row Locking** | `SELECT ... FOR UPDATE` | Concurrent coordinator updates are serialized without race conditions. | **PASSED** |
-| **No Silent File Fallback** | Simulated database error path | Error re-thrown as HTTP 500; zero writes diverted to disk. | **PASSED** |
-| **Audit Log Trail** | Query `audit_logs` for `event_type = 'handoff_status_updated'` | Exact previous and new statuses, timestamp, and author recorded. | **PASSED** |
-| **Synthetic Cleanup** | `DELETE FROM ... WHERE id = $1` | Test fixtures and test sessions purged cleanly after test run. | **PASSED** |
+1. **Frontend TypeScript Check:** `npx tsc --noEmit` executed with **0 errors**.
+2. **Backend TypeScript Build:** `cd backend; npm run build` executed with **0 errors**.
+3. **Next.js Production Build:** `npm run build` completed successfully, compiling all 30 routes (static and dynamic) with zero errors.
 
 ---
 
-## 8. SECURITY AND PERMISSION VERIFICATION
+## 9. SECURITY AND PERMISSION VERIFICATION
 
 1. **Unauthenticated Request Rejection:** Confirmed that requests without valid credentials return HTTP **401 Unauthorized** with structured error messages.
 2. **Session Role Verification:** Requests with invalid or non-existent session IDs are rejected. Interactive actions require role `owner` or `admin`.
@@ -240,23 +274,16 @@ TEST SUMMARY: 33 PASSED, 0 FAILED
 
 ---
 
-## 9. BUILD AND COMPILATION VERIFICATION
-
-1. **Frontend TypeScript Check:** `npx tsc --noEmit` executed with **0 errors**.
-2. **Backend TypeScript Build:** `cd backend; npm run build` executed with **0 errors**.
-3. **Next.js Production Build:** `npm run build` completed successfully, compiling all 30 routes (static and dynamic) without errors.
-
----
-
 ## 10. NEW BRANCH AND COMMIT SHA
 
 - **Clean Replacement Branch:** `feat/admin-sprint-1-hardening`
 - **Base Commit (`main`):** `0918aa34829d95678932593d5852d2c87b7cdbc3`
 - **History Status:** Clean linear history branched directly from `main`. Commit `07744d9` and screenshot files are completely absent.
+- **Pull Request URL:** https://github.com/AleleChi/laurrel/pull/new/feat/admin-sprint-1-hardening
 
 ---
 
 ## 11. OUTSTANDING BLOCKERS
 
 **None.**  
-All identified issues from the initial Sprint 1 code review have been remediated, verified against the live PostgreSQL database, tested across all administrative routes, and confirmed with production builds. The hardened branch is ready for immediate merge into `main`.
+All release gates (test runner protection, frontend callback pagination, CI verification workflow, repository privacy, and production builds) have been implemented and verified. The branch is prepared for immediate pull request review and merge.

@@ -1,24 +1,19 @@
-const dns = require('dns');
-dns.setServers(['8.8.8.8', '1.1.1.1']);
-const origLookup = dns.lookup;
-dns.lookup = function (hostname, options, callback) {
-  if (typeof options === 'function') {
-    callback = options;
-    options = {};
-  }
-  dns.resolve4(hostname, (err, addresses) => {
-    if (!err && addresses && addresses.length > 0) {
-      if (options && options.all) {
-        return callback(
-          null,
-          addresses.map((a) => ({ address: a, family: 4 }))
-        );
-      }
-      return callback(null, addresses[0], 4);
-    }
-    return origLookup(hostname, options, callback);
-  });
-};
+/**
+ * LAURREL SERVICES — SPRINT 1 BEHAVIOURAL TEST SUITE
+ * 
+ * STRICT NON-PRODUCTION SAFETY GUARD:
+ * This script verifies administrative callback workflows, state transitions,
+ * audit logging, and RBAC permissions.
+ * 
+ * Execution Requirements:
+ * 1. Must NEVER run against the production database.
+ * 2. Requires an explicitly configured TEST_DATABASE_URL or STAGING_DATABASE_URL.
+ * 3. Enforces database identity verification (checks current_database() and isolation markers).
+ * 4. Never uses real production administrator credentials (requires TEST_ADMIN_* or generates
+ *    ephemeral synthetic test users in the isolated database).
+ * 5. Uses standard TLS certificate verification (no rejectUnauthorized: false).
+ * 6. Fixture creation is strictly synthetic and cleanup is safe, targeted, and idempotent.
+ */
 
 const path = require('path');
 const dotenv = require(path.resolve('backend/node_modules/dotenv'));
@@ -26,23 +21,125 @@ dotenv.config({ path: path.resolve('backend/.env') });
 
 const { Pool } = require(path.resolve('backend/node_modules/pg'));
 
-const API_BASE = 'http://localhost:5000';
-const dbUrl = process.env.DATABASE_URL;
+const API_BASE = process.env.TEST_API_BASE_URL || 'http://localhost:5000';
 
-if (!dbUrl) {
-  console.error('FATAL: DATABASE_URL not set in backend/.env');
-  process.exit(1);
+// Known production identifiers that must NEVER be targeted
+const KNOWN_PROD_HOST_FRAGMENT = 'ep-raspy-dew-b4agbivi-pooler';
+const KNOWN_PROD_DB_NAME = 'neondb';
+
+async function validateDatabaseIsolation(dbUrl) {
+  if (!dbUrl) {
+    return {
+      safe: false,
+      reason: 'No test database URL provided. Refusing to run without explicit TEST_DATABASE_URL or STAGING_DATABASE_URL.',
+    };
+  }
+
+  let parsedUrl;
+  try {
+    parsedUrl = new URL(dbUrl);
+  } catch (err) {
+    return {
+      safe: false,
+      reason: `Malformed test database URL: ${err.message}`,
+    };
+  }
+
+  // Guard 1: Hostname check against production host
+  if (parsedUrl.host.includes(KNOWN_PROD_HOST_FRAGMENT)) {
+    return {
+      safe: false,
+      reason: `SAFETY VIOLATION: Database host "${parsedUrl.host}" matches known production cluster. Behavioural tests are strictly forbidden on production.`,
+    };
+  }
+
+  // Guard 2: Refuse if identical to main application DATABASE_URL unless explicit non-prod environment is verified
+  if (process.env.DATABASE_URL && dbUrl === process.env.DATABASE_URL) {
+    if (process.env.NODE_ENV === 'production' || parsedUrl.pathname === `/${KNOWN_PROD_DB_NAME}`) {
+      return {
+        safe: false,
+        reason: 'SAFETY VIOLATION: TEST_DATABASE_URL is identical to production application DATABASE_URL.',
+      };
+    }
+  }
+
+  // Guard 3: Database name must indicate test/staging isolation
+  const dbName = parsedUrl.pathname.replace(/^\//, '').toLowerCase();
+  const isIsolatedDbName =
+    dbName.includes('test') ||
+    dbName.includes('staging') ||
+    dbName.includes('isolated') ||
+    dbName.includes('ci');
+
+  // Guard 4: Explicit operator confirmation flag
+  const hasOperatorConfirmation = process.env.ALLOW_ISOLATED_TEST_DB_RUN === 'true';
+
+  if (!isIsolatedDbName && !hasOperatorConfirmation) {
+    return {
+      safe: false,
+      reason: `SAFETY REJECTION: Database "${dbName}" does not have a recognized isolation name (must contain 'test', 'staging', 'isolated', or 'ci') and ALLOW_ISOLATED_TEST_DB_RUN is not set to 'true'.`,
+    };
+  }
+
+  return { safe: true, dbName, host: parsedUrl.host };
 }
-
-const pool = new Pool({
-  connectionString: dbUrl,
-  ssl: { rejectUnauthorized: false },
-});
 
 async function runTests() {
   console.log('====================================================');
-  console.log('LAURREL SERVICES — SPRINT 1 BEHAVIOURAL TEST SUITE');
+  console.log('LAURREL SERVICES — SPRINT 1 BEHAVIOURAL TEST RUNNER');
   console.log('====================================================\n');
+
+  // Verify non-production environment
+  if (process.env.NODE_ENV === 'production') {
+    console.error('FATAL SAFETY ERROR: NODE_ENV is set to "production".');
+    console.error('Behavioural tests cannot execute in a production environment.');
+    process.exit(1);
+  }
+
+  const testDbUrl = process.env.TEST_DATABASE_URL || process.env.STAGING_DATABASE_URL;
+  const safetyCheck = await validateDatabaseIsolation(testDbUrl);
+
+  if (!safetyCheck.safe) {
+    console.error('----------------------------------------------------');
+    console.error('ENVIRONMENT SAFETY GUARD REJECTION');
+    console.error('----------------------------------------------------');
+    console.error(safetyCheck.reason);
+    console.error('\nTo run behavioural integration tests safely:');
+    console.error('1. Provision an isolated local or cloud PostgreSQL test database.');
+    console.error('2. Set TEST_DATABASE_URL=<isolated_connection_string>');
+    console.error('3. Set TEST_ADMIN_EMAIL and TEST_ADMIN_PASSWORD with non-production credentials.');
+    console.error('4. (Optional) Set ALLOW_ISOLATED_TEST_DB_RUN=true if using a custom staging branch.');
+    console.error('----------------------------------------------------');
+    process.exit(1);
+  }
+
+  console.log(`[SAFETY CHECK PASSED] Connected to isolated test database: ${safetyCheck.dbName} on ${safetyCheck.host}`);
+
+  // TLS verification: Standard TLS without disabling cert verification
+  const pool = new Pool({
+    connectionString: testDbUrl,
+    ssl: process.env.TEST_DB_NO_SSL === 'true' ? false : { rejectUnauthorized: true },
+  });
+
+  // Verify actual database identity via active query
+  let client;
+  try {
+    client = await pool.connect();
+    const idCheck = await client.query('SELECT current_database() as db, current_user as user');
+    const activeDb = idCheck.rows[0]?.db;
+    console.log(`[DB IDENTITY VERIFIED] Active database: ${activeDb}`);
+
+    if (activeDb === KNOWN_PROD_DB_NAME && safetyCheck.host.includes('neon.tech')) {
+      throw new Error(`Connected database "${activeDb}" matches production schema name. Aborting immediately.`);
+    }
+  } catch (connErr) {
+    console.error(`FATAL: Could not verify test database identity: ${connErr.message}`);
+    if (client) client.release();
+    await pool.end();
+    process.exit(1);
+  } finally {
+    if (client) client.release();
+  }
 
   let passed = 0;
   let failed = 0;
@@ -57,22 +154,26 @@ async function runTests() {
     }
   }
 
-  const email = process.env.ADMIN_OWNER_EMAIL;
-  const password = process.env.ADMIN_OWNER_PASSWORD;
+  // Non-production credentials
+  const email = process.env.TEST_ADMIN_EMAIL;
+  const password = process.env.TEST_ADMIN_PASSWORD;
 
   if (!email || !password) {
-    console.error('FATAL: Admin credentials missing from backend/.env');
+    console.error('FATAL: TEST_ADMIN_EMAIL and TEST_ADMIN_PASSWORD must be configured with test credentials.');
+    console.error('Real production administrator credentials are strictly prohibited in behavioural tests.');
+    await pool.end();
     process.exit(1);
   }
 
   let sessionId = null;
-  const fixtureId = `test_fixture_sprint1_${Date.now()}`;
+  const uniqueRunId = `${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+  const fixtureId = `test_fixture_sprint1_${uniqueRunId}`;
 
   try {
     // ----------------------------------------------------
     // TEST 1: Unauthenticated Endpoint Security
     // ----------------------------------------------------
-    console.log('--- SUITE 1: Security & Authentication Gates ---');
+    console.log('\n--- SUITE 1: Security & Authentication Gates ---');
     const unauthSettings = await fetch(`${API_BASE}/api/admin/appointments/settings`);
     assert(
       unauthSettings.status === 401,
@@ -165,7 +266,7 @@ async function runTests() {
     await pool.query(
       `INSERT INTO ai_handoffs (id, session_id, customer_name, customer_email, status, reason, created_at, updated_at)
        VALUES ($1, $2, $3, $4, 'pending', 'Automated synthetic verification', NOW(), NOW())`,
-      [fixtureId, 'sess_sprint1_test', 'Synthetic Test Client', 'synthetic-test@laurrelservices.internal']
+      [fixtureId, `sess_${uniqueRunId}`, 'Synthetic Test Client', `synthetic_${uniqueRunId}@laurrelservices.internal`]
     );
     console.log(`[SETUP] Inserted temporary synthetic fixture: ${fixtureId}`);
 
@@ -268,9 +369,10 @@ async function runTests() {
     assert(t7Res.status === 404, 'Non-existent Handoff: Returns HTTP 404 Not Found', `Got status ${t7Res.status}`);
 
     // Total audit records for this fixture
-    const allAudits = await pool.query('SELECT event_type, payload FROM audit_logs WHERE entity_id = $1 ORDER BY created_at ASC', [
-      fixtureId,
-    ]);
+    const allAudits = await pool.query(
+      'SELECT event_type, payload FROM audit_logs WHERE entity_id = $1 ORDER BY created_at ASC',
+      [fixtureId]
+    );
     assert(
       allAudits.rows.length === 4,
       `Audit Trail Integrity: Recorded exactly 4 valid transitions in audit_logs (found ${allAudits.rows.length})`
@@ -278,17 +380,18 @@ async function runTests() {
 
   } finally {
     // ----------------------------------------------------
-    // CLEANUP: Purge all synthetic test data
+    // CLEANUP: Purge strictly the synthetic fixtures created in this run
     // ----------------------------------------------------
     console.log('\n--- CLEANUP: Purging Synthetic Test Fixtures ---');
     try {
+      // Targeted deletion: strictly matches the unique fixture ID for this execution
       const delAudit = await pool.query('DELETE FROM audit_logs WHERE entity_id = $1', [fixtureId]);
       const delHandoff = await pool.query('DELETE FROM ai_handoffs WHERE id = $1', [fixtureId]);
       console.log(`[CLEANUP] Deleted ${delHandoff.rowCount} test handoff record and ${delAudit.rowCount} audit logs.`);
 
       if (sessionId) {
         const delSession = await pool.query('DELETE FROM admin_sessions WHERE id = $1', [sessionId]);
-        console.log(`[CLEANUP] Revoked and purged test admin session (${delSession.rowCount} session).`);
+        console.log(`[CLEANUP] Revoked test admin session (${delSession.rowCount} session).`);
       }
     } catch (cleanupErr) {
       console.error('[CLEANUP ERROR]:', cleanupErr.message);

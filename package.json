@@ -11,6 +11,7 @@
     "studio:build": "npm --prefix studio run build",
     "studio:preview": "npm --prefix studio run start",
     "seed:sanity": "node scripts/seed-sanity.js",
+    "test:ci": "node scripts/test-safe-ci.js",
     "admin:bootstrap": "npm --prefix backend run admin:bootstrap",
     "admin:reset-password": "npm --prefix backend run admin:reset-password"
   },

@@ -18,6 +18,7 @@ import {
   CalendarPlus,
   ChevronDown,
   ChevronRight,
+  ChevronLeft,
   RotateCcw,
   Ban,
   Check,
@@ -138,6 +139,10 @@ export default function AdminEnquiriesPage() {
 
   const [serverHandoffCounts, setServerHandoffCounts] = useState<HandoffCounts | null>(null);
   const [handoffTotal, setHandoffTotal] = useState<number>(0);
+  const [handoffPage, setHandoffPage] = useState<number>(1);
+  const [handoffPageSize, setHandoffPageSize] = useState<number>(10);
+  const [handoffTotalPages, setHandoffTotalPages] = useState<number>(1);
+  const [isHandoffsLoading, setIsHandoffsLoading] = useState<boolean>(false);
   const [dismissDialogState, setDismissDialogState] = useState<{
     isOpen: boolean;
     handoffId: string | null;
@@ -255,13 +260,63 @@ export default function AdminEnquiriesPage() {
     }
   };
 
+  const loadHandoffsPage = async (pageToLoad: number, filterToUse = handoffStatusFilter) => {
+    try {
+      setIsHandoffsLoading(true);
+      const params = new URLSearchParams({
+        page: String(pageToLoad),
+        limit: String(handoffPageSize),
+      });
+      if (filterToUse && filterToUse !== 'all') {
+        params.set('status', filterToUse);
+      }
+      const res = await fetch(`/api/admin/handoffs?${params.toString()}`, { cache: 'no-store' });
+      if (res.ok) {
+        const hData = await res.json();
+        setHandoffs(hData.handoffs || []);
+        if (hData.statusCounts) {
+          setServerHandoffCounts(hData.statusCounts);
+        }
+        if (typeof hData.total === 'number') {
+          setHandoffTotal(hData.total);
+        }
+        if (typeof hData.totalPages === 'number') {
+          setHandoffTotalPages(hData.totalPages);
+        }
+        if (typeof hData.page === 'number') {
+          setHandoffPage(hData.page);
+        }
+      }
+    } catch (err) {
+      console.error('[Handoffs Load Error]:', err);
+    } finally {
+      setIsHandoffsLoading(false);
+    }
+  };
+
+  const handleSelectHandoffTab = (tab: string) => {
+    setHandoffStatusFilter(tab);
+    setHandoffPage(1);
+    loadHandoffsPage(1, tab);
+  };
+
+  const handleHandoffSearchChange = (query: string) => {
+    setHandoffSearchQuery(query);
+    setHandoffPage(1);
+  };
+
+  const handleClearHandoffSearch = () => {
+    setHandoffSearchQuery('');
+    setHandoffPage(1);
+  };
+
   const loadData = async () => {
     try {
       setLoading(true);
       setApiError(null);
       const [enqRes, handoffsRes] = await Promise.all([
         fetch('/api/admin/enquiries?limit=200', { cache: 'no-store' }),
-        fetch('/api/admin/handoffs', { cache: 'no-store' }),
+        fetch(`/api/admin/handoffs?page=${handoffPage}&limit=${handoffPageSize}${handoffStatusFilter !== 'all' ? `&status=${handoffStatusFilter}` : ''}`, { cache: 'no-store' }),
       ]);
 
       if (enqRes.ok) {
@@ -428,6 +483,11 @@ export default function AdminEnquiriesPage() {
       };
       setHandoffActionMsg(`Callback request ${statusLabels[newStatus] || newStatus}.`);
       setTimeout(() => setHandoffActionMsg(null), 3500);
+
+      // Re-fetch current page to ensure next records flow in and counts stay accurate
+      const targetPage = handoffs.length === 1 && handoffPage > 1 ? handoffPage - 1 : handoffPage;
+      await loadHandoffsPage(targetPage, handoffStatusFilter);
+
       return { success: true };
     } catch (err: any) {
       console.error('Error updating handoff status:', err);
@@ -917,7 +977,7 @@ export default function AdminEnquiriesPage() {
                   <button
                     key={st.id}
                     type="button"
-                    onClick={() => setHandoffStatusFilter(st.id)}
+                    onClick={() => handleSelectHandoffTab(st.id)}
                     className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 whitespace-nowrap transition-all ${
                       handoffStatusFilter === st.id
                         ? 'bg-[#390044] text-white shadow-2xs'
@@ -947,13 +1007,13 @@ export default function AdminEnquiriesPage() {
               <input
                 type="text"
                 value={handoffSearchQuery}
-                onChange={(e) => setHandoffSearchQuery(e.target.value)}
+                onChange={(e) => handleHandoffSearchChange(e.target.value)}
                 placeholder="Search callbacks by customer name, email, phone, location, reason..."
                 className="w-full h-11 pl-10 pr-10 text-sm bg-white text-zinc-900 border border-zinc-300 rounded-lg placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#49056B]/20 focus:border-[#49056B] transition-all"
               />
               {handoffSearchQuery && (
                 <button
-                  onClick={() => setHandoffSearchQuery('')}
+                  onClick={handleClearHandoffSearch}
                   className="absolute right-3 text-zinc-400 hover:text-zinc-600 p-1"
                 >
                   <X className="w-4 h-4" />
@@ -961,13 +1021,30 @@ export default function AdminEnquiriesPage() {
               )}
             </div>
 
-            <div className="flex items-center justify-between text-xs text-zinc-500 pt-2 border-t border-zinc-100">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between text-xs text-zinc-500 pt-2 border-t border-zinc-100 gap-2">
               <span>
-                Showing <strong className="text-zinc-900 font-semibold">{filteredHandoffs.length}</strong> of{' '}
-                <strong className="text-zinc-900 font-semibold">{handoffs.length}</strong> callback requests
-                {handoffStatusFilter !== 'all' || handoffSearchQuery ? ' (filtered)' : ''}
+                {handoffSearchQuery ? (
+                  <>
+                    Showing <strong className="text-zinc-900 font-semibold">{filteredHandoffs.length}</strong> matching on this page of{' '}
+                    <strong className="text-zinc-900 font-semibold">{handoffTotal}</strong> total
+                  </>
+                ) : (
+                  <>
+                    Showing{' '}
+                    <strong className="text-zinc-900 font-semibold">
+                      {handoffTotal === 0 ? 0 : (handoffPage - 1) * handoffPageSize + 1}–
+                      {Math.min(handoffPage * handoffPageSize, handoffTotal)}
+                    </strong>{' '}
+                    of <strong className="text-zinc-900 font-semibold">{handoffTotal}</strong> callback requests
+                  </>
+                )}
+                {handoffStatusFilter !== 'all' ? ` (${handoffStatusFilter})` : ''}
               </span>
-              <span>Ottawa Dispatch Operations</span>
+              <div className="flex items-center gap-2 text-zinc-500 font-medium">
+                <span>Ottawa Dispatch Operations</span>
+                <span>•</span>
+                <span>Page {handoffPage} of {handoffTotalPages}</span>
+              </div>
             </div>
           </div>
 
@@ -1161,6 +1238,66 @@ export default function AdminEnquiriesPage() {
                   </div>
                 </div>
               )}
+            </div>
+
+            {/* Callback Pagination Controls Bar */}
+            <div className="px-5 py-3.5 bg-zinc-50 border-t border-zinc-200 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-zinc-600">
+              <div className="flex items-center gap-2">
+                <span>
+                  Showing{' '}
+                  <strong className="text-zinc-900 font-semibold">
+                    {handoffTotal === 0 ? 0 : (handoffPage - 1) * handoffPageSize + 1}
+                  </strong>{' '}
+                  to{' '}
+                  <strong className="text-zinc-900 font-semibold">
+                    {Math.min(handoffPage * handoffPageSize, handoffTotal)}
+                  </strong>{' '}
+                  of <strong className="text-zinc-900 font-semibold">{handoffTotal}</strong> requests
+                </span>
+                {isHandoffsLoading && (
+                  <RefreshCw className="w-3.5 h-3.5 animate-spin text-zinc-400 ml-1" />
+                )}
+              </div>
+
+              <div className="flex items-center gap-2" role="navigation" aria-label="Callback requests pagination">
+                {/* Previous Page Button */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (handoffPage > 1 && !isHandoffsLoading) {
+                      loadHandoffsPage(handoffPage - 1);
+                    }
+                  }}
+                  disabled={handoffPage <= 1 || isHandoffsLoading}
+                  aria-label="Go to previous page"
+                  className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold rounded-md border border-zinc-300 bg-white text-zinc-700 hover:bg-zinc-100 focus:outline-none focus:ring-2 focus:ring-[#390044] focus:ring-offset-1 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                >
+                  <ChevronLeft className="w-3.5 h-3.5" />
+                  <span>Previous</span>
+                </button>
+
+                {/* Page Indicator */}
+                <span className="px-2.5 py-1 text-xs font-medium text-zinc-600">
+                  Page <span className="font-semibold text-zinc-900">{handoffPage}</span> of{' '}
+                  <span className="font-semibold text-zinc-900">{handoffTotalPages}</span>
+                </span>
+
+                {/* Next Page Button */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (handoffPage < handoffTotalPages && !isHandoffsLoading) {
+                      loadHandoffsPage(handoffPage + 1);
+                    }
+                  }}
+                  disabled={handoffPage >= handoffTotalPages || isHandoffsLoading}
+                  aria-label="Go to next page"
+                  className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold rounded-md border border-zinc-300 bg-white text-zinc-700 hover:bg-zinc-100 focus:outline-none focus:ring-2 focus:ring-[#390044] focus:ring-offset-1 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                >
+                  <span>Next</span>
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
             </div>
           </div>
         </div>

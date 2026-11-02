@@ -1,0 +1,61 @@
+name: CI Release Verification
+
+on:
+  push:
+    branches:
+      - main
+      - 'feat/**'
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  verify:
+    name: Build & Release Verification Gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js (LTS 20)
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install Frontend Dependencies
+        run: npm ci
+
+      - name: Install Backend Dependencies
+        run: npm --prefix backend ci
+
+      - name: Frontend TypeScript Check
+        run: npx tsc --noEmit
+
+      - name: Backend TypeScript Check & Build
+        run: |
+          cd backend
+          npm run build
+          cd ..
+
+      - name: Safe Automated CI Test Suite
+        run: npm run test:ci
+
+      - name: Next.js Production Build
+        env:
+          NEXT_TELEMETRY_DISABLED: '1'
+          ADMIN_SESSION_SECRET: ci_verification_session_secret_32c
+          ADMIN_API_SECRET: ci_verification_gateway_api_secret
+          BACKEND_API_URL: http://localhost:5000
+        run: npm run build
+
+      - name: Isolated Database Behavioural Verification (Staging Only)
+        if: env.TEST_DATABASE_URL != ''
+        env:
+          TEST_DATABASE_URL: ${{ secrets.TEST_DATABASE_URL }}
+          TEST_ADMIN_EMAIL: ${{ secrets.TEST_ADMIN_EMAIL }}
+          TEST_ADMIN_PASSWORD: ${{ secrets.TEST_ADMIN_PASSWORD }}
+          ALLOW_ISOLATED_TEST_DB_RUN: 'true'
+        run: node scripts/test-sprint1-behavioural.js
