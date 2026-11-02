@@ -205,8 +205,9 @@ The behavioural test runner was tested under various environment configurations 
 
 ## 7. CI AUTOMATED VERIFICATION RESULTS
 
-The offline safe test suite (`npm run test:ci` / `scripts/test-safe-ci.js`) was executed locally with 100% pass rate:
+The full CI workflow (`.github/workflows/ci.yml`) was executed on GitHub Actions (Run [`41418335356`](https://github.com/AleleChi/laurrel/actions/runs/41418335356)) with **100% pass rate** across all verification steps:
 
+### Suite 1 — Safe Automated CI Test Suite
 ```
 ====================================================
 LAURREL SERVICES — CI RELEASE VERIFICATION SUITE
@@ -253,12 +254,21 @@ CI TEST SUMMARY: 26 PASSED, 0 FAILED
 ====================================================
 ```
 
+### Suite 2 — Isolated Database Behavioural Verification (PostgreSQL 16 Service Container)
+Executed unconditionally inside GitHub Actions using an ephemeral `postgres:16` service container on `localhost:5432/laurrel_test`:
+```
+[SAFETY CHECK PASSED] Connected to isolated test database: laurrel_test on localhost:5432
+TEST SUMMARY: 33 PASSED, 0 FAILED
+```
+- **Total Verification Executed:** 59 automated test assertions passed (26 safe unit + 33 end-to-end behavioural).
+- **Skipped Steps:** 0.
+
 ---
 
 ## 8. BUILD AND COMPILATION VERIFICATION
 
 1. **Frontend TypeScript Check:** `npx tsc --noEmit` executed with **0 errors**.
-2. **Backend TypeScript Build:** `cd backend; npm run build` executed with **0 errors**.
+2. **Backend TypeScript Build:** `cd backend; npm run build` executed with **0 errors** (including automated schema copy to `dist/database/schema.sql`).
 3. **Next.js Production Build:** `npm run build` completed successfully, compiling all 30 routes (static and dynamic) with zero errors.
 
 ---
@@ -276,10 +286,11 @@ CI TEST SUMMARY: 26 PASSED, 0 FAILED
 
 - **Branch:** `feat/admin-sprint-1-hardening`
 - **Base Commit (`main`):** `0918aa34829d95678932593d5852d2c87b7cdbc3`
-- **Final Release Commit SHA:** `ae1aad0`
+- **Final Release Commit SHA:** `e2b661b`
 - **Pull Request URL:** https://github.com/AleleChi/laurrel/pull/6
-- **CI Status:** **ALL CHECKS PASSED (Green)**
-  - GitHub Actions `Build & Release Verification Gate`: **PASS**
+- **GitHub Actions Run:** https://github.com/AleleChi/laurrel/actions/runs/41418335356 (Job 125187555536)
+- **CI Status:** **ALL CHECKS PASSED (Green — Zero Skipped Steps)**
+  - GitHub Actions `Build & Release Verification Gate`: **PASS (1m 54s)**
   - Netlify Deploy Preview (`https://deploy-preview-6--laurrel.netlify.app`): **PASS**
 
 ---
