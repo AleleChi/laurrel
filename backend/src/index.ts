@@ -29,6 +29,8 @@ const host = '0.0.0.0';
 
 // Explicit allowed origins for CORS. Unrestricted wildcard or suffix matching is strictly disallowed.
 const explicitAllowedOrigins: string[] = [
+  'https://laurrelservices.com',
+  'https://www.laurrelservices.com',
   'https://laurrel.netlify.app',
   'https://staging--laurrel.netlify.app',
   'http://localhost:3000',

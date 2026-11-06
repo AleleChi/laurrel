@@ -1,10 +1,10 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Image from 'next/image';
 import { MessageSquare, ChevronRight } from 'lucide-react';
 import { Button } from '../ui/Button';
-import { siteConfig } from '@/content/site';
+import { siteConfig, HeroSlideItem } from '@/content/site';
 import { getHomeHeroData, isCmsConfigured } from '@/sanity/client';
 
 interface HeroProps {
@@ -12,8 +12,42 @@ interface HeroProps {
   initialData?: typeof siteConfig.hero;
 }
 
+const DEFAULT_SLIDES: HeroSlideItem[] = [
+  {
+    id: 'hero-slide-cleaning',
+    serviceKey: 'cleaning',
+    serviceLabel: 'Cleaning',
+    imageSrc: '/assets/images/laurrel-cleaning-slide.webp',
+    altText: 'Cleaner wiping a countertop in a bright residential interior.',
+    order: 1,
+    objectPosition: '70% 30%',
+  },
+  {
+    id: 'hero-slide-moving',
+    serviceKey: 'moving',
+    serviceLabel: 'Moving',
+    imageSrc: '/assets/images/laurrel-moving-slide.webp',
+    altText: 'Movers carrying wrapped household furniture towards a moving truck.',
+    order: 2,
+    objectPosition: '60% 40%',
+  },
+  {
+    id: 'hero-slide-storage',
+    serviceKey: 'storage',
+    serviceLabel: 'Storage Solutions',
+    imageSrc: '/assets/images/laurrel-storage-solutions-slide.webp',
+    altText: 'Packed boxes and protected household belongings arranged for storage.',
+    order: 3,
+    objectPosition: '65% 50%',
+  },
+];
+
 export const Hero: React.FC<HeroProps> = ({ onOpenQuote, initialData }) => {
   const [hero, setHero] = useState(initialData || siteConfig.hero);
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     if (initialData) {
@@ -29,10 +63,90 @@ export const Hero: React.FC<HeroProps> = ({ onOpenQuote, initialData }) => {
     }
   }, [initialData]);
 
-  const heroImageSrc = hero.media?.imageSrc || '/assets/hero/cleaning-hero.webp';
-  const heroImageAlt =
-    hero.media?.altText ||
-    'Professional cleaner wearing yellow gloves detailing a bright kitchen counter in an Ottawa home';
+  // Check for prefers-reduced-motion
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    setPrefersReducedMotion(mediaQuery.matches);
+
+    const listener = (event: MediaQueryListEvent) => {
+      setPrefersReducedMotion(event.matches);
+    };
+
+    if (mediaQuery.addEventListener) {
+      mediaQuery.addEventListener('change', listener);
+      return () => mediaQuery.removeEventListener('change', listener);
+    } else {
+      mediaQuery.addListener(listener);
+      return () => mediaQuery.removeListener(listener);
+    }
+  }, []);
+
+  // Determine active slides list
+  const slides: HeroSlideItem[] = React.useMemo(() => {
+    // 1. If slides array is configured and contains valid slides, use it
+    if (hero.media?.slides && Array.isArray(hero.media.slides) && hero.media.slides.length > 0) {
+      const validSlides = hero.media.slides.filter(s => s && s.imageSrc);
+      if (validSlides.length > 0) {
+        return [...validSlides].sort((a, b) => (a.order || 0) - (b.order || 0));
+      }
+    }
+    // 2. If single custom imageSrc provided that is NOT an outdated legacy path (/assets/hero/cleaning-hero or laurrel-room)
+    if (
+      hero.media?.imageSrc &&
+      hero.media.imageSrc !== DEFAULT_SLIDES[0].imageSrc &&
+      !hero.media.imageSrc.includes('cleaning-hero') &&
+      !hero.media.imageSrc.includes('laurrel-room') &&
+      !hero.media.imageSrc.startsWith('/assets/hero/')
+    ) {
+      return [
+        {
+          ...DEFAULT_SLIDES[0],
+          imageSrc: hero.media.imageSrc,
+          altText: hero.media.altText || DEFAULT_SLIDES[0].altText,
+        },
+        DEFAULT_SLIDES[1],
+        DEFAULT_SLIDES[2],
+      ];
+    }
+    // 3. Fall back strictly to approved DEFAULT_SLIDES under /assets/images/
+    return DEFAULT_SLIDES;
+  }, [hero.media]);
+
+  // Auto-advance function
+  const nextSlide = useCallback(() => {
+    setActiveIndex((prev) => (prev + 1) % slides.length);
+  }, [slides.length]);
+
+  // Handle visibility changes (tab backgrounding)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') {
+        setIsPaused(true);
+      } else {
+        setIsPaused(false);
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, []);
+
+  // Setup rotation interval (5 seconds)
+  useEffect(() => {
+    if (isPaused || prefersReducedMotion || slides.length <= 1) {
+      if (timerRef.current) clearInterval(timerRef.current);
+      return;
+    }
+
+    timerRef.current = setInterval(() => {
+      nextSlide();
+    }, 5000);
+
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, [isPaused, prefersReducedMotion, slides.length, nextSlide]);
 
   return (
     <section
@@ -41,7 +155,7 @@ export const Hero: React.FC<HeroProps> = ({ onOpenQuote, initialData }) => {
     >
       <div className="max-w-[1320px] mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
-          {/* Left Column: Typographic & Action Content (~48% of layout) */}
+          {/* Left Column: Typographic & Action Content (~48% of layout) - Remains completely stationary */}
           <div className="lg:col-span-6 xl:col-span-6 flex flex-col justify-center">
             {/* Eyebrow Pill */}
             <div className="inline-flex items-center gap-2.5 mb-4 sm:mb-5">
@@ -53,8 +167,8 @@ export const Hero: React.FC<HeroProps> = ({ onOpenQuote, initialData }) => {
 
             {/* H1 Headline */}
             <h1 className="text-[2.5rem] sm:text-[3.25rem] lg:text-[3.8rem] xl:text-[4.3rem] font-extrabold tracking-tight leading-[1.08] text-[#49056B]">
-              <span>{hero.headline.line1} </span>
-              <span className="text-[#FE6000]">{hero.headline.line2}</span>
+              <span className="block">{hero.headline.line1}</span>
+              <span className="block text-[#FE6000]">{hero.headline.line2}</span>
               {hero.headline.line3 ? (
                 <span className="block">{hero.headline.line3}</span>
               ) : null}
@@ -112,17 +226,73 @@ export const Hero: React.FC<HeroProps> = ({ onOpenQuote, initialData }) => {
             </div>
           </div>
 
-          {/* Right Column: High-Impact Authentic Service Photography (~52% of layout) */}
+          {/* Right Column: Smooth Three-Image Slider (~52% of layout) */}
           <div className="lg:col-span-6 xl:col-span-6 w-full">
-            <div className="relative w-full aspect-[4/3] sm:aspect-[16/11] lg:aspect-[4/3] xl:aspect-[16/11] rounded-2xl overflow-hidden border border-black/[0.08] shadow-card-soft bg-[#202024]">
-              <Image
-                src={heroImageSrc}
-                alt={heroImageAlt}
-                fill
-                priority
-                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 680px"
-                className="object-cover object-center"
-              />
+            <div
+              className="relative w-full aspect-[4/3] sm:aspect-[16/11] lg:aspect-[4/3] xl:aspect-[16/11] rounded-2xl overflow-hidden border border-black/[0.08] shadow-card-soft bg-[#202024]"
+              role="region"
+              aria-roledescription="carousel"
+              aria-label="Laurrel Services hero photography"
+              onMouseEnter={() => setIsPaused(true)}
+              onMouseLeave={() => setIsPaused(false)}
+              onFocus={() => setIsPaused(true)}
+              onBlur={() => setIsPaused(false)}
+            >
+              {slides.map((slide, index) => {
+                const isActive = index === activeIndex;
+                return (
+                  <div
+                    key={slide.id || index}
+                    role="group"
+                    aria-roledescription="slide"
+                    aria-label={`${slide.serviceLabel} (${index + 1} of ${slides.length})`}
+                    aria-hidden={!isActive}
+                    className={`absolute inset-0 transition-opacity ${
+                      prefersReducedMotion ? 'duration-0' : 'duration-[800ms]'
+                    } ease-in-out ${
+                      isActive ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'
+                    }`}
+                  >
+                    <Image
+                      src={slide.imageSrc}
+                      alt={slide.altText}
+                      fill
+                      priority={index === 0}
+                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 680px"
+                      className="object-cover"
+                      style={{ objectPosition: slide.objectPosition || 'center center' }}
+                    />
+                  </div>
+                );
+              })}
+
+              {/* Discreet, restrained slide indicators */}
+              {slides.length > 1 && (
+                <div
+                  className="absolute bottom-4 left-0 right-0 z-20 flex items-center justify-center gap-1.5 pointer-events-auto"
+                  role="tablist"
+                  aria-label="Hero slide navigation"
+                >
+                  {slides.map((s, idx) => {
+                    const isSelected = idx === activeIndex;
+                    return (
+                      <button
+                        key={s.id || idx}
+                        type="button"
+                        role="tab"
+                        aria-selected={isSelected}
+                        aria-label={`Select ${s.serviceLabel} slide (${idx + 1} of ${slides.length})`}
+                        onClick={() => setActiveIndex(idx)}
+                        className={`h-1.5 rounded-full transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white cursor-pointer ${
+                          isSelected
+                            ? 'w-7 bg-white shadow-xs'
+                            : 'w-2 bg-white/45 hover:bg-white/75'
+                        }`}
+                      />
+                    );
+                  })}
+                </div>
+              )}
             </div>
           </div>
         </div>

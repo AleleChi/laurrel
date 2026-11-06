@@ -19,6 +19,12 @@ export const AboutSection: React.FC<AboutSectionProps> = ({ initialData }) => {
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
 
   useEffect(() => {
+    if (initialData) {
+      setAbout(initialData);
+    }
+  }, [initialData]);
+
+  useEffect(() => {
     if (isCmsConfigured && !initialData) {
       getHomeAboutData().then((res) => {
         if (res?.data) {
@@ -69,16 +75,16 @@ export const AboutSection: React.FC<AboutSectionProps> = ({ initialData }) => {
     <section
       id="about"
       ref={sectionRef}
-      className="relative py-16 sm:py-20 lg:py-28 xl:py-32 bg-[var(--warm-white)] scroll-mt-28"
+      className="relative py-12 sm:py-16 lg:py-20 xl:py-24 bg-[var(--warm-white)] scroll-mt-28 sm:scroll-mt-32"
       aria-labelledby="home-about-heading"
     >
       <div className="max-w-[1320px] mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* TOP: Section Label & Large Editorial H2 */}
-        <div className="max-w-4xl mb-12 sm:mb-14 lg:mb-16">
+        <div className="max-w-4xl mb-10 sm:mb-12 lg:mb-14">
           {/* Plain uppercase text label — strictly no badges, pills, or circular dots */}
           <p
-            className={`text-xs sm:text-[13px] lg:text-[14px] font-bold tracking-[0.14em] uppercase text-[#49056B] mb-4 sm:mb-5 ${anim(
+            className={`text-xs sm:text-[13px] lg:text-[14px] font-bold tracking-[0.14em] uppercase text-[#49056B] mb-3 sm:mb-4 ${anim(
               'delay-100'
             )}`}
           >
@@ -87,7 +93,7 @@ export const AboutSection: React.FC<AboutSectionProps> = ({ initialData }) => {
 
           <h2
             id="home-about-heading"
-            className={`text-3xl sm:text-4xl md:text-5xl lg:text-[3.5rem] xl:text-[4rem] font-extrabold tracking-tight text-[#49056B] leading-[1.1] ${anim(
+            className={`text-3xl sm:text-4xl md:text-5xl lg:text-[3.25rem] xl:text-[3.75rem] font-extrabold tracking-tight text-[#49056B] leading-[1.14] ${anim(
               'delay-200'
             )}`}
           >
@@ -96,36 +102,17 @@ export const AboutSection: React.FC<AboutSectionProps> = ({ initialData }) => {
         </div>
 
         {/* MIDDLE: Three-column Editorial Composition */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 sm:gap-12 lg:gap-8 xl:gap-12 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 sm:gap-10 lg:gap-8 xl:gap-12 items-start">
           
-          {/* LEFT COLUMN: Intro paragraph + Oversized 03 Stat (Desktop) */}
-          <div className="lg:col-span-4 flex flex-col justify-between self-stretch order-1">
-            <div>
-              <p
-                className={`text-base sm:text-[17px] lg:text-[18px] text-[#575757] leading-relaxed font-normal ${anim(
-                  'delay-250'
-                )}`}
-              >
-                {about.introParagraph}
-              </p>
-            </div>
-
-            {/* Oversized number 03 and caption — Desktop layout */}
-            <div
-              className={`hidden lg:block pt-6 xl:pt-8 mt-auto ${anim(
-                'delay-350'
+          {/* LEFT COLUMN: Intro paragraph */}
+          <div className="lg:col-span-4 flex flex-col order-1">
+            <p
+              className={`text-base sm:text-[17px] lg:text-[18px] text-[#575757] leading-relaxed font-normal max-w-prose ${anim(
+                'delay-250'
               )}`}
             >
-              <div
-                className="text-[140px] xl:text-[170px] 2xl:text-[190px] font-extrabold text-[#49056B] leading-none tracking-tight select-none"
-                aria-label="03 Core Services"
-              >
-                {about.stat.number}
-              </div>
-              <p className="text-xs sm:text-[13px] font-bold tracking-[0.12em] uppercase text-[#202024]/80 mt-2">
-                {about.stat.caption}
-              </p>
-            </div>
+              {about.introParagraph}
+            </p>
           </div>
 
           {/* CENTRE COLUMN: Prominent Portrait Photograph */}
@@ -141,7 +128,7 @@ export const AboutSection: React.FC<AboutSectionProps> = ({ initialData }) => {
                 fill
                 loading="eager"
                 sizes="(max-width: 768px) 100vw, (max-width: 1200px) 38vw, 420px"
-                className="object-cover object-[center_35%]"
+                className="object-cover object-center"
               />
             </div>
           </div>
@@ -149,7 +136,7 @@ export const AboutSection: React.FC<AboutSectionProps> = ({ initialData }) => {
           {/* RIGHT COLUMN: Service descriptions + About CTA */}
           <div className="lg:col-span-4 flex flex-col order-3">
             <h3
-              className={`text-2xl sm:text-3xl font-extrabold text-[#49056B] tracking-tight leading-snug mb-6 sm:mb-8 ${anim(
+              className={`text-2xl sm:text-3xl font-extrabold text-[#49056B] tracking-tight leading-snug mb-6 sm:mb-7 ${anim(
                 'delay-250'
               )}`}
             >
@@ -160,7 +147,7 @@ export const AboutSection: React.FC<AboutSectionProps> = ({ initialData }) => {
             <div className="space-y-6 sm:space-y-7">
               {about.services.map((service, idx) => (
                 <div
-                  key={service.title}
+                  key={service.title || idx}
                   className={anim(`delay-${300 + idx * 75}`)}
                 >
                   <h4 className="text-base sm:text-[17px] font-bold text-[#202024] mb-1.5">
@@ -185,20 +172,6 @@ export const AboutSection: React.FC<AboutSectionProps> = ({ initialData }) => {
                   {about.cta.label}
                 </Button>
               </Link>
-            </div>
-
-            {/* Mobile / Tablet presentation of Oversized 03 Stat — clean & non-dominating */}
-            <div
-              className={`lg:hidden mt-10 pt-8 border-t border-black/5 flex items-baseline gap-4 ${anim(
-                'delay-550'
-              )}`}
-            >
-              <span className="text-6xl sm:text-7xl font-extrabold text-[#49056B] leading-none tracking-tight">
-                {about.stat.number}
-              </span>
-              <span className="text-xs sm:text-sm font-bold tracking-[0.14em] uppercase text-[#202024]/75">
-                {about.stat.caption}
-              </span>
             </div>
           </div>
 

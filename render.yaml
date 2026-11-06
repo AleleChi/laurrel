@@ -26,13 +26,13 @@ services:
       - key: DATABASE_URL
         sync: false # Set to your existing Neon PostgreSQL connection string (postgresql://...?sslmode=require)
       - key: FRONTEND_ORIGIN
-        value: https://laurrel.netlify.app
+        value: https://laurrelservices.com
       - key: ADMIN_API_SECRET
         generateValue: true # Secure 32-character master API token generated automatically by Render
       - key: ADMIN_SESSION_SECRET
         generateValue: true # Cryptographic secret for signing session cookies
       - key: ADMIN_OWNER_EMAIL
-        value: owner@laurrelservices.ca # Update to business owner's email
+        value: owner@laurrelservices.com # Business owner email
       - key: ADMIN_OWNER_PASSWORD
         generateValue: true # Initial owner password generated automatically by Render
       - key: GEMINI_API_KEY
@@ -42,7 +42,7 @@ services:
       - key: RESEND_API_KEY
         sync: false # Set your verified Resend API key
       - key: EMAIL_FROM
-        sync: false # Set your verified sender (e.g. "Laurrel Dispatch <dispatch@laurrelservices.ca>" or "onboarding@resend.dev")
+        sync: false # Set your verified sender (e.g. "Laurrel Dispatch <dispatch@laurrelservices.com>" or "onboarding@resend.dev")
       - key: ENQUIRY_TO_EMAIL
         sync: false # Set your intake mailbox address (e.g. info@laurrelservices.com)
       - key: STORAGE_PROVIDER
@@ -56,4 +56,4 @@ services:
       - key: R2_BUCKET_NAME
         value: laurrel-media-prod # Dedicated production bucket
       - key: R2_PUBLIC_URL
-        sync: false # Verified public delivery CDN URL (e.g. https://media.laurrelservices.ca or R2 custom domain)
+        sync: false # Verified public delivery CDN URL (e.g. https://media.laurrelservices.com or R2 custom domain)

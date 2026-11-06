@@ -153,7 +153,7 @@ export default function DraftPreviewPage() {
           <SiteHeader onOpenQuote={() => handleOpenQuote()} />
           <main className="flex-1">
             <Hero onOpenQuote={() => handleOpenQuote()} initialData={sections['hero']} />
-            <ServiceTicker />
+            <ServiceTicker initialData={sections['ticker']} />
             <AboutSection onOpenQuote={() => handleOpenQuote()} initialData={sections['about']} />
             <ServicesHighlightSection content={sections['servicesHighlight']} />
             <WhenPlansOverlapSection content={sections['overlappingPlans']} onOpenQuote={handleOpenQuote} />

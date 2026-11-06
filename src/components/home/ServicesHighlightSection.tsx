@@ -1,14 +1,10 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { motion, useReducedMotion } from 'framer-motion';
 import { ArrowRight } from 'lucide-react';
-import {
-  CleaningIllustration,
-  MovingIllustration,
-  StorageIllustration,
-} from '@/components/icons/services';
 import { siteConfig, ServicesHighlightConfig } from '@/content/site';
 import { getHomeServicesData, isCmsConfigured } from '@/sanity/client';
 
@@ -73,20 +69,6 @@ export const ServicesHighlightSection: React.FC<ServicesHighlightSectionProps> =
         ease: [0.21, 0.47, 0.32, 0.98],
       },
     }),
-  };
-
-  // Map service ID to corresponding illustration component
-  const getIllustration = (id: string) => {
-    switch (id) {
-      case 'cleaning':
-        return <CleaningIllustration />;
-      case 'moving':
-        return <MovingIllustration />;
-      case 'storage':
-        return <StorageIllustration />;
-      default:
-        return null;
-    }
   };
 
   return (
@@ -180,12 +162,23 @@ export const ServicesHighlightSection: React.FC<ServicesHighlightSectionProps> =
                 viewport={{ once: true, amount: 0.15 }}
                 className="group flex flex-col sm:flex-row items-start gap-6 sm:gap-8 lg:gap-10"
               >
-                {/* Left Illustration Box inside clean white rounded card */}
+                {/* Left Service Photograph */}
                 <div
-                  className="w-24 h-24 sm:w-24 sm:h-24 lg:w-[104px] lg:h-[104px] flex-shrink-0 flex items-center justify-center p-2 rounded-2xl bg-white shadow-sm"
-                  aria-hidden="true"
+                  className="relative w-24 h-24 sm:w-28 sm:h-28 lg:w-32 lg:h-32 flex-shrink-0 rounded-2xl overflow-hidden border border-white/15 bg-white/5 shadow-sm"
                 >
-                  {getIllustration(service.id)}
+                  <Image
+                    src={service.imageSrc || (
+                      service.id === 'cleaning'
+                        ? '/assets/images/laurrel-service-cleaning.webp'
+                        : service.id === 'moving'
+                        ? '/assets/images/laurrel-service-moving.webp'
+                        : '/assets/images/laurrel-service-storage-solutions.webp'
+                    )}
+                    alt={service.altText || `${service.title} by Laurrel Services in Ottawa`}
+                    fill
+                    sizes="(max-width: 640px) 96px, (max-width: 1024px) 112px, 128px"
+                    className="object-cover object-center"
+                  />
                 </div>
 
                 {/* Right Text Column */}
@@ -205,7 +198,7 @@ export const ServicesHighlightSection: React.FC<ServicesHighlightSectionProps> =
                         ? 'View Cleaning Services'
                         : service.id === 'moving'
                         ? 'View Moving Services'
-                        : 'View Storage Options'}
+                        : 'View Storage Solutions'}
                     </span>
                     <ArrowRight className="w-4 h-4 group-hover/link:translate-x-1 transition-transform" />
                   </Link>

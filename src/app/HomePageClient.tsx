@@ -47,7 +47,7 @@ export function HomePageClient({ initialData }: HomePageClientProps) {
           onOpenQuote={(service) => handleOpenQuote(service ? [service] : undefined)}
           initialData={initialData?.hero}
         />
-        <ServiceTicker />
+        <ServiceTicker initialData={initialData?.ticker} />
         <AboutSection onOpenQuote={() => handleOpenQuote()} initialData={initialData?.about} />
         <ServicesHighlightSection content={initialData?.servicesHighlight} />
         <WhenPlansOverlapSection content={initialData?.overlappingPlans} onOpenQuote={handleOpenQuote} />

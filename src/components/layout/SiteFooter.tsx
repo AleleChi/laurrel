@@ -26,6 +26,29 @@ export const SiteFooter: React.FC<SiteFooterProps> = ({ onOpenQuote }) => {
     }
   }, []);
 
+  const defaultAboutSummary =
+    'Laurrel Services offers residential and commercial cleaning, moving services and storage solutions across Ottawa and surrounding areas. Whether you need help with one service or have several jobs in mind, contact us to discuss your requirements.';
+
+  const rawAbout = siteSettings?.footer?.aboutSummary;
+  const aboutSummary =
+    !rawAbout ||
+    rawAbout.includes('secure storage') ||
+    rawAbout.includes('One responsive team')
+      ? defaultAboutSummary
+      : rawAbout;
+
+  const rawRegion = siteSettings?.footer?.serviceRegionLabel;
+  const regionLabel =
+    !rawRegion || rawRegion === 'Ottawa & NCR' || rawRegion.includes('NCR')
+      ? 'Ottawa & Surrounding Areas'
+      : rawRegion;
+
+  const rawEnquiry = siteSettings?.footer?.estimatesLabel;
+  const enquiryLabel =
+    !rawEnquiry || rawEnquiry === 'Online Request'
+      ? 'Request a Quote'
+      : rawEnquiry;
+
   const footerContainerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -61,7 +84,7 @@ export const SiteFooter: React.FC<SiteFooterProps> = ({ onOpenQuote }) => {
         variants={footerContainerVariants}
         className="max-w-[1380px] mx-auto px-6 sm:px-8 lg:px-12"
       >
-        {/* Top Row: Brand Identity + Verified Ottawa Service Badges */}
+        {/* Top Row: Brand Identity + Ottawa Service Information Badges */}
         <motion.div
           variants={footerItemVariants}
           className="flex flex-col lg:flex-row lg:items-center justify-between gap-8 pb-12 border-b border-white/10"
@@ -71,11 +94,11 @@ export const SiteFooter: React.FC<SiteFooterProps> = ({ onOpenQuote }) => {
               LAURREL SERVICES
             </span>
             <p className="text-sm sm:text-base text-white/60 max-w-xl">
-              Cleaning, moving and storage coordinated under one trusted team in Ottawa, Canada.
+              Cleaning, moving and storage solutions for homes and businesses in Ottawa and surrounding areas.
             </p>
           </div>
 
-          {/* Verified Service Tiles with Lime Icons */}
+          {/* Regional & Enquiry Information Badges */}
           <div className="flex flex-wrap items-center gap-6 sm:gap-8">
             {/* Tile 1: Regional Focus */}
             <div className="flex items-center gap-3.5">
@@ -96,35 +119,12 @@ export const SiteFooter: React.FC<SiteFooterProps> = ({ onOpenQuote }) => {
                   Service Region
                 </span>
                 <span className="text-sm sm:text-base font-semibold text-white">
-                  {siteSettings?.footer?.serviceRegionLabel || 'Ottawa & NCR'}
+                  {regionLabel}
                 </span>
               </div>
             </div>
 
-            {/* Tile 2: Coordinated Solution */}
-            <div className="flex items-center gap-3.5">
-              <div className="w-12 h-12 rounded-2xl bg-[#FE6000] text-[#202024] flex items-center justify-center flex-shrink-0 shadow-sm">
-                <svg
-                  className="w-5 h-5 stroke-current stroke-[2] fill-none"
-                  viewBox="0 0 24 24"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden="true"
-                >
-                  <path d="M12 2L2 7l10 5 10-5-10-5zm0 8.5L4.5 7 12 3.5 19.5 7 12 10.5zm-8 4.3l8 4 8-4v2.5l-8 4-8-4v-2.5zm0-4.3l8 4 8-4v2.5l-8 4-8-4v-2.5z" />
-                </svg>
-              </div>
-              <div>
-                <span className="text-xs uppercase tracking-wider text-white/50 block font-medium">
-                  Coordination
-                </span>
-                <span className="text-sm sm:text-base font-semibold text-white">
-                  {siteSettings?.footer?.coordinationLabel || '1 Point of Contact'}
-                </span>
-              </div>
-            </div>
-
-            {/* Tile 3: Direct Enquiries */}
+            {/* Tile 2: Direct Enquiries */}
             <div className="flex items-center gap-3.5">
               <div className="w-12 h-12 rounded-2xl bg-[#FE6000] text-[#202024] flex items-center justify-center flex-shrink-0 shadow-sm">
                 <svg
@@ -140,14 +140,14 @@ export const SiteFooter: React.FC<SiteFooterProps> = ({ onOpenQuote }) => {
               </div>
               <div>
                 <span className="text-xs uppercase tracking-wider text-white/50 block font-medium">
-                  Estimates
+                  Enquiries
                 </span>
                 <button
                   type="button"
                   onClick={onOpenQuote}
                   className="text-sm sm:text-base font-semibold text-white hover:text-[#FE6000] transition-colors text-left"
                 >
-                  {siteSettings?.footer?.estimatesLabel || 'Online Request'}
+                  {enquiryLabel}
                 </button>
               </div>
             </div>
@@ -164,12 +164,8 @@ export const SiteFooter: React.FC<SiteFooterProps> = ({ onOpenQuote }) => {
             <h4 className="text-xs font-bold tracking-widest text-white uppercase mb-4">
               About Laurrel
             </h4>
-            <p className="text-sm leading-relaxed text-white/70 max-w-sm mb-4">
-              {siteSettings?.footer?.aboutSummary ||
-                'Laurrel Services coordinates residential and commercial cleaning, careful moving, and secure storage arrangements across Ottawa and the surrounding National Capital Region.'}
-            </p>
-            <p className="text-xs text-white/50">
-              One responsive team for multiple related property and transition needs.
+            <p className="text-sm leading-relaxed text-white/70 max-w-sm">
+              {aboutSummary}
             </p>
           </div>
 
@@ -189,7 +185,7 @@ export const SiteFooter: React.FC<SiteFooterProps> = ({ onOpenQuote }) => {
               </li>
               <li>
                 <Link
-                  href="/#cleaning"
+                  href="/services#cleaning"
                   className="hover:text-[#FE6000] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FE6000] rounded"
                 >
                   Cleaning Services
@@ -197,7 +193,7 @@ export const SiteFooter: React.FC<SiteFooterProps> = ({ onOpenQuote }) => {
               </li>
               <li>
                 <Link
-                  href="/#moving"
+                  href="/services#moving"
                   className="hover:text-[#FE6000] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FE6000] rounded"
                 >
                   Moving Services
@@ -205,7 +201,7 @@ export const SiteFooter: React.FC<SiteFooterProps> = ({ onOpenQuote }) => {
               </li>
               <li>
                 <Link
-                  href="/#storage"
+                  href="/services#storage"
                   className="hover:text-[#FE6000] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FE6000] rounded"
                 >
                   Storage Solutions
@@ -222,17 +218,16 @@ export const SiteFooter: React.FC<SiteFooterProps> = ({ onOpenQuote }) => {
             </ul>
           </div>
 
-          {/* Col 3: Service Commitments (2 cols) */}
+          {/* Col 3: Our Services (2 cols) */}
           <div className="lg:col-span-2">
             <h4 className="text-xs font-bold tracking-widest text-white uppercase mb-4">
               Our Services
             </h4>
             <ul className="space-y-2 text-sm text-white/70">
               <li>Residential Cleaning</li>
-              <li>Commercial Turnover</li>
-              <li>Local Moving</li>
-              <li>Move Coordination</li>
-              <li>Secured Storage</li>
+              <li>Commercial Cleaning</li>
+              <li>Moving Services</li>
+              <li>Storage Solutions</li>
             </ul>
           </div>
 
@@ -243,7 +238,7 @@ export const SiteFooter: React.FC<SiteFooterProps> = ({ onOpenQuote }) => {
                 Plan Your Service
               </h4>
               <p className="text-sm text-white/70 leading-relaxed mb-5">
-                Ready to plan your move, handover clean, or storage arrangement? Tell us what you need and our Ottawa team will assist you.
+                Planning a clean, a move or looking for storage options? Share a few details about what you need and your preferred date to request a quote.
               </p>
             </div>
             <div>
@@ -268,7 +263,7 @@ export const SiteFooter: React.FC<SiteFooterProps> = ({ onOpenQuote }) => {
               `© ${new Date().getFullYear()} LAURREL SERVICES. All rights reserved.`}
           </p>
           <div className="flex items-center gap-6">
-            <span>Serving Ottawa & Eastern Ontario</span>
+            <span>Serving Ottawa & Surrounding Areas</span>
             <span>Privacy Policy</span>
             <span>Terms of Service</span>
           </div>
