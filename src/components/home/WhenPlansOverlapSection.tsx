@@ -167,11 +167,8 @@ export const WhenPlansOverlapSection: React.FC<WhenPlansOverlapSectionProps> = (
           >
             {/* Top Section */}
             <div>
-              {/* Header inside Lime card: linear vector illustration + State Indicator */}
-              <div className="flex items-center justify-between mb-6">
-                <div className="w-11 h-11 rounded-2xl bg-[#FE6000] text-[#18181B] flex items-center justify-center shadow-xs">
-                  <Layers className="w-5 h-5 text-[#18181B]" />
-                </div>
+              {/* Subtle Slide Counter */}
+              <div className="flex items-center justify-end mb-6">
                 <div className="flex items-center gap-1.5 text-xs font-bold tracking-wider text-white/80 uppercase">
                   <span>0{currentIndex + 1}</span>
                   <span>/</span>

@@ -12,7 +12,7 @@ export interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   { id: 'cleaning', label: 'Cleaning Services', href: '#cleaning' },
   { id: 'moving', label: 'Moving Services', href: '#moving' },
-  { id: 'storage', label: 'Storage Services', href: '#storage' },
+  { id: 'storage', label: 'Storage Solutions', href: '#storage' },
   { id: 'how-it-works', label: 'How It Works', href: '#how-it-works' },
   { id: 'faq', label: 'Frequently Asked Questions', href: '#faq' },
 ];

@@ -585,11 +585,27 @@ export async function getSiteSettingsData(): Promise<{
               officeAddress: res.businessInfo?.officeAddress || siteConfig.contactPage.officeAddress,
             },
             footer: {
-              aboutSummary: res.footer?.aboutSummary,
-              serviceRegionLabel: res.footer?.serviceRegionLabel || 'Ottawa & NCR',
-              coordinationLabel: res.footer?.coordinationLabel || '1 Point of Contact',
-              estimatesLabel: res.footer?.estimatesLabel || 'Online Request',
-              copyrightNotice: res.footer?.copyrightNotice || '© 2026 Laurrel Services. All rights reserved. Ottawa, Ontario, Canada.',
+              aboutSummary:
+                !res.footer?.aboutSummary ||
+                res.footer.aboutSummary.includes('secure storage') ||
+                res.footer.aboutSummary.includes('One responsive team')
+                  ? 'Laurrel Services offers residential and commercial cleaning, moving services and storage solutions across Ottawa and surrounding areas. Whether you need help with one service or have several jobs in mind, contact us to discuss your requirements.'
+                  : res.footer.aboutSummary,
+              serviceRegionLabel:
+                !res.footer?.serviceRegionLabel ||
+                res.footer.serviceRegionLabel === 'Ottawa & NCR' ||
+                res.footer.serviceRegionLabel.includes('NCR')
+                  ? 'Ottawa & Surrounding Areas'
+                  : res.footer.serviceRegionLabel,
+              coordinationLabel: '',
+              estimatesLabel:
+                !res.footer?.estimatesLabel ||
+                res.footer.estimatesLabel === 'Online Request'
+                  ? 'Request a Quote'
+                  : res.footer.estimatesLabel,
+              copyrightNotice:
+                res.footer?.copyrightNotice ||
+                `© ${new Date().getFullYear()} LAURREL SERVICES. All rights reserved.`,
             },
             seo: {
               defaultMetaTitle: res.seo?.defaultMetaTitle || siteConfig.meta.title,
@@ -616,11 +632,12 @@ export async function getSiteSettingsData(): Promise<{
         officeAddress: siteConfig.contactPage.officeAddress,
       },
       footer: {
-        aboutSummary: 'Laurrel Services coordinates residential and commercial cleaning, careful moving, and secure storage arrangements across Ottawa and the surrounding National Capital Region.',
-        serviceRegionLabel: 'Ottawa & NCR',
-        coordinationLabel: '1 Point of Contact',
-        estimatesLabel: 'Online Request',
-        copyrightNotice: '© 2026 Laurrel Services. All rights reserved. Ottawa, Ontario, Canada.',
+        aboutSummary:
+          'Laurrel Services offers residential and commercial cleaning, moving services and storage solutions across Ottawa and surrounding areas. Whether you need help with one service or have several jobs in mind, contact us to discuss your requirements.',
+        serviceRegionLabel: 'Ottawa & Surrounding Areas',
+        coordinationLabel: '',
+        estimatesLabel: 'Request a Quote',
+        copyrightNotice: `© ${new Date().getFullYear()} LAURREL SERVICES. All rights reserved.`,
       },
       seo: {
         defaultMetaTitle: siteConfig.meta.title,

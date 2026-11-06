@@ -19,16 +19,58 @@ export function HeroSectionEditor({ data, onChange, disabled }: SectionEditorPro
   const secondaryCta = hero.secondaryCta || {};
   const supportCard = hero.supportCard || {};
   const media = hero.media || {};
-  const videos = media.videos || [];
+
+  const defaultSlides = [
+    {
+      id: 'hero-slide-cleaning',
+      serviceKey: 'cleaning',
+      serviceLabel: 'Cleaning',
+      imageSrc: '/assets/images/laurrel-cleaning-slide.webp',
+      altText: 'Cleaner wiping a countertop in a bright residential interior.',
+      order: 1,
+      objectPosition: 'center center',
+    },
+    {
+      id: 'hero-slide-moving',
+      serviceKey: 'moving',
+      serviceLabel: 'Moving',
+      imageSrc: '/assets/images/laurrel-moving-slide.webp',
+      altText: 'Movers carrying wrapped household furniture towards a moving truck.',
+      order: 2,
+      objectPosition: 'center center',
+    },
+    {
+      id: 'hero-slide-storage',
+      serviceKey: 'storage',
+      serviceLabel: 'Storage Solutions',
+      imageSrc: '/assets/images/laurrel-storage-solutions-slide.webp',
+      altText: 'Packed boxes and protected household belongings arranged for storage.',
+      order: 3,
+      objectPosition: 'center center',
+    },
+  ];
+
+  const slides = Array.isArray(media.slides) && media.slides.length > 0
+    ? media.slides
+    : defaultSlides;
 
   const update = (patch: Record<string, any>) => {
     onChange({ ...hero, ...patch });
   };
 
-  const updateVideo = (index: number, patch: Record<string, any>) => {
-    const updated = [...videos];
+  const updateSlide = (index: number, patch: Record<string, any>) => {
+    const updated = [...slides];
     updated[index] = { ...updated[index], ...patch };
-    update({ media: { ...media, videos: updated } });
+    const syncImageSrc = index === 0 && patch.imageSrc ? patch.imageSrc : media.imageSrc || updated[0]?.imageSrc;
+    const syncAltText = index === 0 && patch.altText ? patch.altText : media.altText || updated[0]?.altText;
+    update({
+      media: {
+        ...media,
+        imageSrc: syncImageSrc,
+        altText: syncAltText,
+        slides: updated,
+      },
+    });
   };
 
   return (
@@ -40,7 +82,7 @@ export function HeroSectionEditor({ data, onChange, disabled }: SectionEditorPro
             disabled={disabled}
             value={hero.eyebrow || ''}
             onChange={(e) => update({ eyebrow: e.target.value })}
-            placeholder="CLEANING · MOVING · STORAGE IN OTTAWA"
+            placeholder="CLEANING · MOVING · STORAGE SOLUTIONS IN OTTAWA"
           />
         </CmsField>
 
@@ -51,7 +93,7 @@ export function HeroSectionEditor({ data, onChange, disabled }: SectionEditorPro
               disabled={disabled}
               value={headline.line1 || ''}
               onChange={(e) => update({ headline: { ...headline, line1: e.target.value } })}
-              placeholder="Clean spaces."
+              placeholder="One team."
             />
           </CmsField>
           <CmsField label="Headline Line 2">
@@ -59,15 +101,15 @@ export function HeroSectionEditor({ data, onChange, disabled }: SectionEditorPro
               disabled={disabled}
               value={headline.line2 || ''}
               onChange={(e) => update({ headline: { ...headline, line2: e.target.value } })}
-              placeholder="Smooth moves."
+              placeholder="Three solutions."
             />
           </CmsField>
-          <CmsField label="Headline Line 3">
+          <CmsField label="Headline Line 3 (Optional)">
             <CmsInput
               disabled={disabled}
               value={headline.line3 || ''}
               onChange={(e) => update({ headline: { ...headline, line3: e.target.value } })}
-              placeholder="Secure storage."
+              placeholder="Leave empty or enter line 3"
             />
           </CmsField>
         </div>
@@ -78,7 +120,7 @@ export function HeroSectionEditor({ data, onChange, disabled }: SectionEditorPro
             rows={3}
             value={hero.body || ''}
             onChange={(e) => update({ body: e.target.value })}
-            placeholder="Whether you’re preparing a property, moving to a new address..."
+            placeholder="From cleaning homes and workspaces to moving furniture and finding storage options..."
           />
         </CmsField>
       </div>
@@ -144,7 +186,7 @@ export function HeroSectionEditor({ data, onChange, disabled }: SectionEditorPro
               disabled={disabled}
               value={supportCard.body || ''}
               onChange={(e) => update({ supportCard: { ...supportCard, body: e.target.value } })}
-              placeholder="Tell us what you need..."
+              placeholder="Tell us what you need and your preferred date to get started."
             />
           </CmsField>
           <CmsField label="Action Text">
@@ -159,20 +201,95 @@ export function HeroSectionEditor({ data, onChange, disabled }: SectionEditorPro
       </div>
 
       <div className="bg-white p-6 rounded-xl border border-black/[0.06] shadow-xs space-y-5">
-        <h3 className="text-sm font-bold text-zinc-900 tracking-tight">Hero Media & 3-Video Rotator References</h3>
-        <p className="text-xs text-zinc-400">
-          The three-service rotation (Cleaning, Moving, Storage) runs continuously on the live website. Manage video streams, poster frames, and fallback imagery.
-        </p>
+        <div className="space-y-1">
+          <h3 className="text-sm font-bold text-zinc-900 tracking-tight">
+            Hero Photography & Multi-Service Slider (Cleaning · Moving · Storage Solutions)
+          </h3>
+          <p className="text-xs text-zinc-500">
+            Manage the three client-approved photography slides (Cleaning, Moving, Storage Solutions) displayed in the smooth hero crossfade rotator, plus fallback imagery.
+          </p>
+        </div>
 
-        {/* Fallback Photograph */}
-        <div className="pt-2">
+        {/* The 3 Slides: Cleaning, Moving, Storage Solutions */}
+        <div className="space-y-5 pt-2">
+          {slides.map((slide: any, idx: number) => (
+            <div key={slide.id || idx} className="p-4 bg-zinc-50/70 rounded-xl border border-black/[0.04] space-y-3">
+              <div className="flex items-center justify-between pb-1 border-b border-black/[0.04]">
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-[#FE6000]" />
+                  <span className="text-xs font-bold text-zinc-900 tracking-tight">
+                    Slide {idx + 1}: {slide.serviceLabel || slide.serviceKey}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-[11px] text-zinc-400 font-mono">Order:</span>
+                  <input
+                    type="number"
+                    disabled={disabled}
+                    min={1}
+                    max={10}
+                    value={slide.order || idx + 1}
+                    onChange={(e) => updateSlide(idx, { order: parseInt(e.target.value, 10) || idx + 1 })}
+                    className="w-12 h-6 px-1.5 text-xs text-center border border-zinc-200 rounded bg-white text-zinc-800"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <CmsField label="Service Display Label">
+                  <CmsInput
+                    disabled={disabled}
+                    value={slide.serviceLabel || ''}
+                    onChange={(e) => updateSlide(idx, { serviceLabel: e.target.value })}
+                    placeholder="e.g. Cleaning"
+                  />
+                </CmsField>
+                <CmsField label="Object Position / Focal Point">
+                  <CmsInput
+                    disabled={disabled}
+                    value={slide.objectPosition || 'center center'}
+                    onChange={(e) => updateSlide(idx, { objectPosition: e.target.value })}
+                    placeholder="center center"
+                  />
+                </CmsField>
+              </div>
+
+              <CmsMediaField
+                label={`${slide.serviceLabel || 'Service'} Slide Photograph`}
+                description="Client-approved WebP or high-resolution marketing concept image."
+                value={slide.imageSrc || ''}
+                altText={slide.altText || ''}
+                assetId={slide.assetId || ''}
+                focalPoint={slide.objectPosition || 'center center'}
+                allowedType="image"
+                disabled={disabled}
+                onChange={(patch) =>
+                  updateSlide(idx, {
+                    imageSrc: patch.src !== undefined ? patch.src : slide.imageSrc,
+                    altText: patch.altText !== undefined ? patch.altText : slide.altText,
+                    assetId: patch.assetId !== undefined ? patch.assetId : slide.assetId,
+                    objectPosition: patch.focalPoint !== undefined ? patch.focalPoint : slide.objectPosition,
+                  })
+                }
+              />
+            </div>
+          ))}
+        </div>
+
+        {/* Fallback Single Image Configuration for Backward Compatibility */}
+        <div className="pt-4 border-t border-black/[0.04] space-y-2">
+          <span className="text-xs font-semibold text-zinc-700 block">
+            Legacy Single Image / OpenGraph Fallback Reference
+          </span>
+          <p className="text-[11px] text-zinc-400">
+            Synchronized automatically with Slide 1 for clients or channels requiring a single static image reference.
+          </p>
           <CmsMediaField
-            label="Hero Fallback / Social Share Photograph"
-            description="Displayed when video playback is not active or during reduced-motion preferences."
-            value={media.imageSrc || ''}
-            altText={media.altText || ''}
-            assetId={media.assetId || ''}
-            focalPoint={media.objectPosition || 'center 60%'}
+            label="Hero Static Fallback Image"
+            value={media.imageSrc || slides[0]?.imageSrc || ''}
+            altText={media.altText || slides[0]?.altText || ''}
+            assetId={media.assetId || slides[0]?.assetId || ''}
+            focalPoint={media.objectPosition || 'center center'}
             allowedType="image"
             disabled={disabled}
             onChange={(patch) =>
@@ -187,62 +304,6 @@ export function HeroSectionEditor({ data, onChange, disabled }: SectionEditorPro
               })
             }
           />
-        </div>
-
-        <div className="space-y-4 pt-3 border-t border-black/[0.04]">
-          <h4 className="text-xs font-bold text-zinc-800 tracking-tight">Rotating Service Videos (Dual-Slot Architecture)</h4>
-          {videos.map((vid: any, idx: number) => (
-            <div key={vid.id || idx} className="p-4 bg-zinc-50/70 rounded-xl border border-black/[0.04] space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-zinc-900 tracking-tight">
-                  Video {idx + 1}: {vid.service} Service
-                </span>
-                <span className="text-[10px] text-zinc-400 font-mono">order: {vid.order}</span>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <CmsMediaField
-                  label={`Video Stream (${vid.service})`}
-                  description="MP4 or WebM video file"
-                  value={vid.src || ''}
-                  assetId={vid.assetId || ''}
-                  allowedType="video"
-                  disabled={disabled}
-                  onChange={(patch) =>
-                    updateVideo(idx, {
-                      src: patch.src !== undefined ? patch.src : vid.src,
-                      assetId: patch.assetId !== undefined ? patch.assetId : vid.assetId,
-                    })
-                  }
-                />
-                <CmsMediaField
-                  label={`Poster Frame (${vid.service})`}
-                  description="Instant initial frame"
-                  value={vid.poster || ''}
-                  assetId={vid.posterAssetId || ''}
-                  focalPoint={vid.objectPosition || 'center 45%'}
-                  allowedType="image"
-                  disabled={disabled}
-                  onChange={(patch) =>
-                    updateVideo(idx, {
-                      poster: patch.src !== undefined ? patch.src : vid.poster,
-                      posterAssetId: patch.assetId !== undefined ? patch.assetId : vid.posterAssetId,
-                      objectPosition: patch.focalPoint !== undefined ? patch.focalPoint : vid.objectPosition,
-                    })
-                  }
-                />
-              </div>
-
-              <CmsField label="Accessible Video Description">
-                <CmsInput
-                  disabled={disabled}
-                  value={vid.description || ''}
-                  onChange={(e) => updateVideo(idx, { description: e.target.value })}
-                  placeholder="Laurrel Services professional inspecting residential space..."
-                />
-              </CmsField>
-            </div>
-          ))}
         </div>
       </div>
     </div>
@@ -285,7 +346,7 @@ export function HomeAboutEditor({ data, onChange, disabled }: SectionEditorProps
             disabled={disabled}
             value={about.headline || ''}
             onChange={(e) => update({ headline: e.target.value })}
-            placeholder="The details matter before the work begins."
+            placeholder="A cleaner space. A smoother move. Storage options when you need them."
           />
         </CmsField>
 
@@ -295,7 +356,16 @@ export function HomeAboutEditor({ data, onChange, disabled }: SectionEditorProps
             rows={3}
             value={about.introParagraph || ''}
             onChange={(e) => update({ introParagraph: e.target.value })}
-            placeholder="Cleaning a property, moving belongings and arranging storage..."
+            placeholder="Whether you're preparing a property, relocating furniture or looking for somewhere to keep your belongings..."
+          />
+        </CmsField>
+
+        <CmsField label="Right-Hand Services Heading">
+          <CmsInput
+            disabled={disabled}
+            value={about.rightHeading || ''}
+            onChange={(e) => update({ rightHeading: e.target.value })}
+            placeholder="Choose the service you need."
           />
         </CmsField>
 
